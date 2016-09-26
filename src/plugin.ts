@@ -83,13 +83,14 @@ const SCRIPTS = [
 /**
  * A namespace for help plugin private functions.
  */
-export
 const distributedUILab: JupyterLabPlugin<void> = {
-  id: 'jupyter.extensions.distributed-ui-lab',
+  id: 'jupyter.extensions.dask-labextension',
   requires: [ICommandPalette],
   activate: activateDistributedUILab,
   autoStart: true
 }
+
+export default distributedUILab;
 
 /**
  * Activate the bokeh application extension.

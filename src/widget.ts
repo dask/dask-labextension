@@ -50,7 +50,9 @@ class DistributedUIElement extends Widget {
     if (height===-1) {
       height = null;
     }
-    Bokeh.index[this._bokeh_id].model.document.resize(width, height)
+    // Didn't have time to get this working...
+    // Bokeh.index['bk-resource-profile-plot'].model.documentresize(width, height);
+    // Bokeh.index[this._bokeh_id].model.document.resize(width, height)
   }
 
   private _bokeh_id: string = "";
