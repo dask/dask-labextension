@@ -44,9 +44,15 @@ class DistributedUIElement extends Widget {
   protected onResize(msg: ResizeMessage) {
     let width: Number = msg.width;
     let height: Number = msg.height;
-    // Bokeh.index[this._bokeh_id].model.document.resize(width=width, height=height)
+    if (width===-1) {
+      width = null;
+    }
+    if (height===-1) {
+      height = null;
+    }
+    Bokeh.index[this._bokeh_id].model.document.resize(width, height)
   }
 
-  private _bokeh_id: String = "";
+  private _bokeh_id: string = "";
 
 }

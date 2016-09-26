@@ -1,6 +1,6 @@
 {
   "name": "dask-labextension",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "A JupyterLab extension for dask.",
   "main": "lib/plugin.js",
   "typings": "lib/plugin.d.ts",
@@ -38,7 +38,7 @@
     "lib/*.d.ts",
     "dist/*.js"
   ],
-  "author": "Brian Granger and Matt rocklin",
+  "author": "Brian Granger and Luke Canavan",
   "license": "BSD-3-Clause",
   "bugs": {
     "url": "https://github.com/dask/dask-labextension/issues"

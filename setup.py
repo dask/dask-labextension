@@ -6,13 +6,6 @@
 
 from __future__ import print_function
 
-# the name of the package
-name = 'dask-labextension'
-
-DESCRIPTION = 'JupyterLab extension for Dask'
-LONG_DESCRIPTION = """
-"""
-
 #-----------------------------------------------------------------------------
 # Minimal Python version sanity check
 #-----------------------------------------------------------------------------
@@ -37,9 +30,10 @@ if 'develop' in sys.argv or any(a.startswith('bdist') for a in sys.argv):
     import setuptools
 
 setup_args = dict(
-    name                 = 'dask-labextension',
+    name                 = 'dask_labextension',
     packages             = ['dask_labextension'],
-    author               = 'Brian Granger and Matt Rocklin',
+    version              = '0.0.1',
+    author               = 'Brian Granger and Luke Canavan',
     author_email         = 'ellisonbg@gmail.com',
     include_package_data = True
 )
