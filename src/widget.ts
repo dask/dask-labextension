@@ -50,7 +50,6 @@ class DistributedUIElement extends Widget {
    * A message handler invoked on a `'resize'` message.
    */
   protected onResize(msg: ResizeMessage) {
-    debugger;
     if (this._plot_ref) {
       let width: Number = msg.width;
       let height: Number = msg.height;
