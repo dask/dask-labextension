@@ -30,7 +30,7 @@ class DistributedUIElement extends Widget {
     div.appendChild(tag)
 
     // store bokeh model id as private attr for access in onResize eventing
-    this._bokeh_id = script.bokeh_id
+    this._bokeh_id = script["data-bokeh-model-id"]
 
     this.id = script.id
     this.title.label = script.text
@@ -50,9 +50,7 @@ class DistributedUIElement extends Widget {
     if (height===-1) {
       height = null;
     }
-    // Didn't have time to get this working...
-    // Bokeh.index['bk-resource-profile-plot'].model.documentresize(width, height);
-    // Bokeh.index[this._bokeh_id].model.document.resize(width, height)
+    Bokeh.index[this._bokeh_id].model.document.resize(width, height)
   }
 
   private _bokeh_id: string = "";
