@@ -27,8 +27,13 @@ class DistributedUIElement extends Widget {
     tag.setAttribute('data-bokeh-model-id', script['data-bokeh-model-id'])
     tag.setAttribute('data-bokeh-doc-id', script['data-bokeh-doc-id'])
     tag.onload = (event: Event) => {
-      // this._plot_ref = Bokeh.index[this._bokeh_id].model.document
-    }
+      let that = this
+      setTimeout(function() {
+        // sleeo until bokehjs is loaded and the is rendered and added to the index
+        // there's almost definitely a more elegant way to do this
+        that._plot_ref = Bokeh.index[that._bokeh_id].model.document;
+      }, 1000)
+    };
 
     // wrap bokeh elements in div to apply css selector
     let div = document.createElement('div')
@@ -45,7 +50,8 @@ class DistributedUIElement extends Widget {
    * A message handler invoked on a `'resize'` message.
    */
   protected onResize(msg: ResizeMessage) {
-    if (this._plot_ref !== null) {
+    debugger;
+    if (this._plot_ref) {
       let width: Number = msg.width;
       let height: Number = msg.height;
       if (width===-1) {
