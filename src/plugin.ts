@@ -15,7 +15,7 @@ const PORT = '8787'
 
 const SCRIPTS = [
   {
-    src: `http://${URL}:${PORT}/status/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9680`,
+    src: `http://${URL}:${PORT}/resource_profile/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9680`,
     bokeh_id: "0938e7ff-da78-4769-bf7f-b31d99fd9680",
     id: "distributed-ui:bk-resource-profile-plot",
     text: "Resource Profile",
@@ -23,13 +23,14 @@ const SCRIPTS = [
     "data-bokeh-doc-id": ""
   },
   {
-    src: `http://${URL}:${PORT}/status/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9681`,
+    src: `http://${URL}:${PORT}/network_profile/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9681`,
     bokeh_id: "0938e7ff-da78-4769-bf7f-b31d99fd9681",
     id: "distributed-ui:bk-network-profile-plot",
     text: "Network Profile",
     'data-bokeh-model-id': "bk-network-profile-plot",
     'data-bokeh-doc-id': ""
   },
+  /// below doesn't work
   {
     src: `http://${URL}:${PORT}/status/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9682`,
     bokeh_id: "0938e7ff-da78-4769-bf7f-b31d99fd9682",
@@ -76,6 +77,14 @@ const SCRIPTS = [
     id: "distributed-ui:bk-worker-table",
     text: "Workers Table",
     'data-bokeh-model-id': "bk-worker-table",
+    'data-bokeh-doc-id': ""
+  },
+  {
+    src: `http://${URL}:${PORT}/tasks/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9688`,
+    bokeh_id: "0938e7ff-da78-4769-bf7f-b31d99fd9688",
+    id: "distributed-ui:bk-task-static",
+    text: "Task Static",
+    'data-bokeh-model-id': "bk-task-stream-plot",
     'data-bokeh-doc-id': ""
   }
 ];

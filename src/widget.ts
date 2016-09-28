@@ -29,9 +29,9 @@ class DistributedUIElement extends Widget {
     tag.onload = (event: Event) => {
       let that = this
       setTimeout(function() {
-        // sleeo until bokehjs is loaded and the is rendered and added to the index
+        // wait until bokehjs is loaded and the plot is rendered and added to the index
         // there's almost definitely a more elegant way to do this
-        that._plot_ref = Bokeh.index[that._bokeh_id].model.document;
+        that._plot_ref = Bokeh.index[that._bokeh_id].model;
       }, 1000)
     };
 
@@ -59,7 +59,7 @@ class DistributedUIElement extends Widget {
       if (height===-1) {
         height = null;
       }
-      this._plot_ref.resize(width, height)
+      this._plot_ref.document.resize(width, height)
     }
   }
 
