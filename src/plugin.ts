@@ -71,7 +71,7 @@ const SCRIPTS = [
     'data-bokeh-doc-id': ""
   },
   {
-    src: `http://${URL}:${PORT}/workers_table/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9687`,
+    src: `http://${URL}:${PORT}/worker_table/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9687`,
     bokeh_id: "0938e7ff-da78-4769-bf7f-b31d99fd9687",
     id: "distributed-ui:bk-worker-table",
     text: "Workers Table",
