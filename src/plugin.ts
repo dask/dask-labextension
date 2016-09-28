@@ -30,9 +30,8 @@ const SCRIPTS = [
     'data-bokeh-model-id': "bk-network-profile-plot",
     'data-bokeh-doc-id': ""
   },
-  /// below doesn't work
   {
-    src: `http://${URL}:${PORT}/status/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9682`,
+    src: `http://${URL}:${PORT}/memory_usage/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9682`,
     bokeh_id: "0938e7ff-da78-4769-bf7f-b31d99fd9682",
     id: "distributed-ui:bk-nbytes-plot",
     text: "Memory Use",
@@ -40,7 +39,7 @@ const SCRIPTS = [
     'data-bokeh-doc-id': ""
   },
   {
-    src: `http://${URL}:${PORT}/status/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9683`,
+    src: `http://${URL}:${PORT}/task_stream/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9683`,
     bokeh_id: "0938e7ff-da78-4769-bf7f-b31d99fd9683",
     id: "distributed-ui:bk-task-stream-plot",
     text: "Task Stream",
@@ -48,7 +47,7 @@ const SCRIPTS = [
     'data-bokeh-doc-id': ""
   },
   {
-    src: `http://${URL}:${PORT}/status/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9684`,
+    src: `http://${URL}:${PORT}/progress_stream/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9684`,
     bokeh_id: "0938e7ff-da78-4769-bf7f-b31d99fd9684",
     id: "distributed-ui:bk-progress-plot",
     text: "Progress Stream",
@@ -56,7 +55,7 @@ const SCRIPTS = [
     'data-bokeh-doc-id': ""
   },
   {
-    src: `http://${URL}:${PORT}/workers/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9685`,
+    src: `http://${URL}:${PORT}/processing/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9685`,
     bokeh_id: "0938e7ff-da78-4769-bf7f-b31d99fd9685",
     id: "distributed-ui:bk-processing-plot",
     text: "Processing and Pending",
@@ -64,7 +63,7 @@ const SCRIPTS = [
     'data-bokeh-doc-id': ""
   },
   {
-    src: `http://${URL}:${PORT}/workers/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9686`,
+    src: `http://${URL}:${PORT}/worker_memory/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9686`,
     bokeh_id: "0938e7ff-da78-4769-bf7f-b31d99fd9686",
     id: "distributed-ui:bk-memory-usage-plot",
     text: "Worker Memory",
@@ -72,19 +71,11 @@ const SCRIPTS = [
     'data-bokeh-doc-id': ""
   },
   {
-    src: `http://${URL}:${PORT}/workers/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9687`,
+    src: `http://${URL}:${PORT}/workers_table/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9687`,
     bokeh_id: "0938e7ff-da78-4769-bf7f-b31d99fd9687",
     id: "distributed-ui:bk-worker-table",
     text: "Workers Table",
     'data-bokeh-model-id': "bk-worker-table",
-    'data-bokeh-doc-id': ""
-  },
-  {
-    src: `http://${URL}:${PORT}/tasks/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9688`,
-    bokeh_id: "0938e7ff-da78-4769-bf7f-b31d99fd9688",
-    id: "distributed-ui:bk-task-static",
-    text: "Task Static",
-    'data-bokeh-model-id': "bk-task-stream-plot",
     'data-bokeh-doc-id': ""
   }
 ];
@@ -125,11 +116,4 @@ function activateDistributedUILab(app: JupyterLab, palette: ICommandPalette): vo
     command: element.id,
     category: "Dask Distributed UI"
   }))
-}
-
-
-/**
- * A namespace for help plugin private functions.
- */
-namespace Private {
 }

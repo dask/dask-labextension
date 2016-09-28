@@ -38,6 +38,8 @@ class DistributedUIElement extends Widget {
     // wrap bokeh elements in div to apply css selector
     let div = document.createElement('div')
     div.classList.add('bk-root')
+    // could use some padding, but it interferes w/ the resizing rn
+    // div.style['margin'] = '10px 5px 5px'
     div.appendChild(tag)
 
     this.id = script.id
