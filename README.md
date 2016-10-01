@@ -18,7 +18,7 @@ $ pip install -e .
 Finally install and enable the labextension:
 
 ```
-$ juptyer labextension install --py --symlink --sys-prefix dask_labextension
+$ jupyter labextension install --py --symlink --sys-prefix dask_labextension
 $ jupyter labextension enable --py dask_labextension
 ```
 
