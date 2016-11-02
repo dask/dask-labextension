@@ -15,23 +15,15 @@ const PORT = '8787'
 
 const SCRIPTS = [
   {
-    src: `http://${URL}:${PORT}/resource_profile/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9680`,
+    src: `http://${URL}:${PORT}/resource-profiles/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9680`,
     bokeh_id: "0938e7ff-da78-4769-bf7f-b31d99fd9680",
-    id: "distributed-ui:bk-resource-profile-plot",
-    text: "Resource Profile",
-    "data-bokeh-model-id": "bk-resource-profile-plot",
+    id: "distributed-ui:bk-resource-profiles-plot",
+    text: "Resource Profiles",
+    "data-bokeh-model-id": "bk-resource-profiles-plot",
     "data-bokeh-doc-id": ""
   },
   {
-    src: `http://${URL}:${PORT}/network_profile/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9681`,
-    bokeh_id: "0938e7ff-da78-4769-bf7f-b31d99fd9681",
-    id: "distributed-ui:bk-network-profile-plot",
-    text: "Network Profile",
-    'data-bokeh-model-id': "bk-network-profile-plot",
-    'data-bokeh-doc-id': ""
-  },
-  {
-    src: `http://${URL}:${PORT}/memory_usage/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9682`,
+    src: `http://${URL}:${PORT}/memory-usage/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9682`,
     bokeh_id: "0938e7ff-da78-4769-bf7f-b31d99fd9682",
     id: "distributed-ui:bk-nbytes-plot",
     text: "Memory Use",
@@ -39,7 +31,7 @@ const SCRIPTS = [
     'data-bokeh-doc-id': ""
   },
   {
-    src: `http://${URL}:${PORT}/task_stream/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9683`,
+    src: `http://${URL}:${PORT}/task-stream/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9683`,
     bokeh_id: "0938e7ff-da78-4769-bf7f-b31d99fd9683",
     id: "distributed-ui:bk-task-stream-plot",
     text: "Task Stream",
@@ -47,31 +39,23 @@ const SCRIPTS = [
     'data-bokeh-doc-id': ""
   },
   {
-    src: `http://${URL}:${PORT}/progress_stream/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9684`,
+    src: `http://${URL}:${PORT}/task-progress/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9684`,
     bokeh_id: "0938e7ff-da78-4769-bf7f-b31d99fd9684",
-    id: "distributed-ui:bk-progress-plot",
-    text: "Progress Stream",
-    'data-bokeh-model-id': "bk-progress-plot",
+    id: "distributed-ui:bk-task-progress-plot",
+    text: "Task Progress",
+    'data-bokeh-model-id': "bk-task-progress-plot",
     'data-bokeh-doc-id': ""
   },
   {
-    src: `http://${URL}:${PORT}/processing/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9685`,
+    src: `http://${URL}:${PORT}/processing-stacks/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9685`,
     bokeh_id: "0938e7ff-da78-4769-bf7f-b31d99fd9685",
-    id: "distributed-ui:bk-processing-plot",
-    text: "Processing and Pending",
-    'data-bokeh-model-id': "bk-processing-plot",
+    id: "distributed-ui:bk-processing-stacks-plot",
+    text: "Processing and Stacks",
+    'data-bokeh-model-id': "bk-processing-stacks-plot",
     'data-bokeh-doc-id': ""
   },
   {
-    src: `http://${URL}:${PORT}/worker_memory/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9686`,
-    bokeh_id: "0938e7ff-da78-4769-bf7f-b31d99fd9686",
-    id: "distributed-ui:bk-memory-usage-plot",
-    text: "Worker Memory",
-    'data-bokeh-model-id': "bk-memory-usage-plot",
-    'data-bokeh-doc-id': ""
-  },
-  {
-    src: `http://${URL}:${PORT}/worker_table/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9687`,
+    src: `http://${URL}:${PORT}/worker-table/autoload.js?bokeh-autoload-element=0938e7ff-da78-4769-bf7f-b31d99fd9687`,
     bokeh_id: "0938e7ff-da78-4769-bf7f-b31d99fd9687",
     id: "distributed-ui:bk-worker-table",
     text: "Workers Table",
