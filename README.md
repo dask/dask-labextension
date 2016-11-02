@@ -1,30 +1,36 @@
-# dask-labextension
+# dask_labextension
 
-# Development installation
+dask_labextension
 
-First build the npm package:
 
-```
-$ npm install
-$ npm run build
-```
+## Prerequisites
 
-Then install the python package:
+* JupyterLab 0.7.0 or later
 
-```
-$ pip install -e .
-```
+## Installation
 
-Finally install and enable the labextension:
+To install using pip:
 
-```
-$ jupyter labextension install --py --symlink --sys-prefix dask_labextension
-$ jupyter labextension enable --py dask_labextension
+```bash
+pip install dask_labextension
+jupyter labextension install --py --sys-prefix dask_labextension
+jupyter labextension enable --py --sys-prefix dask_labextension
 ```
 
-If changes are made to the npm package during development, just do the following
-to update:
+## Development
 
+For a development install (requires npm version 4 or later), do the following in the repository directory:
+
+```bash
+npm install
+pip install -e .
+jupyter labextension install --symlink --py --sys-prefix dask_labextension
+jupyter labextension enable --py --sys-prefix dask_labextension
 ```
-$ npm run build
+
+To rebuild the extension bundle:
+
+```bash
+npm run build
 ```
+
