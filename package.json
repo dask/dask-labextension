@@ -1,6 +1,6 @@
 {
   "name": "dask-labextension",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "A JupyterLab extension for dask.",
   "main": "lib/plugin.js",
   "typings": "lib/plugin.d.ts",
@@ -21,7 +21,7 @@
     "prepublish": "npm run build"
   },
   "dependencies": {
-    "jupyterlab": "^0.7.0"
+    "jupyterlab": "^0.8.0"
   },
   "devDependencies": {
     "fs-extra": "^0.30.0",
@@ -39,5 +39,6 @@
   "bugs": {
     "url": "https://github.com/dask/dask-labextension/issues"
   },
-  "homepage": "https://github.com/dask/dask-labextension"
+  "homepage": "https://github.com/dask/dask-labextension",
+  "private": true
 }

@@ -31,11 +31,11 @@ if not os.path.exists('node_modules'):
 setup_args = dict(
     name                 = 'dask-labextension',
     packages             = ['dask_labextension'],
-    version              = '0.0.2',
+    version              = '0.1.0',
     author               = 'Luke Canavan and Brian Granger',
     author_email         = 'canavandl@gmail.com and ellisonbg@gmail.com',
     keywords             = ['jupyterlab', 'jupyterlab extension', 'dask'],
-    install_requires     = ['jupyterlab>=0.7.0'],
+    install_requires     = ['jupyterlab>=0.8.0'],
     include_package_data = True
 )
 
