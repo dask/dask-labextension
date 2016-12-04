@@ -21,14 +21,13 @@
     "prepublish": "npm run build"
   },
   "dependencies": {
-    "@jupyterlab/extension-builder": "^0.10.0",
     "jupyterlab": "^0.11.2",
     "phosphor": "^0.7.0"
   },
   "devDependencies": {
     "fs-extra": "^0.30.0",
     "rimraf": "^2.5.4",
-    "@jupyterlab/extension-builder": "^0.7.0",
+    "@jupyterlab/extension-builder": "^0.10.0",
     "typescript": "^2.0.3"
   },
   "files": [
