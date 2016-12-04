@@ -5,7 +5,7 @@ dask_labextension
 
 ## Prerequisites
 
-* JupyterLab 0.7.0 or later
+* JupyterLab 0.11.2 or later
 
 ## Installation
 
