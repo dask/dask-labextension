@@ -21,7 +21,9 @@
     "prepublish": "npm run build"
   },
   "dependencies": {
-    "jupyterlab": "^0.8.0"
+    "@jupyterlab/extension-builder": "^0.10.0",
+    "jupyterlab": "^0.11.2",
+    "phosphor": "^0.7.0"
   },
   "devDependencies": {
     "fs-extra": "^0.30.0",
