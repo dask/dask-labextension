@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "A JupyterLab extension for dask.",
   "main": "lib/plugin.js",
-  "typings": "lib/plugin.d.ts",
+  "types": "lib/plugin.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/dask/dask-labextension"
@@ -11,24 +11,26 @@
   "keywords": [
     "jupyter",
     "jupyterlab",
+    "jupyterlab-extension",
     "dask"
   ],
   "scripts": {
-    "build:src": "tsc --project src && node scripts/copyfiles.js",
-    "build:extension": "node scripts/build_extension.js",
-    "build": "npm run build:src && npm run build:extension",
-    "clean": "rimraf lib && rimraf dask_labextension/static",
-    "prepublish": "npm run build"
+    "build": "tsc",
+    "clean": "rimraf lib",
+    "precommit": "lint-staged",
+    "prettier": "prettier --write '**/*{.ts,.tsx,.js,.jsx,.css,.json,.md}'",
+    "watch": "tsc -w"
   },
-  "dependencies": {
-    "jupyterlab": "^0.11.2",
-    "phosphor": "^0.7.0"
-  },
+  "dependencies": {},
   "devDependencies": {
-    "fs-extra": "^0.30.0",
-    "rimraf": "^2.5.4",
-    "@jupyterlab/extension-builder": "^0.10.0",
-    "typescript": "^2.0.3"
+    "husky": "^0.14.3",
+    "lint-staged": "^7.2.0",
+    "prettier": "^1.13.7",
+    "rimraf": "^2.6.1",
+    "tslint": "^5.10.0",
+    "tslint-config-prettier": "^1.13.0",
+    "tslint-plugin-prettier": "^1.3.0",
+    "typescript": "^2.9.2"
   },
   "files": [
     "lib/*.js",
@@ -40,6 +42,12 @@
   "bugs": {
     "url": "https://github.com/dask/dask-labextension/issues"
   },
+  "lint-staged": {
+    "**/*{.ts,.tsx,.css,.json,.md}": [
+      "prettier --write",
+      "git add"
+    ]
+  },
   "homepage": "https://github.com/dask/dask-labextension",
-  "private": true
+  "private": false
 }
