@@ -1,9 +1,9 @@
 {
-  "name": "dask-labextension",
+  "name": "jupyterlab-dask",
   "version": "0.1.0",
   "description": "A JupyterLab extension for dask.",
-  "main": "lib/plugin.js",
-  "types": "lib/plugin.d.ts",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/dask/dask-labextension"
@@ -21,7 +21,10 @@
     "prettier": "prettier --write '**/*{.ts,.tsx,.js,.jsx,.css,.json,.md}'",
     "watch": "tsc -w"
   },
-  "dependencies": {},
+  "dependencies": {
+    "react": "^16.4.2",
+    "react-dom": "^16.4.2"
+  },
   "devDependencies": {
     "husky": "^0.14.3",
     "lint-staged": "^7.2.0",
@@ -37,7 +40,10 @@
     "lib/*.d.ts",
     "dist/*.js"
   ],
-  "author": "Brian Granger and Luke Canavan",
+  "jupyterlab": {
+    "extension": true
+  },
+  "author": "Brian Granger, Luke Canavan, Ian Rose",
   "license": "BSD-3-Clause",
   "bugs": {
     "url": "https://github.com/dask/dask-labextension/issues"
