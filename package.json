@@ -22,6 +22,8 @@
     "watch": "tsc -w"
   },
   "dependencies": {
+    "@jupyterlab/application": "^0.17.2",
+    "@jupyterlab/apputils": "^0.17.2",
     "react": "^16.4.2",
     "react-dom": "^16.4.2"
   },
