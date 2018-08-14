@@ -1,3 +1,0 @@
-graft dask_labextension/static
-graft src
-include package.json
