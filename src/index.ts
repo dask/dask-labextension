@@ -46,7 +46,7 @@ function activate(app: JupyterLab, restorer: ILayoutRestorer): void {
   dashboardLauncher.id = 'dask-dashboard-launcher';
   dashboardLauncher.title.label = 'Dask';
 
-  const tracker = new InstanceTracker<MainAreaWidget>({
+  const tracker = new InstanceTracker<MainAreaWidget<IFrame>>({
     namespace: 'dask-dashboard'
   });
 
@@ -73,9 +73,22 @@ function activate(app: JupyterLab, restorer: ILayoutRestorer): void {
     label: args => `Launch Dask ${(args['label'] as string) || ''} Dashboard`,
     caption: 'Launch a Dask dashboard',
     execute: args => {
+      // Construct the url for the dashboard.
       const route = (args['route'] as string) || '';
+      const baseUrl = 'http://localhost:8787';
+      const url = URLExt.join(baseUrl, route);
+
+      // If we already have a dashboard open to this url, activate it
+      // but don't create a duplicate.
+      const w = tracker.find(w => w.content.url === url);
+      if (w) {
+        app.shell.activateById(w.id);
+        return;
+      }
+
+      // Otherwise create the new dashboard widget.
       const iframe = new IFrame();
-      iframe.url = `http://localhost:8787/${route}`;
+      iframe.url = url;
       const widget = new MainAreaWidget({ content: iframe });
       widget.id = `dask-dashboard-${Private.id++}`;
       widget.title.label = `Dask ${(args['label'] as string) || ''}`;
