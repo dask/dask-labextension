@@ -40,9 +40,8 @@
     "typescript": "^2.9.2"
   },
   "files": [
-    "lib/*.js",
-    "lib/*.d.ts",
-    "dist/*.js"
+    "lib/**/*.{d.ts,eot,gif,html,jpg,js,js.map,json,png,svg,woff2,ttf}",
+    "style/**/*.{css,eot,gif,html,jpg,json,png,svg,woff2,ttf}"
   ],
   "jupyterlab": {
     "extension": true

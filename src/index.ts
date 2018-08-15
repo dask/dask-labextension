@@ -4,9 +4,11 @@ import {
   JupyterLabPlugin
 } from '@jupyterlab/application';
 
-import { IFrame, MainAreaWidget } from '@jupyterlab/apputils';
+import { IFrame, InstanceTracker, MainAreaWidget } from '@jupyterlab/apputils';
 
 import { DaskDashboardLauncher } from './widget';
+
+import '../style/index.css';
 
 namespace CommandIDs {
   /**
@@ -52,11 +54,12 @@ function activate(app: JupyterLab, restorer: ILayoutRestorer): void {
       `Launch Dask ${capitalize(args['type'] as string)} Dashboard`,
     caption: 'Launch a Dask dashboard',
     execute: args => {
-      const type = (args['type'] as string) || '';
+      const type = (args['route'] as string) || '';
       const iframe = new IFrame();
       iframe.url = `http://localhost:8787/${type}`;
       const widget = new MainAreaWidget({ content: iframe });
       widget.id = `dask-dashboard-${Private.id++}`;
+      widget.title.label = `Dask ${(args['label'] as string) || ''}`;
       app.shell.addToMainArea(widget);
     }
   });

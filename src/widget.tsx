@@ -1,5 +1,7 @@
 import { CommandRegistry } from '@phosphor/commands';
 
+import { JSONObject } from '@phosphor/coreutils';
+
 import { Message } from '@phosphor/messaging';
 
 import { Widget } from '@phosphor/widgets';
@@ -16,7 +18,9 @@ export class DaskDashboardLauncher extends Widget {
    */
   constructor(options: DaskDashboardLauncher.IOptions) {
     super();
+    this.addClass('dask-DaskDashboardLauncher');
     this._commands = options.commands;
+    this._items = options.items || DaskDashboardLauncher.DEFAULT_ITEMS;
   }
 
   /**
@@ -28,7 +32,10 @@ export class DaskDashboardLauncher extends Widget {
       return;
     }
 
-    ReactDOM.render(<DashboardListing commands={this._commands} />, this.node);
+    ReactDOM.render(
+      <DashboardListing commands={this._commands} items={this._items} />,
+      this.node
+    );
   }
 
   /**
@@ -39,6 +46,7 @@ export class DaskDashboardLauncher extends Widget {
   }
 
   private _commands: CommandRegistry;
+  private _items: DaskDashboardLauncher.IItem[];
 }
 
 /**
@@ -52,18 +60,27 @@ export class DashboardListing extends React.Component<
    * Render the TOCTree.
    */
   render() {
-    const types = ['tasks', 'workers'];
-    let listing: JSX.Element[] = types.map(t => {
+    let listing = this.props.items.map(item => {
       const handler = () => {
-        this.props.commands.execute('dask:launch-dashboard', { type: t });
+        this.props.commands.execute('dask:launch-dashboard', item);
       };
-      return <button value={t} onClick={handler} />;
+      return (
+        <li className="dask-DashboardListing-item">
+          <button
+            className="jp-mod-styled jp-mod-accept"
+            value={item.label}
+            onClick={handler}
+          >
+            {item.label}
+          </button>
+        </li>
+      );
     });
 
     // Return the JSX component.
     return (
       <div>
-        <ul>{listing}</ul>
+        <ul className="dask-DashboardListing-list">{listing}</ul>
       </div>
     );
   }
@@ -76,11 +93,28 @@ export interface IDashboardListingProps extends React.Props<DashboardListing> {
    * A command registry.
    */
   commands: CommandRegistry;
+
+  items: DaskDashboardLauncher.IItem[];
 }
 /**
  * A namespace for DaskDashboardLauncher statics.
  */
 export namespace DaskDashboardLauncher {
+  /**
+   * An interface dashboard launcher item.
+   */
+  export interface IItem extends JSONObject {
+    /**
+     * The route to add the the base url.
+     */
+    route: string;
+
+    /**
+     * The display label for the item.
+     */
+    label: string;
+  }
+
   /**
    * Options for the constructor.
    */
@@ -89,5 +123,18 @@ export namespace DaskDashboardLauncher {
      * The document manager for the application.
      */
     commands: CommandRegistry;
+
+    /**
+     * A list of items for the launcher.
+     */
+    items?: IItem[];
   }
+
+  export const DEFAULT_ITEMS = [
+    { route: 'solo-graph', label: 'Graph' },
+    { route: 'solo-load', label: 'Load' },
+    { route: 'solo-profile', label: 'Profile' },
+    { route: 'solo-progress', label: 'Progress' },
+    { route: 'solo-task-stream', label: 'Task Stream' }
+  ];
 }
