@@ -1,10 +1,14 @@
+import { IChangedArgs } from '@jupyterlab/coreutils';
+
 import { CommandRegistry } from '@phosphor/commands';
 
 import { JSONObject } from '@phosphor/coreutils';
 
 import { Message } from '@phosphor/messaging';
 
-import { Widget } from '@phosphor/widgets';
+import { ISignal, Signal } from '@phosphor/signaling';
+
+import { Widget, PanelLayout } from '@phosphor/widgets';
 
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
@@ -18,13 +22,28 @@ export class DaskDashboardLauncher extends Widget {
    */
   constructor(options: DaskDashboardLauncher.IOptions) {
     super();
+    let layout = (this.layout = new PanelLayout());
+    this._listing = new Widget();
+    this._input = new URLInput();
+    layout.addWidget(this._input);
+    layout.addWidget(this._listing);
     this.addClass('dask-DaskDashboardLauncher');
     this._commands = options.commands;
     this._items = options.items || DaskDashboardLauncher.DEFAULT_ITEMS;
   }
 
+  /**
+   * The list of dashboard items which can be launched.
+   */
   get items(): DaskDashboardLauncher.IItem[] {
     return this._items;
+  }
+
+  /**
+   * Get the URL input widget.
+   */
+  get input(): URLInput {
+    return this._input;
   }
 
   /**
@@ -38,7 +57,7 @@ export class DaskDashboardLauncher extends Widget {
 
     ReactDOM.render(
       <DashboardListing commands={this._commands} items={this._items} />,
-      this.node
+      this._listing.node
     );
   }
 
@@ -49,8 +68,106 @@ export class DaskDashboardLauncher extends Widget {
     this.update();
   }
 
+  private _listing: Widget;
+  private _input: URLInput;
   private _commands: CommandRegistry;
   private _items: DaskDashboardLauncher.IItem[];
+}
+
+/**
+ * A widget for hosting a url input element.
+ */
+export class URLInput extends Widget {
+  /**
+   * Construct a new input element.
+   */
+  constructor() {
+    super();
+    this.addClass('dask-URLInput');
+    const wrapper = document.createElement('div');
+    wrapper.className = 'dask-URLInput-wrapper';
+    this._input = document.createElement('input');
+    this._input.placeholder = 'DASK DASHBOARD URL';
+    this.node.appendChild(wrapper);
+    wrapper.appendChild(this._input);
+  }
+
+  /**
+   * The underlying input value.
+   */
+  get input(): HTMLInputElement {
+    return this._input;
+  }
+
+  /**
+   * The base url for the dask webserver.
+   */
+  get url(): string {
+    return this._url;
+  }
+  set url(newValue: string) {
+    const oldValue = this._url;
+    if (newValue === oldValue) {
+      return;
+    }
+    this._url = newValue;
+    this._input.value = newValue;
+    this._urlChanged.emit({ name: 'url', oldValue, newValue });
+    this.update();
+  }
+
+  /**
+   * A signal emitted when the url changes.
+   */
+  get urlChanged(): ISignal<this, IChangedArgs<string>> {
+    return this._urlChanged;
+  }
+
+  /**
+   * Handle the DOM events for the widget.
+   *
+   * @param event - The DOM event sent to the widget.
+   *
+   * #### Notes
+   * This method implements the DOM `EventListener` interface and is
+   * called in response to events on the main area widget's node. It should
+   * not be called directly by user code.
+   */
+  handleEvent(event: KeyboardEvent): void {
+    switch (event.type) {
+      case 'keydown':
+        switch (event.keyCode) {
+          case 13: // Enter
+            event.stopPropagation();
+            event.preventDefault();
+            this.url = this._input.value;
+            break;
+          default:
+            break;
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
+  /**
+   * Handle `after-attach` messages for the widget.
+   */
+  protected onAfterAttach(msg: Message): void {
+    this._input.addEventListener('keydown', this, true);
+  }
+
+  /**
+   * Handle `before-detach` messages for the widget.
+   */
+  protected onBeforeDetach(msg: Message): void {
+    this._input.removeEventListener('keydown', this, true);
+  }
+
+  private _urlChanged = new Signal<this, IChangedArgs<string>>(this);
+  private _url: string;
+  private _input: HTMLInputElement;
 }
 
 /**
@@ -98,6 +215,9 @@ export interface IDashboardListingProps extends React.Props<DashboardListing> {
    */
   commands: CommandRegistry;
 
+  /**
+   * A list of dashboard items to render.
+   */
   items: DaskDashboardLauncher.IItem[];
 }
 /**

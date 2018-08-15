@@ -8,8 +8,6 @@ import { IFrame, InstanceTracker, MainAreaWidget } from '@jupyterlab/apputils';
 
 import { URLExt } from '@jupyterlab/coreutils';
 
-import { find } from '@phosphor/algorithm';
-
 import { DaskDashboardLauncher } from './widget';
 
 import '../style/index.css';
@@ -50,24 +48,27 @@ function activate(app: JupyterLab, restorer: ILayoutRestorer): void {
     namespace: 'dask-dashboard'
   });
 
-  const getItem = (
-    widget: MainAreaWidget<IFrame>
-  ): DaskDashboardLauncher.IItem => {
-    const url = widget.content.url;
-    const route = URLExt.parse(url).pathname!.slice(1);
-    console.log(route);
-    const item = find(dashboardLauncher.items, i => i.route === route)!;
-    return item;
-  };
+  const itemForWidget = new Map<
+    MainAreaWidget<IFrame>,
+    DaskDashboardLauncher.IItem
+  >();
 
   restorer.add(dashboardLauncher, 'running-sessions');
   restorer.restore(tracker, {
     command: CommandIDs.launchPanel,
-    args: widget => getItem(widget),
-    name: widget => getItem(widget).route
+    args: widget => itemForWidget.get(widget)!,
+    name: widget => itemForWidget.get(widget)!.route
   });
 
   app.shell.addToLeftArea(dashboardLauncher, { rank: 200 });
+
+  dashboardLauncher.input.urlChanged.connect((sender, args) => {
+    tracker.forEach(widget => {
+      const item = itemForWidget.get(widget)!;
+      const url = URLExt.join(args.newValue, item.route);
+      widget.content.url = url;
+    });
+  });
 
   app.commands.addCommand(CommandIDs.launchPanel, {
     label: args => `Launch Dask ${(args['label'] as string) || ''} Dashboard`,
@@ -93,6 +94,10 @@ function activate(app: JupyterLab, restorer: ILayoutRestorer): void {
       widget.id = `dask-dashboard-${Private.id++}`;
       widget.title.label = `Dask ${(args['label'] as string) || ''}`;
 
+      itemForWidget.set(widget, args as DaskDashboardLauncher.IItem);
+      widget.disposed.connect(() => {
+        itemForWidget.delete(widget);
+      });
       app.shell.addToMainArea(widget);
       tracker.add(widget);
     }
