@@ -6,6 +6,10 @@ import {
 
 import { IFrame, InstanceTracker, MainAreaWidget } from '@jupyterlab/apputils';
 
+import { URLExt } from '@jupyterlab/coreutils';
+
+import { find } from '@phosphor/algorithm';
+
 import { DaskDashboardLauncher } from './widget';
 
 import '../style/index.css';
@@ -42,25 +46,42 @@ function activate(app: JupyterLab, restorer: ILayoutRestorer): void {
   dashboardLauncher.id = 'dask-dashboard-launcher';
   dashboardLauncher.title.label = 'Dask';
 
+  const tracker = new InstanceTracker<MainAreaWidget>({
+    namespace: 'dask-dashboard'
+  });
+
+  const getItem = (
+    widget: MainAreaWidget<IFrame>
+  ): DaskDashboardLauncher.IItem => {
+    const url = widget.content.url;
+    const route = URLExt.parse(url).pathname!.slice(1);
+    console.log(route);
+    const item = find(dashboardLauncher.items, i => i.route === route)!;
+    return item;
+  };
+
   restorer.add(dashboardLauncher, 'running-sessions');
+  restorer.restore(tracker, {
+    command: CommandIDs.launchPanel,
+    args: widget => getItem(widget),
+    name: widget => getItem(widget).route
+  });
 
   app.shell.addToLeftArea(dashboardLauncher, { rank: 200 });
 
-  let capitalize = (str: string) =>
-    str ? `${str[0].toUpperCase()}${str.slice(1)}` : '';
-
   app.commands.addCommand(CommandIDs.launchPanel, {
-    label: args =>
-      `Launch Dask ${capitalize(args['type'] as string)} Dashboard`,
+    label: args => `Launch Dask ${(args['label'] as string) || ''} Dashboard`,
     caption: 'Launch a Dask dashboard',
     execute: args => {
-      const type = (args['route'] as string) || '';
+      const route = (args['route'] as string) || '';
       const iframe = new IFrame();
-      iframe.url = `http://localhost:8787/${type}`;
+      iframe.url = `http://localhost:8787/${route}`;
       const widget = new MainAreaWidget({ content: iframe });
       widget.id = `dask-dashboard-${Private.id++}`;
       widget.title.label = `Dask ${(args['label'] as string) || ''}`;
+
       app.shell.addToMainArea(widget);
+      tracker.add(widget);
     }
   });
 }

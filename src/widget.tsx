@@ -23,6 +23,10 @@ export class DaskDashboardLauncher extends Widget {
     this._items = options.items || DaskDashboardLauncher.DEFAULT_ITEMS;
   }
 
+  get items(): DaskDashboardLauncher.IItem[] {
+    return this._items;
+  }
+
   /**
    * Handle an update request.
    */
@@ -65,7 +69,7 @@ export class DashboardListing extends React.Component<
         this.props.commands.execute('dask:launch-dashboard', item);
       };
       return (
-        <li className="dask-DashboardListing-item">
+        <li className="dask-DashboardListing-item" key={item.route}>
           <button
             className="jp-mod-styled jp-mod-accept"
             value={item.label}
