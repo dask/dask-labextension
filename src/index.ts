@@ -1,6 +1,3 @@
-// Copyright (c) Jupyter Development Team.
-// Distributed under the terms of the Modified BSD License.
-
 import {
   ILayoutRestorer,
   JupyterLab,
@@ -9,13 +6,13 @@ import {
 
 import { IFrame, MainAreaWidget } from '@jupyterlab/apputils';
 
-import { Widget } from '@phosphor/widgets';
+import { DaskDashboardLauncher } from './widget';
 
 namespace CommandIDs {
   /**
    * Launch a dask dashboard panel in an iframe.
    */
-  export const launchPanel = 'dask:launch-panel';
+  export const launchPanel = 'dask:launch-dashboard';
 }
 
 /**
@@ -37,7 +34,9 @@ export default plugin;
  * Activate the dashboard launcher plugin.
  */
 function activate(app: JupyterLab, restorer: ILayoutRestorer): void {
-  const dashboardLauncher = new Widget();
+  const dashboardLauncher = new DaskDashboardLauncher({
+    commands: app.commands
+  });
   dashboardLauncher.id = 'dask-dashboard-launcher';
   dashboardLauncher.title.label = 'Dask';
 
@@ -60,10 +59,6 @@ function activate(app: JupyterLab, restorer: ILayoutRestorer): void {
       widget.id = `dask-dashboard-${Private.id++}`;
       app.shell.addToMainArea(widget);
     }
-  });
-
-  app.restored.then(() => {
-    app.commands.execute(CommandIDs.launchPanel);
   });
 }
 
