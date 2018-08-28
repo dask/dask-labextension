@@ -294,10 +294,12 @@ export namespace DaskDashboardLauncher {
   }
 
   export const DEFAULT_ITEMS = [
-    { route: 'solo-graph', label: 'Graph' },
-    { route: 'solo-load', label: 'Load' },
-    { route: 'solo-profile', label: 'Profile' },
-    { route: 'solo-progress', label: 'Progress' },
-    { route: 'solo-task-stream', label: 'Task Stream' }
+    { route: 'individual-graph', label: 'Graph' },
+    { route: 'individual-load', label: 'Load' },
+    { route: 'individual-profile', label: 'Profile' },
+    { route: 'individual-profile-server', label: 'Profile Server' },
+    { route: 'individual-progress', label: 'Progress' },
+    { route: 'individual-task-stream', label: 'Task Stream' },
+    { route: 'individual-workers', label: 'Workers' }
   ];
 }
