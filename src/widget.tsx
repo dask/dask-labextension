@@ -1,4 +1,6 @@
-import { IChangedArgs } from '@jupyterlab/coreutils';
+import { showErrorMessage } from '@jupyterlab/apputils';
+
+import { URLExt, IChangedArgs } from '@jupyterlab/coreutils';
 
 import { CommandRegistry } from '@phosphor/commands';
 
@@ -140,7 +142,18 @@ export class URLInput extends Widget {
           case 13: // Enter
             event.stopPropagation();
             event.preventDefault();
-            this.url = this._input.value;
+            const value = this._input.value;
+            this._testDaskDashboard(value).then(result => {
+              if (result) {
+                this.url = value;
+              } else {
+                showErrorMessage(
+                  'Invalid URL',
+                  Error(`${value} does not appear to be a valid Dask dashboard`)
+                );
+              }
+            });
+
             break;
           default:
             break;
@@ -163,6 +176,32 @@ export class URLInput extends Widget {
    */
   protected onBeforeDetach(msg: Message): void {
     this._input.removeEventListener('keydown', this, true);
+  }
+
+  /**
+   * Test whether a given URL hosts a dask dashboard.
+   */
+  private _testDaskDashboard(url: string): Promise<boolean> {
+    return new Promise<boolean>(resolve => {
+      // Hack Alert! We would like to test whether a given URL is actually
+      // a dask dashboard, since we will be iframe-ing it sight-unseen.
+      // However, CORS policies prevent us from doing a normal fetch
+      // to an arbitrary URL. We *can*, however, request an image from
+      // an arbitrary location. So let's request the dask logo from the
+      // bokeh server statics directory and check whether that was successful.
+      //
+      // If the logo ever moves or changes names, or if there is a different
+      // server with an identical file path, then this will fail.
+      let logoUrl = URLExt.join(url, 'statics/dask_horizontal.svg');
+      let img = document.createElement('img');
+      img.onload = () => {
+        resolve(true);
+      };
+      img.onerror = () => {
+        resolve(false);
+      };
+      img.src = logoUrl;
+    });
   }
 
   private _urlChanged = new Signal<this, IChangedArgs<string>>(this);
