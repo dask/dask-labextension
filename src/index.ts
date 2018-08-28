@@ -42,7 +42,8 @@ function activate(app: JupyterLab, restorer: ILayoutRestorer): void {
     commands: app.commands
   });
   dashboardLauncher.id = 'dask-dashboard-launcher';
-  dashboardLauncher.title.label = 'Dask';
+  dashboardLauncher.title.iconClass = 'dask-DaskLogo jp-SideBar-tabIcon';
+  dashboardLauncher.title.caption = 'Dask Dashboard';
 
   const tracker = new InstanceTracker<MainAreaWidget<IFrame>>({
     namespace: 'dask-dashboard'
@@ -93,6 +94,7 @@ function activate(app: JupyterLab, restorer: ILayoutRestorer): void {
       const widget = new MainAreaWidget({ content: iframe });
       widget.id = `dask-dashboard-${Private.id++}`;
       widget.title.label = `Dask ${(args['label'] as string) || ''}`;
+      widget.title.icon = 'dask-DaskLogo';
 
       itemForWidget.set(widget, args as DaskDashboardLauncher.IItem);
       widget.disposed.connect(() => {
