@@ -42,9 +42,13 @@
 
 .dask-URLInput-wrapper {
   background-color: var(--jp-layout-color1);
-  width: calc(100%-18px);
+  width: calc(100% - 18px);
   float: left;
   border: none;
+}
+
+.dask-URLInput-wrapper input {
+  width: 100%;
 }
 
 .dask-DaskLogo {
