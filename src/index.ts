@@ -6,7 +6,7 @@ import {
 
 import { IFrame, InstanceTracker, MainAreaWidget } from '@jupyterlab/apputils';
 
-import { URLExt } from '@jupyterlab/coreutils';
+import { IStateDB, URLExt } from '@jupyterlab/coreutils';
 
 import { DaskDashboardLauncher } from './widget';
 
@@ -25,7 +25,7 @@ namespace CommandIDs {
 const plugin: JupyterLabPlugin<void> = {
   activate,
   id: 'jupyterlab-dask:plugin',
-  requires: [ILayoutRestorer],
+  requires: [ILayoutRestorer, IStateDB],
   autoStart: true
 };
 
@@ -37,13 +37,18 @@ export default plugin;
 /**
  * Activate the dashboard launcher plugin.
  */
-function activate(app: JupyterLab, restorer: ILayoutRestorer): void {
+function activate(
+  app: JupyterLab,
+  restorer: ILayoutRestorer,
+  state: IStateDB
+): void {
+  const id = 'dask-dashboard-launcher';
   const dashboardLauncher = new DaskDashboardLauncher({
     commands: app.commands
   });
-  dashboardLauncher.id = 'dask-dashboard-launcher';
+  dashboardLauncher.id = id;
   dashboardLauncher.title.iconClass = 'dask-DaskLogo jp-SideBar-tabIcon';
-  dashboardLauncher.title.caption = 'Dask Dashboard';
+  dashboardLauncher.title.caption = 'Dask Dashboard Launcher';
 
   const tracker = new InstanceTracker<MainAreaWidget<IFrame>>({
     namespace: 'dask-dashboard-launcher'
@@ -54,7 +59,7 @@ function activate(app: JupyterLab, restorer: ILayoutRestorer): void {
     DaskDashboardLauncher.IItem
   >();
 
-  restorer.add(dashboardLauncher, 'dask-dashboard-launcher');
+  restorer.add(dashboardLauncher, id);
   restorer.restore(tracker, {
     command: CommandIDs.launchPanel,
     args: widget => itemForWidget.get(widget)!,
@@ -64,21 +69,30 @@ function activate(app: JupyterLab, restorer: ILayoutRestorer): void {
   app.shell.addToLeftArea(dashboardLauncher, { rank: 200 });
 
   dashboardLauncher.input.urlChanged.connect((sender, args) => {
+    // Update the urls of open dashboards.
     tracker.forEach(widget => {
       const item = itemForWidget.get(widget)!;
       const url = URLExt.join(args.newValue, item.route);
       widget.content.url = url;
     });
+    // Save the current url to the state DB so it can be
+    // reloaded on refresh.
+    state.save(`${id}:url`, args.newValue);
   });
 
+  state.fetch(`${id}:url`).then((url: string) => {
+    dashboardLauncher.input.url = url;
+  });
+
+  // Add the command for launching a new dashboard item.
   app.commands.addCommand(CommandIDs.launchPanel, {
     label: args => `Launch Dask ${(args['label'] as string) || ''} Dashboard`,
     caption: 'Launch a Dask dashboard',
     execute: args => {
       // Construct the url for the dashboard.
-      const route = (args['route'] as string) || '';
       const baseUrl = dashboardLauncher.input.url;
-      const url = URLExt.join(baseUrl, route);
+      const route = (args['route'] as string) || '';
+      const url = baseUrl ? URLExt.join(baseUrl, route) : '';
 
       // If we already have a dashboard open to this url, activate it
       // but don't create a duplicate.
