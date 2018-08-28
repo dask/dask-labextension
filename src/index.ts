@@ -20,7 +20,7 @@ namespace CommandIDs {
 }
 
 /**
- * The default running sessions extension.
+ * The dask dashboard extension.
  */
 const plugin: JupyterLabPlugin<void> = {
   activate,
@@ -46,7 +46,7 @@ function activate(app: JupyterLab, restorer: ILayoutRestorer): void {
   dashboardLauncher.title.caption = 'Dask Dashboard';
 
   const tracker = new InstanceTracker<MainAreaWidget<IFrame>>({
-    namespace: 'dask-dashboard'
+    namespace: 'dask-dashboard-launcher'
   });
 
   const itemForWidget = new Map<
@@ -54,7 +54,7 @@ function activate(app: JupyterLab, restorer: ILayoutRestorer): void {
     DaskDashboardLauncher.IItem
   >();
 
-  restorer.add(dashboardLauncher, 'running-sessions');
+  restorer.add(dashboardLauncher, 'dask-dashboard-launcher');
   restorer.restore(tracker, {
     command: CommandIDs.launchPanel,
     args: widget => itemForWidget.get(widget)!,
@@ -77,7 +77,7 @@ function activate(app: JupyterLab, restorer: ILayoutRestorer): void {
     execute: args => {
       // Construct the url for the dashboard.
       const route = (args['route'] as string) || '';
-      const baseUrl = 'http://localhost:8787';
+      const baseUrl = dashboardLauncher.input.url;
       const url = URLExt.join(baseUrl, route);
 
       // If we already have a dashboard open to this url, activate it

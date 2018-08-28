@@ -1,6 +1,6 @@
 import { showErrorMessage } from '@jupyterlab/apputils';
 
-import { URLExt, IChangedArgs } from '@jupyterlab/coreutils';
+import { URLExt } from '@jupyterlab/coreutils';
 
 import { CommandRegistry } from '@phosphor/commands';
 
@@ -32,6 +32,10 @@ export class DaskDashboardLauncher extends Widget {
     this.addClass('dask-DaskDashboardLauncher');
     this._commands = options.commands;
     this._items = options.items || DaskDashboardLauncher.DEFAULT_ITEMS;
+    this._input.urlChanged.connect(
+      this.update,
+      this
+    );
   }
 
   /**
@@ -58,7 +62,11 @@ export class DaskDashboardLauncher extends Widget {
     }
 
     ReactDOM.render(
-      <DashboardListing commands={this._commands} items={this._items} />,
+      <DashboardListing
+        isEnabled={this.input.isValid}
+        commands={this._commands}
+        items={this._items}
+      />,
       this._listing.node
     );
   }
@@ -103,6 +111,12 @@ export class URLInput extends Widget {
 
   /**
    * The base url for the dask webserver.
+   *
+   * #### Notes
+   * Setting this value will result in a urlChanged
+   * signal being emitted, but it will happen asynchronously,
+   * as it first checks to see whether the url is pointing
+   * at a valid dask dashboard server.
    */
   get url(): string {
     return this._url;
@@ -112,16 +126,33 @@ export class URLInput extends Widget {
     if (newValue === oldValue) {
       return;
     }
-    this._url = newValue;
-    this._input.value = newValue;
-    this._urlChanged.emit({ name: 'url', oldValue, newValue });
-    this.update();
+    Private.testDaskDashboard(newValue).then(result => {
+      this._url = newValue;
+      this._isValid = result;
+      this._input.value = newValue;
+      this._urlChanged.emit({ isValid: result, oldValue, newValue });
+      this._input.blur();
+      this.update();
+      if (!result) {
+        showErrorMessage(
+          'Invalid URL',
+          Error(`${newValue} does not appear to be a valid Dask dashboard`)
+        );
+      }
+    });
+  }
+
+  /**
+   * Whether the current url is pointing to a valid dask dashboard.
+   */
+  get isValid(): boolean {
+    return this._isValid;
   }
 
   /**
    * A signal emitted when the url changes.
    */
-  get urlChanged(): ISignal<this, IChangedArgs<string>> {
+  get urlChanged(): ISignal<this, URLInput.IChangedArgs> {
     return this._urlChanged;
   }
 
@@ -143,17 +174,10 @@ export class URLInput extends Widget {
             event.stopPropagation();
             event.preventDefault();
             const value = this._input.value;
-            this._testDaskDashboard(value).then(result => {
-              if (result) {
-                this.url = value;
-              } else {
-                showErrorMessage(
-                  'Invalid URL',
-                  Error(`${value} does not appear to be a valid Dask dashboard`)
-                );
-              }
-            });
-
+            if (!value) {
+              return;
+            }
+            this.url = value;
             break;
           default:
             break;
@@ -178,34 +202,9 @@ export class URLInput extends Widget {
     this._input.removeEventListener('keydown', this, true);
   }
 
-  /**
-   * Test whether a given URL hosts a dask dashboard.
-   */
-  private _testDaskDashboard(url: string): Promise<boolean> {
-    return new Promise<boolean>(resolve => {
-      // Hack Alert! We would like to test whether a given URL is actually
-      // a dask dashboard, since we will be iframe-ing it sight-unseen.
-      // However, CORS policies prevent us from doing a normal fetch
-      // to an arbitrary URL. We *can*, however, request an image from
-      // an arbitrary location. So let's request the dask logo from the
-      // bokeh server statics directory and check whether that was successful.
-      //
-      // If the logo ever moves or changes names, or if there is a different
-      // server with an identical file path, then this will fail.
-      let logoUrl = URLExt.join(url, 'statics/dask_horizontal.svg');
-      let img = document.createElement('img');
-      img.onload = () => {
-        resolve(true);
-      };
-      img.onerror = () => {
-        resolve(false);
-      };
-      img.src = logoUrl;
-    });
-  }
-
-  private _urlChanged = new Signal<this, IChangedArgs<string>>(this);
+  private _urlChanged = new Signal<this, URLInput.IChangedArgs>(this);
   private _url: string;
+  private _isValid: boolean;
   private _input: HTMLInputElement;
 }
 
@@ -229,6 +228,7 @@ export class DashboardListing extends React.Component<
           <button
             className="jp-mod-styled jp-mod-accept"
             value={item.label}
+            disabled={!this.props.isEnabled}
             onClick={handler}
           >
             {item.label}
@@ -245,6 +245,32 @@ export class DashboardListing extends React.Component<
     );
   }
 }
+
+/**
+ * A namespace for URLInput statics.
+ */
+export namespace URLInput {
+  /**
+   * Changed args for the url.
+   */
+  export interface IChangedArgs {
+    /**
+     * The old url.
+     */
+    oldValue: string;
+
+    /**
+     * The new url.
+     */
+    newValue: string;
+
+    /**
+     * Whether the URL is pointing at a valid dask webserver.
+     */
+    isValid: boolean;
+  }
+}
+
 /**
  * Props for the TOCTree component.
  */
@@ -258,6 +284,11 @@ export interface IDashboardListingProps extends React.Props<DashboardListing> {
    * A list of dashboard items to render.
    */
   items: DaskDashboardLauncher.IItem[];
+
+  /**
+   * Whether the items should be enabled.
+   */
+  isEnabled: boolean;
 }
 /**
  * A namespace for DaskDashboardLauncher statics.
@@ -302,4 +333,35 @@ export namespace DaskDashboardLauncher {
     { route: 'individual-task-stream', label: 'Task Stream' },
     { route: 'individual-workers', label: 'Workers' }
   ];
+}
+
+/**
+ * A namespace for private functionality.
+ */
+namespace Private {
+  /**
+   * Test whether a given URL hosts a dask dashboard.
+   */
+  export function testDaskDashboard(url: string): Promise<boolean> {
+    return new Promise<boolean>(resolve => {
+      // Hack Alert! We would like to test whether a given URL is actually
+      // a dask dashboard, since we will be iframe-ing it sight-unseen.
+      // However, CORS policies prevent us from doing a normal fetch
+      // to an arbitrary URL. We *can*, however, request an image from
+      // an arbitrary location. So let's request the dask logo from the
+      // bokeh server statics directory and check whether that was successful.
+      //
+      // If the logo ever moves or changes names, or if there is a different
+      // server with an identical file path, then this will fail.
+      let logoUrl = URLExt.join(url, 'statics/dask_horizontal.svg');
+      let img = document.createElement('img');
+      img.onload = () => {
+        resolve(true);
+      };
+      img.onerror = () => {
+        resolve(false);
+      };
+      img.src = logoUrl;
+    });
+  }
 }

@@ -27,6 +27,11 @@
   height: var(--dask-launch-button-height);
 }
 
+.dask-DashboardListing-item button:disabled {
+  background-color: var(--jp-layout-color3);
+  border: 1px solid var(--jp-layout-color3);
+}
+
 .dask-URLInput {
   padding: 8px;
   background-color: var(--jp-layout-color2);
