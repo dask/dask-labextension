@@ -1,4 +1,4 @@
-import { showErrorMessage, ToolbarButton } from '@jupyterlab/apputils';
+import { ToolbarButton } from '@jupyterlab/apputils';
 
 import { URLExt } from '@jupyterlab/coreutils';
 
@@ -151,12 +151,8 @@ export class URLInput extends Widget {
       this._input.blur();
       this.update();
       if (!result) {
-        showErrorMessage(
-          'Invalid Dask URL',
-          Error(
-            `${newValue ||
-              'This'} does not appear to host a valid Dask dashboard`
-          )
+        console.warn(
+          `${newValue} does not appear to host a valid Dask dashboard`
         );
       }
     });
