@@ -173,11 +173,7 @@ export class URLInput extends Widget {
           case 13: // Enter
             event.stopPropagation();
             event.preventDefault();
-            const value = this._input.value;
-            if (!value) {
-              return;
-            }
-            this.url = value;
+            this.url = this._input.value;
             break;
           default:
             break;

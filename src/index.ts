@@ -6,7 +6,7 @@ import {
 
 import { IFrame, InstanceTracker, MainAreaWidget } from '@jupyterlab/apputils';
 
-import { IStateDB, URLExt } from '@jupyterlab/coreutils';
+import { ISettingRegistry, IStateDB, URLExt } from '@jupyterlab/coreutils';
 
 import { DaskDashboardLauncher } from './widget';
 
@@ -25,7 +25,7 @@ namespace CommandIDs {
 const plugin: JupyterLabPlugin<void> = {
   activate,
   id: 'jupyterlab-dask:plugin',
-  requires: [ILayoutRestorer, IStateDB],
+  requires: [ILayoutRestorer, ISettingRegistry, IStateDB],
   autoStart: true
 };
 
@@ -40,6 +40,7 @@ export default plugin;
 function activate(
   app: JupyterLab,
   restorer: ILayoutRestorer,
+  settings: ISettingRegistry,
   state: IStateDB
 ): void {
   const id = 'dask-dashboard-launcher';
@@ -77,11 +78,25 @@ function activate(
     });
     // Save the current url to the state DB so it can be
     // reloaded on refresh.
-    state.save(`${id}:url`, args.newValue);
+    state.save(id, { url: args.newValue });
   });
 
-  state.fetch(`${id}:url`).then((url: string) => {
-    dashboardLauncher.input.url = url;
+  // Fetch the initial state of the settings.
+  Promise.all([
+    settings.load('jupyterlab-dask:plugin'),
+    state.fetch(id),
+    app.restored
+  ]).then(res => {
+    const settings = res[0];
+    const url = (res[1] as { url: string }).url as string;
+    if (url) {
+      // If there is a URL in the statedb, let it have priority.
+      dashboardLauncher.input.url = url;
+      return;
+    }
+    // Otherwise set the default from the settings.
+    dashboardLauncher.input.url = settings.get('defaultURL')
+      .composite as string;
   });
 
   // Add the command for launching a new dashboard item.

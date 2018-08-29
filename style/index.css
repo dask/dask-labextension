@@ -54,3 +54,9 @@
 .dask-DaskLogo {
   background-image: url(dask.svg);
 }
+
+#setting-editor .dask-DaskLogo {
+  background-repeat: no-repeat;
+  background-size: 85%;
+  background-position: center;
+}
