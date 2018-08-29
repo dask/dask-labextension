@@ -30,7 +30,7 @@
   border: 1px solid #ecb172;
 }
 
-.dask-DashboardListing-item button:disabled {
+.dask-DashboardListing-item button:disabled.jp-mod-styled.jp-mod-accept {
   background-color: var(--jp-layout-color3);
   border: 1px solid var(--jp-layout-color3);
 }
