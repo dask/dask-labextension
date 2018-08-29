@@ -8,6 +8,10 @@ import { IFrame, InstanceTracker, MainAreaWidget } from '@jupyterlab/apputils';
 
 import { ISettingRegistry, IStateDB, URLExt } from '@jupyterlab/coreutils';
 
+import { INotebookTracker } from '@jupyterlab/notebook';
+
+import { Kernel, KernelMessage } from '@jupyterlab/services';
+
 import { DaskDashboardLauncher } from './widget';
 
 import '../style/index.css';
@@ -25,7 +29,7 @@ namespace CommandIDs {
 const plugin: JupyterLabPlugin<void> = {
   activate,
   id: 'jupyterlab-dask:plugin',
-  requires: [ILayoutRestorer, ISettingRegistry, IStateDB],
+  requires: [ILayoutRestorer, INotebookTracker, ISettingRegistry, IStateDB],
   autoStart: true
 };
 
@@ -40,10 +44,12 @@ export default plugin;
 function activate(
   app: JupyterLab,
   restorer: ILayoutRestorer,
+  notebookTracker: INotebookTracker,
   settings: ISettingRegistry,
   state: IStateDB
 ): void {
   const id = 'dask-dashboard-launcher';
+
   const dashboardLauncher = new DaskDashboardLauncher({
     commands: app.commands
   });
@@ -141,6 +147,15 @@ function activate(
       tracker.add(widget);
     }
   });
+
+  notebookTracker.currentChanged.connect(async (sender, panel) => {
+    let kernel = panel && panel.session && panel.session.kernel;
+    if (!kernel) {
+      return;
+    }
+    const link = await Private.checkKernel(kernel);
+    console.log(link);
+  });
 }
 
 namespace Private {
@@ -148,4 +163,28 @@ namespace Private {
    * A private counter for ids.
    */
   export let id = 0;
+
+  /**
+   * Check a kernel for whether it has a default client dashboard address.
+   */
+  export function checkKernel(
+    kernel: Kernel.IKernelConnection
+  ): Promise<string> {
+    const code = `try:\n  from dask.distributed import default_client as _internal_jlab_default_client\n  display(_internal_jlab_default_client().cluster.dashboard_link)\nexcept:\n  pass`;
+    const content: KernelMessage.IExecuteRequest = {
+      store_history: false,
+      code
+    };
+    return new Promise<string>((resolve, reject) => {
+      const future = kernel.requestExecute(content);
+      future.onIOPub = msg => {
+        if (msg.header.msg_type !== 'display_data') {
+          return;
+        }
+        const data = (msg as KernelMessage.IDisplayDataMsg).content.data;
+        const url = (data['text/plain'] as string) || '';
+        resolve(url.replace(/'/g, '').split('status')[0]);
+      };
+    });
+  }
 }

@@ -24,6 +24,7 @@
   "dependencies": {
     "@jupyterlab/application": "^0.18.0",
     "@jupyterlab/apputils": "^0.18.0",
+    "@jupyterlab/notebook": "^0.18.4",
     "react": "^16.4.2",
     "react-dom": "^16.4.2"
   },
