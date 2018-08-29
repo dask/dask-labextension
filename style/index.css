@@ -53,7 +53,7 @@
 }
 
 .dask-URLInput-wrapper input {
-  width: 100%;
+  width: calc(100% - 18px);
 }
 
 .dask-UrlInput .jp-ToolbarButton {
@@ -68,7 +68,7 @@
 }
 
 .dask-SearchLogo {
-  background-image: var(--jp-icon-search-white);
+  background-image: var(--jp-icon-search);
 }
 
 #setting-editor .dask-DaskLogo {
