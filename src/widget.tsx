@@ -137,7 +137,7 @@ export class URLInput extends Widget {
       this.update();
       if (!result) {
         showErrorMessage(
-          'Invalid URL',
+          'Invalid Dask URL',
           Error(
             `${newValue ||
               'This'} does not appear to host a valid Dask dashboard`
@@ -236,6 +236,13 @@ export class URLInput extends Widget {
         if (result === this._isValid) {
           return;
         }
+        // Show an error if the connection died.
+        if (!result && this._isValid) {
+          showErrorMessage(
+            'Lost Dask Connection',
+            Error(`The connection to ${url} has been lost`)
+          );
+        }
         // Connection died or started
         if (result !== this._isValid) {
           this._isValid = result;
@@ -244,13 +251,6 @@ export class URLInput extends Widget {
             newValue: url,
             isValid: result
           });
-        }
-        // Show an error if the connection died.
-        if (!result && this._isValid) {
-          showErrorMessage(
-            'Lost Connection',
-            Error(`The connection to ${url} has been lost`)
-          );
         }
       });
     }, 2000); // Every two seconds.
