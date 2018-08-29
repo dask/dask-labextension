@@ -238,10 +238,7 @@ export class URLInput extends Widget {
         }
         // Show an error if the connection died.
         if (!result && this._isValid) {
-          showErrorMessage(
-            'Lost Dask Connection',
-            Error(`The connection to ${url} has been lost`)
-          );
+          console.warn(`The connection to dask dashboard ${url} has been lost`);
         }
         // Connection died or started
         if (result !== this._isValid) {
