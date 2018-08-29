@@ -1,4 +1,4 @@
-import { showErrorMessage } from '@jupyterlab/apputils';
+import { showErrorMessage, ToolbarButton } from '@jupyterlab/apputils';
 
 import { URLExt } from '@jupyterlab/coreutils';
 
@@ -26,7 +26,7 @@ export class DaskDashboardLauncher extends Widget {
     super();
     let layout = (this.layout = new PanelLayout());
     this._listing = new Widget();
-    this._input = new URLInput();
+    this._input = new URLInput(options.linkFinder);
     layout.addWidget(this._input);
     layout.addWidget(this._listing);
     this.addClass('dask-DaskDashboardLauncher');
@@ -91,15 +91,30 @@ export class URLInput extends Widget {
   /**
    * Construct a new input element.
    */
-  constructor() {
+  constructor(linkFinder?: () => Promise<string>) {
     super();
     this.addClass('dask-URLInput');
-    const wrapper = document.createElement('div');
-    wrapper.className = 'dask-URLInput-wrapper';
+    const layout = (this.layout = new PanelLayout());
+    const wrapper = new Widget();
+    wrapper.addClass('dask-URLInput-wrapper');
     this._input = document.createElement('input');
     this._input.placeholder = 'DASK DASHBOARD URL';
-    this.node.appendChild(wrapper);
-    wrapper.appendChild(this._input);
+    wrapper.node.appendChild(this._input);
+    layout.addWidget(wrapper);
+
+    if (linkFinder) {
+      const findButton = new ToolbarButton({
+        iconClassName: 'dask-SearchLogo jp-Icon jp-Icon-16',
+        onClick: async () => {
+          let link = await linkFinder();
+          if (link) {
+            this.url = link;
+          }
+        },
+        tooltip: 'Auto-detect dashboard URL'
+      });
+      layout.addWidget(findButton);
+    }
 
     this._startUrlCheckTimer();
   }
@@ -124,6 +139,7 @@ export class URLInput extends Widget {
     return this._url;
   }
   set url(newValue: string) {
+    this._input.value = newValue;
     const oldValue = this._url;
     if (newValue === oldValue) {
       return;
@@ -131,7 +147,6 @@ export class URLInput extends Widget {
     Private.testDaskDashboard(newValue).then(result => {
       this._url = newValue;
       this._isValid = result;
-      this._input.value = newValue;
       this._urlChanged.emit({ isValid: result, oldValue, newValue });
       this._input.blur();
       this.update();
@@ -370,6 +385,13 @@ export namespace DaskDashboardLauncher {
      * The document manager for the application.
      */
     commands: CommandRegistry;
+
+    /**
+     * A function that attempts to find a link to
+     * a dask bokeh server in the current application
+     * context.
+     */
+    linkFinder?: () => Promise<string>;
 
     /**
      * A list of items for the launcher.

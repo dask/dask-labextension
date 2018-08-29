@@ -37,16 +37,18 @@
 
 .dask-URLInput {
   padding: 8px;
-  background-color: var(--jp-layout-color2);
-  border-bottom: 1px solid var(--jp-border-color1);
+  display: flex;
+  align-items: center;
+  background-color: var(--jp-layout-color1);
+  border-bottom: 1px solid var(--jp-border-color2);
   box-shadow: var(--jp-toolbar-box-shadow);
   z-index: 2;
 }
 
 .dask-URLInput-wrapper {
   background-color: var(--jp-layout-color1);
-  width: calc(100% - 18px);
-  float: left;
+  flex: 1 1 auto;
+  margin: 0 4px 0 0;
   border: none;
 }
 
@@ -54,8 +56,19 @@
   width: 100%;
 }
 
+.dask-UrlInput .jp-ToolbarButton {
+  flex: 0 0 auto;
+  margin: 0 0 0 4px;
+  background-color: var(--jp-layout-color2);
+  min-width: 16px;
+}
+
 .dask-DaskLogo {
   background-image: url(dask.svg);
+}
+
+.dask-SearchLogo {
+  background-image: var(--jp-icon-search-white);
 }
 
 #setting-editor .dask-DaskLogo {

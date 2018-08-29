@@ -50,8 +50,21 @@ function activate(
 ): void {
   const id = 'dask-dashboard-launcher';
 
+  // Attempt to find a link to the dask dashboard
+  // based on the currently active notebook/console
+  const linkFinder = async () => {
+    let current = notebookTracker.currentWidget;
+    let kernel = current && current.session && current.session.kernel;
+    if (!kernel) {
+      return '';
+    }
+    const link = await Private.checkKernel(kernel);
+    return link;
+  };
+
   const dashboardLauncher = new DaskDashboardLauncher({
-    commands: app.commands
+    commands: app.commands,
+    linkFinder
   });
   dashboardLauncher.id = id;
   dashboardLauncher.title.iconClass = 'dask-DaskLogo jp-SideBar-tabIcon';
@@ -147,15 +160,6 @@ function activate(
       tracker.add(widget);
     }
   });
-
-  notebookTracker.currentChanged.connect(async (sender, panel) => {
-    let kernel = panel && panel.session && panel.session.kernel;
-    if (!kernel) {
-      return;
-    }
-    const link = await Private.checkKernel(kernel);
-    console.log(link);
-  });
 }
 
 namespace Private {
@@ -183,6 +187,7 @@ namespace Private {
         }
         const data = (msg as KernelMessage.IDisplayDataMsg).content.data;
         const url = (data['text/plain'] as string) || '';
+        console.log(`Found dashboard link at ${url}`);
         resolve(url.replace(/'/g, '').split('status')[0]);
       };
     });
