@@ -6,9 +6,11 @@ import {
 
 import { IFrame, InstanceTracker, MainAreaWidget } from '@jupyterlab/apputils';
 
+import { ConsolePanel, IConsoleTracker } from '@jupyterlab/console';
+
 import { ISettingRegistry, IStateDB, URLExt } from '@jupyterlab/coreutils';
 
-import { INotebookTracker } from '@jupyterlab/notebook';
+import { INotebookTracker, NotebookPanel } from '@jupyterlab/notebook';
 
 import { Kernel, KernelMessage } from '@jupyterlab/services';
 
@@ -29,7 +31,13 @@ namespace CommandIDs {
 const plugin: JupyterLabPlugin<void> = {
   activate,
   id: 'jupyterlab-dask:plugin',
-  requires: [ILayoutRestorer, INotebookTracker, ISettingRegistry, IStateDB],
+  requires: [
+    IConsoleTracker,
+    ILayoutRestorer,
+    INotebookTracker,
+    ISettingRegistry,
+    IStateDB
+  ],
   autoStart: true
 };
 
@@ -43,6 +51,7 @@ export default plugin;
  */
 function activate(
   app: JupyterLab,
+  consoleTracker: IConsoleTracker,
   restorer: ILayoutRestorer,
   notebookTracker: INotebookTracker,
   settings: ISettingRegistry,
@@ -53,8 +62,23 @@ function activate(
   // Attempt to find a link to the dask dashboard
   // based on the currently active notebook/console
   const linkFinder = async () => {
-    let current = notebookTracker.currentWidget;
-    let kernel = current && current.session && current.session.kernel;
+    // Get a handle on the most relevant kernel,
+    // whether it is attached to a notebook or a console.
+    let current = app.shell.currentWidget;
+    let kernel: Kernel.IKernelConnection | null | undefined;
+    if (current && notebookTracker.has(current)) {
+      kernel = (current as NotebookPanel).session.kernel;
+    } else if (current && consoleTracker.has(current)) {
+      kernel = (current as ConsolePanel).session.kernel;
+    } else if (notebookTracker.currentWidget) {
+      const current = notebookTracker.currentWidget;
+      kernel = current.session.kernel;
+    } else if (consoleTracker.currentWidget) {
+      const current = consoleTracker.currentWidget;
+      kernel = current.session.kernel;
+    }
+    // Check to see if we found a kernel, and if its
+    // language is python.
     if (
       !kernel ||
       !kernel.info ||
@@ -62,6 +86,7 @@ function activate(
     ) {
       return '';
     }
+    // If so, find the link if we can.
     const link = await Private.checkKernel(kernel);
     return link;
   };
