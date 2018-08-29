@@ -55,7 +55,7 @@ function activate(
     namespace: 'dask-dashboard-launcher'
   });
 
-  const itemForWidget = new Map<
+  const argsForWidget = new Map<
     MainAreaWidget<IFrame>,
     DaskDashboardLauncher.IItem
   >();
@@ -63,8 +63,8 @@ function activate(
   restorer.add(dashboardLauncher, id);
   restorer.restore(tracker, {
     command: CommandIDs.launchPanel,
-    args: widget => itemForWidget.get(widget)!,
-    name: widget => itemForWidget.get(widget)!.route
+    args: widget => argsForWidget.get(widget)!,
+    name: widget => argsForWidget.get(widget)!.route
   });
 
   app.shell.addToLeftArea(dashboardLauncher, { rank: 200 });
@@ -76,7 +76,7 @@ function activate(
         widget.content.url = '';
         return;
       }
-      const item = itemForWidget.get(widget)!;
+      const item = argsForWidget.get(widget)!;
       const url = URLExt.join(args.newValue, item.route);
       widget.content.url = url;
     });
@@ -116,7 +116,10 @@ function activate(
 
       // If we already have a dashboard open to this url, activate it
       // but don't create a duplicate.
-      const w = tracker.find(w => w.content.url === url);
+      const w = tracker.find(w => {
+        let item = argsForWidget.get(w);
+        return !!item && item.route === route;
+      });
       if (w) {
         app.shell.activateById(w.id);
         return;
@@ -130,9 +133,9 @@ function activate(
       widget.title.label = `Dask ${(args['label'] as string) || ''}`;
       widget.title.icon = 'dask-DaskLogo';
 
-      itemForWidget.set(widget, args as DaskDashboardLauncher.IItem);
+      argsForWidget.set(widget, args as DaskDashboardLauncher.IItem);
       widget.disposed.connect(() => {
-        itemForWidget.delete(widget);
+        argsForWidget.delete(widget);
       });
       app.shell.addToMainArea(widget);
       tracker.add(widget);
