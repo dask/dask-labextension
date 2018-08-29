@@ -100,6 +100,8 @@ export class URLInput extends Widget {
     this._input.placeholder = 'DASK DASHBOARD URL';
     this.node.appendChild(wrapper);
     wrapper.appendChild(this._input);
+
+    this._startUrlCheckTimer();
   }
 
   /**
@@ -160,6 +162,24 @@ export class URLInput extends Widget {
   }
 
   /**
+   * Dispose of the resources held by the dashboard.
+   */
+  dispose(): void {
+    if (this._isDisposed) {
+      return;
+    }
+    this._isDisposed = true;
+    window.clearInterval(this._timer);
+  }
+
+  /**
+   * Whether the dashboard has been disposed.
+   */
+  get isDisposed(): boolean {
+    return this._isDisposed;
+  }
+
+  /**
    * Handle the DOM events for the widget.
    *
    * @param event - The DOM event sent to the widget.
@@ -201,10 +221,47 @@ export class URLInput extends Widget {
     this._input.removeEventListener('keydown', this, true);
   }
 
+  /**
+   * Periodically poll for valid url.
+   */
+  private _startUrlCheckTimer(): void {
+    this._timer = window.setInterval(() => {
+      const url = this._url;
+      // Don't bother checking if there is no url.
+      if (!url) {
+        return;
+      }
+      Private.testDaskDashboard(url).then(result => {
+        // No change.
+        if (result === this._isValid) {
+          return;
+        }
+        // Connection died or started
+        if (result !== this._isValid) {
+          this._isValid = result;
+          this._urlChanged.emit({
+            oldValue: url,
+            newValue: url,
+            isValid: result
+          });
+        }
+        // Show an error if the connection died.
+        if (!result && this._isValid) {
+          showErrorMessage(
+            'Lost Connection',
+            Error(`The connection to ${url} has been lost`)
+          );
+        }
+      });
+    }, 2000); // Every two seconds.
+  }
+
   private _urlChanged = new Signal<this, URLInput.IChangedArgs>(this);
   private _url: string;
   private _isValid: boolean;
   private _input: HTMLInputElement;
+  private _timer: number;
+  private _isDisposed: boolean;
 }
 
 /**
@@ -353,6 +410,10 @@ namespace Private {
       // If the logo ever moves or changes names, or if there is a different
       // server with an identical file path, then this will fail.
       let logoUrl = URLExt.join(url, 'statics/dask_horizontal.svg');
+      // Bust caching for src attr
+      // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Using_XMLHttpRequest#Bypassing_the_cache
+      logoUrl += (/\?/.test(logoUrl) ? '&' : '?') + new Date().getTime();
+
       let img = document.createElement('img');
       img.onload = () => {
         resolve(true);
