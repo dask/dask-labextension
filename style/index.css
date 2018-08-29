@@ -22,9 +22,12 @@
   width: 100%;
 }
 
-.dask-DashboardListing-item button {
+.dask-DashboardListing-item button.jp-mod-styled.jp-mod-accept {
   flex: 1 1 auto;
   height: var(--dask-launch-button-height);
+  color: #000000;
+  background-color: #ecb172;
+  border: 1px solid #ecb172;
 }
 
 .dask-DashboardListing-item button:disabled {
