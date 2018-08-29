@@ -55,7 +55,11 @@ function activate(
   const linkFinder = async () => {
     let current = notebookTracker.currentWidget;
     let kernel = current && current.session && current.session.kernel;
-    if (!kernel) {
+    if (
+      !kernel ||
+      !kernel.info ||
+      kernel.info.language_info.name !== 'python'
+    ) {
       return '';
     }
     const link = await Private.checkKernel(kernel);
