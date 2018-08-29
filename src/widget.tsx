@@ -136,7 +136,10 @@ export class URLInput extends Widget {
       if (!result) {
         showErrorMessage(
           'Invalid URL',
-          Error(`${newValue} does not appear to be a valid Dask dashboard`)
+          Error(
+            `${newValue ||
+              'This'} does not appear to host a valid Dask dashboard`
+          )
         );
       }
     });

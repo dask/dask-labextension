@@ -72,6 +72,10 @@ function activate(
   dashboardLauncher.input.urlChanged.connect((sender, args) => {
     // Update the urls of open dashboards.
     tracker.forEach(widget => {
+      if (!args.isValid) {
+        widget.content.url = '';
+        return;
+      }
       const item = itemForWidget.get(widget)!;
       const url = URLExt.join(args.newValue, item.route);
       widget.content.url = url;
@@ -105,9 +109,10 @@ function activate(
     caption: 'Launch a Dask dashboard',
     execute: args => {
       // Construct the url for the dashboard.
+      const valid = dashboardLauncher.input.isValid;
       const baseUrl = dashboardLauncher.input.url;
       const route = (args['route'] as string) || '';
-      const url = baseUrl ? URLExt.join(baseUrl, route) : '';
+      const url = valid ? URLExt.join(baseUrl, route) : '';
 
       // If we already have a dashboard open to this url, activate it
       // but don't create a duplicate.
