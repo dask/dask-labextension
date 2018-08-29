@@ -45,8 +45,7 @@
     "style/**/*.{css,eot,gif,html,jpg,json,png,svg,woff2,ttf}"
   ],
   "jupyterlab": {
-    "extension": true,
-    "schemaDir": "schema"
+    "extension": true
   },
   "author": "Brian Granger, Luke Canavan, Ian Rose",
   "license": "BSD-3-Clause",
