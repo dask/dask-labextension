@@ -1,9 +1,9 @@
 {
-  "name": "dask-labextension",
+  "name": "jupyterlab-dask",
   "version": "0.1.0",
   "description": "A JupyterLab extension for dask.",
-  "main": "lib/plugin.js",
-  "typings": "lib/plugin.d.ts",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/dask/dask-labextension"
@@ -11,35 +11,59 @@
   "keywords": [
     "jupyter",
     "jupyterlab",
+    "jupyterlab-extension",
     "dask"
   ],
   "scripts": {
-    "build:src": "tsc --project src && node scripts/copyfiles.js",
-    "build:extension": "node scripts/build_extension.js",
-    "build": "npm run build:src && npm run build:extension",
-    "clean": "rimraf lib && rimraf dask_labextension/static",
-    "prepublish": "npm run build"
+    "build": "tsc",
+    "clean": "rimraf lib",
+    "precommit": "lint-staged",
+    "prettier": "prettier --write '**/*{.ts,.tsx,.js,.jsx,.css,.json,.md}'",
+    "watch": "tsc -w"
   },
   "dependencies": {
-    "jupyterlab": "^0.11.2",
-    "phosphor": "^0.7.0"
+    "@jupyterlab/application": "^0.18.0",
+    "@jupyterlab/apputils": "^0.18.0",
+    "@jupyterlab/console": "^0.18.4",
+    "@jupyterlab/notebook": "^0.18.4",
+    "react": "^16.4.2",
+    "react-dom": "^16.4.2"
   },
   "devDependencies": {
-    "fs-extra": "^0.30.0",
-    "rimraf": "^2.5.4",
-    "@jupyterlab/extension-builder": "^0.10.0",
-    "typescript": "^2.0.3"
+    "@types/react": "~16.0.19",
+    "@types/react-dom": "~16.0.5",
+    "husky": "^0.14.3",
+    "lint-staged": "^7.2.0",
+    "prettier": "^1.13.7",
+    "rimraf": "^2.6.1",
+    "tslint": "^5.10.0",
+    "tslint-config-prettier": "^1.13.0",
+    "tslint-plugin-prettier": "^1.3.0",
+    "typescript": "^2.9.2"
   },
   "files": [
-    "lib/*.js",
-    "lib/*.d.ts",
-    "dist/*.js"
+    "lib/**/*.{d.ts,eot,gif,html,jpg,js,js.map,json,png,svg,woff2,ttf}",
+    "schema/*.json",
+    "style/**/*.{css,eot,gif,html,jpg,json,png,svg,woff2,ttf}"
   ],
-  "author": "Brian Granger and Luke Canavan",
+  "jupyterlab": {
+    "extension": true,
+    "schemaDir": "schema"
+  },
+  "author": "Brian Granger, Luke Canavan, Ian Rose",
   "license": "BSD-3-Clause",
   "bugs": {
     "url": "https://github.com/dask/dask-labextension/issues"
   },
+  "lint-staged": {
+    "**/*{.ts,.tsx,.css,.json,.md}": [
+      "prettier --write",
+      "git add"
+    ]
+  },
   "homepage": "https://github.com/dask/dask-labextension",
-  "private": true
+  "resolutions": {
+    "@types/react": "~16.0.19"
+  },
+  "private": false
 }

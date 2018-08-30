@@ -1,0 +1,14 @@
+{
+  "jupyter.lab.setting-icon-class": "dask-DaskLogo",
+  "jupyter.lab.setting-icon-label": "Dask Dashboard",
+  "title": "Dask Dashboard",
+  "description": "Settings for the Dask Dashboard plugin.",
+  "properties": {
+    "defaultURL": {
+      "type": "string",
+      "title": "Default URL for the Dask Dashboard Webserver",
+      "default": ""
+    }
+  },
+  "type": "object"
+}

@@ -1,0 +1,78 @@
+:root {
+  --dash-launch-button-height: 28px;
+}
+
+.dask-DaskDashboardLauncher {
+  background: var(--jp-layout-color1);
+  color: var(--jp-ui-font-color1);
+  display: flex;
+  flex-direction: column;
+  font-size: var(--jp-ui-font-size1);
+}
+
+.dask-DashboardListing-list {
+  margin: 24px;
+  padding: 0;
+  list-style-type: none;
+}
+
+.dask-DashboardListing-item {
+  display: flex;
+  margin: 4px 0 4px 0;
+  width: 100%;
+}
+
+.dask-DashboardListing-item button.jp-mod-styled.jp-mod-accept {
+  flex: 1 1 auto;
+  height: var(--dask-launch-button-height);
+  color: #000000;
+  background-color: #ecb172;
+  border: 1px solid #ecb172;
+}
+
+.dask-DashboardListing-item button:disabled.jp-mod-styled.jp-mod-accept {
+  background-color: var(--jp-layout-color3);
+  border: 1px solid var(--jp-layout-color3);
+}
+
+.dask-URLInput {
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  background-color: var(--jp-layout-color1);
+  border-bottom: 1px solid var(--jp-border-color2);
+  box-shadow: var(--jp-toolbar-box-shadow);
+  z-index: 2;
+}
+
+.dask-URLInput-wrapper {
+  background-color: var(--jp-layout-color1);
+  flex: 1 1 auto;
+  margin: 0 4px 0 0;
+  border: none;
+}
+
+.dask-URLInput-wrapper input {
+  width: calc(100% - 18px);
+}
+
+.dask-UrlInput .jp-ToolbarButton {
+  flex: 0 0 auto;
+  margin: 0 0 0 4px;
+  background-color: var(--jp-layout-color2);
+  min-width: 16px;
+}
+
+.dask-DaskLogo {
+  background-image: url(dask.svg);
+}
+
+.dask-SearchLogo {
+  background-image: var(--jp-icon-search);
+}
+
+#setting-editor .dask-DaskLogo {
+  background-repeat: no-repeat;
+  background-size: 85%;
+  background-position: center;
+}

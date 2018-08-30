@@ -1,31 +1,24 @@
-# dask_labextension
+# Dask JupyterLab Extension
 
-dask_labextension
-
-
-## Prerequisites
-
-* JupyterLab 0.11.2 or later
+This package provides a JupyterLab extension to embed Dask's dashboard plots
+directly into JupyterLab panes.
 
 ## Installation
 
-To install using pip:
+Install using the command line with
 
 ```bash
-pip install dask_labextension
-jupyter labextension install --py --sys-prefix dask_labextension
-jupyter labextension enable --py --sys-prefix dask_labextension
+jupyter labextension install dask_labextension
 ```
 
-## Development
+### For development
 
-For a development install (requires npm version 4 or later), do the following in the repository directory:
+As described in the [JupyterLab documentation](https://jupyterlab.readthedocs.io/en/stable/developer/extension_dev.html#extension-authoring) for a development install you can run the following in this directory:
 
 ```bash
-npm install
-pip install -e .
-jupyter labextension install --symlink --py --sys-prefix dask_labextension
-jupyter labextension enable --py --sys-prefix dask_labextension
+npm install   # Install npm package dependencies
+npm run build  # Compile the TypeScript sources to Javascript
+jupyter labextension install  # Install the current directory as an extension
 ```
 
 To rebuild the extension bundle:
@@ -33,4 +26,3 @@ To rebuild the extension bundle:
 ```bash
 npm run build
 ```
-
