@@ -1,5 +1,5 @@
 {
-  "name": "jupyterlab-dask",
+  "name": "dask-labextension",
   "version": "0.1.0",
   "description": "A JupyterLab extension for dask.",
   "main": "lib/index.js",
