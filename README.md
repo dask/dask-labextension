@@ -8,7 +8,7 @@ directly into JupyterLab panes.
 Install using the command line with
 
 ```bash
-jupyter labextension install dask_labextension
+jupyter labextension install dask-labextension
 ```
 
 ### For development
