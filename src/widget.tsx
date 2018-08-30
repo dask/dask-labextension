@@ -397,7 +397,8 @@ export namespace DaskDashboardLauncher {
 
   export const DEFAULT_ITEMS = [
     { route: 'individual-graph', label: 'Graph' },
-    { route: 'individual-load', label: 'Load' },
+    { route: 'individual-nbytes', label: 'Memory Use' },
+    { route: 'individual-nprocessing', label: 'Processing Tasks' },
     { route: 'individual-profile', label: 'Profile' },
     { route: 'individual-profile-server', label: 'Profile Server' },
     { route: 'individual-progress', label: 'Progress' },
@@ -424,7 +425,7 @@ namespace Private {
       //
       // If the logo ever moves or changes names, or if there is a different
       // server with an identical file path, then this will fail.
-      let logoUrl = URLExt.join(url, 'statics/dask_horizontal.svg');
+      let logoUrl = URLExt.join(url, 'statics/images/dask-logo.svg');
       // Bust caching for src attr
       // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Using_XMLHttpRequest#Bypassing_the_cache
       logoUrl += (/\?/.test(logoUrl) ? '&' : '?') + new Date().getTime();
