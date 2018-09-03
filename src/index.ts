@@ -25,12 +25,14 @@ namespace CommandIDs {
   export const launchPanel = 'dask:launch-dashboard';
 }
 
+const PLUGIN_ID = 'dask-labextension:plugin';
+
 /**
  * The dask dashboard extension.
  */
 const plugin: JupyterLabPlugin<void> = {
   activate,
-  id: 'jupyterlab-dask:plugin',
+  id: PLUGIN_ID,
   requires: [
     IConsoleTracker,
     ILayoutRestorer,
@@ -134,22 +136,20 @@ function activate(
   });
 
   // Fetch the initial state of the settings.
-  Promise.all([
-    settings.load('jupyterlab-dask:plugin'),
-    state.fetch(id),
-    app.restored
-  ]).then(res => {
-    const settings = res[0];
-    const url = (res[1] as { url: string }).url as string;
-    if (url) {
-      // If there is a URL in the statedb, let it have priority.
-      dashboardLauncher.input.url = url;
-      return;
+  Promise.all([settings.load(PLUGIN_ID), state.fetch(id), app.restored]).then(
+    res => {
+      const settings = res[0];
+      const url = (res[1] as { url: string }).url as string;
+      if (url) {
+        // If there is a URL in the statedb, let it have priority.
+        dashboardLauncher.input.url = url;
+        return;
+      }
+      // Otherwise set the default from the settings.
+      dashboardLauncher.input.url = settings.get('defaultURL')
+        .composite as string;
     }
-    // Otherwise set the default from the settings.
-    dashboardLauncher.input.url = settings.get('defaultURL')
-      .composite as string;
-  });
+  );
 
   // Add the command for launching a new dashboard item.
   app.commands.addCommand(CommandIDs.launchPanel, {
