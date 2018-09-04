@@ -14,7 +14,7 @@ import { INotebookTracker, NotebookPanel } from '@jupyterlab/notebook';
 
 import { Kernel, KernelMessage } from '@jupyterlab/services';
 
-import { DaskDashboardLauncher } from './widget';
+import { DaskDashboardLauncher, normalizeDashboardUrl } from './widget';
 
 import '../style/index.css';
 
@@ -158,7 +158,7 @@ function activate(
     execute: args => {
       // Construct the url for the dashboard.
       const valid = dashboardLauncher.input.isValid;
-      const baseUrl = dashboardLauncher.input.url;
+      const baseUrl = normalizeDashboardUrl(dashboardLauncher.input.url);
       const route = (args['route'] as string) || '';
       const url = valid ? URLExt.join(baseUrl, route) : '';
 

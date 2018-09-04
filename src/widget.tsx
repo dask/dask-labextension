@@ -408,6 +408,19 @@ export namespace DaskDashboardLauncher {
 }
 
 /**
+ * Optionally remove a `status` route from a dashboard url.
+ */
+export function normalizeDashboardUrl(url: string): string {
+  if (url.endsWith('status')) {
+    return url.slice(0, -'status'.length);
+  }
+  if (url.endsWith('status/')) {
+    return url.slice(0, -'status/'.length);
+  }
+  return url;
+}
+
+/**
  * A namespace for private functionality.
  */
 namespace Private {
@@ -415,6 +428,7 @@ namespace Private {
    * Test whether a given URL hosts a dask dashboard.
    */
   export function testDaskDashboard(url: string): Promise<boolean> {
+    url = normalizeDashboardUrl(url);
     return new Promise<boolean>(resolve => {
       // Hack Alert! We would like to test whether a given URL is actually
       // a dask dashboard, since we will be iframe-ing it sight-unseen.
