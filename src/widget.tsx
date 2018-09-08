@@ -265,8 +265,8 @@ export class URLInput extends Widget {
   }
 
   private _urlChanged = new Signal<this, URLInput.IChangedArgs>(this);
-  private _url: string;
-  private _isValid: boolean;
+  private _url = '';
+  private _isValid = false;
   private _input: HTMLInputElement;
   private _timer: number;
   private _isDisposed: boolean;
