@@ -3,6 +3,9 @@
 This package provides a JupyterLab extension to embed Dask's dashboard plots
 directly into JupyterLab panes.
 
+![Dask Extension][./dask.png]
+
+
 # Requirements
 
 JupyterLab >= 0.35
