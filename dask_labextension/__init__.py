@@ -8,7 +8,7 @@ __version__ = '0.7.0'
 
 def _jupyter_server_extension_paths():
     return [{
-        'module': 'dask-labextension'
+        'module': 'dask_labextension'
     }]
 
 def load_jupyter_server_extension(nb_server_app):
