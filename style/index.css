@@ -70,8 +70,31 @@
   min-width: 16px;
 }
 
+.dask-ClusterListing ul.dask-ClusterListing-list {
+  list-style-type: none;
+  padding: 8px;
+}
+
+.dask-ClusterListing-list li.dask-ClusterListingItem {
+  display: flex;
+  list-style-type: none;
+  padding: 4px 0px 4px 0px;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.dask-ClusterListing-list .dask-ClusterListingItem-label {
+  text-transform: uppercase;
+  flex: 1 1 auto;
+}
+
 .dask-DaskLogo {
   background-image: url(dask.svg);
+}
+
+.dask-ClusterListingItem .dask-DaskLogo {
+  padding: 4px;
+  flex: 0 0 auto;
 }
 
 .dask-SearchLogo {

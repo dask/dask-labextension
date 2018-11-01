@@ -180,15 +180,25 @@ export interface IClusterListingProps {
  * A TSX functional component for rendering a single running cluster.
  */
 function ClusterListingItem(props: IClusterListingItemProps) {
+  const { cluster, stop } = props;
   return (
-    <li className="dask-ClusterListingItem" key={props.cluster.id}>
-      <span className="dask-DaskLogo" />
-      <span>{props.cluster.dashboard_link}</span>
-      <button
-        className="jp-RunningSessions-itemShutdown jp-mod-styled"
-        onClick={() => props.stop()}
+    <li className="dask-ClusterListingItem" key={cluster.id}>
+      <span className="dask-DaskLogo jp-Icon jp-Icon-16" />
+      <span
+        className="dask-ClusterListingItem-label"
+        title={`${cluster.name}
+Scheduler Address:  ${cluster.scheduler_address}
+Dashboard URL:  ${cluster.dashboard_link}
+Number of workers:  ${cluster.workers}`}
       >
-        SHUTDOWN
+        {cluster.name}
+      </span>
+      <button
+        title={`Shutdown ${cluster.name}`}
+        className="jp-ToolbarButtonComponent"
+        onClick={stop}
+      >
+        <span className="jp-CloseIcon jp-Icon jp-Icon-16 jp-ToolbarButtonComponent-icon" />
       </button>
     </li>
   );
@@ -217,6 +227,16 @@ export interface IClusterModel extends JSONObject {
    * A unique string ID for the cluster.
    */
   id: string;
+
+  /**
+   * A display name for the cluster.
+   */
+  name: string;
+
+  /**
+   * A URI for the dask scheduler.
+   */
+  scheduler_address: string;
 
   /**
    * A URL for the Dask dashboard.
