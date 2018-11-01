@@ -6,6 +6,8 @@ import {
 
 import { IFrame, InstanceTracker, MainAreaWidget } from '@jupyterlab/apputils';
 
+import { CodeEditor } from '@jupyterlab/codeeditor';
+
 import { ConsolePanel, IConsoleTracker } from '@jupyterlab/console';
 
 import { ISettingRegistry, IStateDB, URLExt } from '@jupyterlab/coreutils';
@@ -13,6 +15,8 @@ import { ISettingRegistry, IStateDB, URLExt } from '@jupyterlab/coreutils';
 import { INotebookTracker, NotebookPanel } from '@jupyterlab/notebook';
 
 import { Kernel, KernelMessage } from '@jupyterlab/services';
+
+import { IClusterModel, DaskClusterManager } from './clusters';
 
 import { IDashboardItem, normalizeDashboardUrl } from './dashboard';
 
@@ -25,6 +29,11 @@ namespace CommandIDs {
    * Launch a dask dashboard panel in an iframe.
    */
   export const launchPanel = 'dask:launch-dashboard';
+
+  /**
+   * Inject client code into the active editor.
+   */
+  export const injectClientCode = 'dask:inject-client-code';
 }
 
 const PLUGIN_ID = 'dask-labextension:plugin';
@@ -66,21 +75,11 @@ function activate(
   // Attempt to find a link to the dask dashboard
   // based on the currently active notebook/console
   const linkFinder = async () => {
-    // Get a handle on the most relevant kernel,
-    // whether it is attached to a notebook or a console.
-    let current = app.shell.currentWidget;
-    let kernel: Kernel.IKernelConnection | null | undefined;
-    if (current && notebookTracker.has(current)) {
-      kernel = (current as NotebookPanel).session.kernel;
-    } else if (current && consoleTracker.has(current)) {
-      kernel = (current as ConsolePanel).session.kernel;
-    } else if (notebookTracker.currentWidget) {
-      const current = notebookTracker.currentWidget;
-      kernel = current.session.kernel;
-    } else if (consoleTracker.currentWidget) {
-      const current = consoleTracker.currentWidget;
-      kernel = current.session.kernel;
-    }
+    const kernel = Private.getCurrentKernel(
+      app,
+      notebookTracker,
+      consoleTracker
+    );
     // Check to see if we found a kernel, and if its
     // language is python.
     if (
@@ -192,6 +191,27 @@ function activate(
       tracker.add(widget);
     }
   });
+
+  app.commands.addCommand(CommandIDs.injectClientCode, {
+    label: 'Inject Dask Client Connection Code',
+    execute: args => {
+      const cluster = Private.clusterFromClick(app, sidebar.clusterManager);
+      const editor = Private.getCurrentEditor(
+        app,
+        notebookTracker,
+        consoleTracker
+      );
+      if (!editor || !cluster) {
+        return;
+      }
+      Private.injectClientCode(cluster, editor);
+    }
+  });
+
+  app.contextMenu.addItem({
+    command: CommandIDs.injectClientCode,
+    selector: '.dask-ClusterListingItem-label'
+  });
 }
 
 namespace Private {
@@ -223,5 +243,97 @@ namespace Private {
         resolve(url.replace(/'/g, '').split('status')[0]);
       };
     });
+  }
+
+  /**
+   * Insert code to connect to a given cluster.
+   */
+  export function injectClientCode(
+    cluster: IClusterModel,
+    editor: CodeEditor.IEditor
+  ): void {
+    const cursor = editor.getCursorPosition();
+    const offset = editor.getOffsetAt(cursor);
+    const code = `from dask.distributed import Client
+
+client = Client("${cluster.scheduler_address}")
+client
+`;
+    editor.model.value.insert(offset, code);
+  }
+
+  /**
+   * Get the currently focused kernel in the application,
+   * checking both notebooks and consoles.
+   */
+  export function getCurrentKernel(
+    app: JupyterLab,
+    notebookTracker: INotebookTracker,
+    consoleTracker: IConsoleTracker
+  ): Kernel.IKernelConnection | null | undefined {
+    // Get a handle on the most relevant kernel,
+    // whether it is attached to a notebook or a console.
+    let current = app.shell.currentWidget;
+    let kernel: Kernel.IKernelConnection | null | undefined;
+    if (current && notebookTracker.has(current)) {
+      kernel = (current as NotebookPanel).session.kernel;
+    } else if (current && consoleTracker.has(current)) {
+      kernel = (current as ConsolePanel).session.kernel;
+    } else if (notebookTracker.currentWidget) {
+      const current = notebookTracker.currentWidget;
+      kernel = current.session.kernel;
+    } else if (consoleTracker.currentWidget) {
+      const current = consoleTracker.currentWidget;
+      kernel = current.session.kernel;
+    }
+    return kernel;
+  }
+
+  /**
+   * Get the currently focused editor in the application,
+   * checking both notebooks and consoles.
+   */
+  export function getCurrentEditor(
+    app: JupyterLab,
+    notebookTracker: INotebookTracker,
+    consoleTracker: IConsoleTracker
+  ): CodeEditor.IEditor | null | undefined {
+    // Get a handle on the most relevant kernel,
+    // whether it is attached to a notebook or a console.
+    let current = app.shell.currentWidget;
+    let editor: CodeEditor.IEditor | null | undefined;
+    if (current && notebookTracker.has(current)) {
+      const cell = (current as NotebookPanel).content.activeCell;
+      editor = cell && cell.editor;
+    } else if (current && consoleTracker.has(current)) {
+      const cell = (current as ConsolePanel).console.promptCell;
+      editor = cell && cell.editor;
+    } else if (notebookTracker.currentWidget) {
+      const current = notebookTracker.currentWidget;
+      const cell = (current as NotebookPanel).content.activeCell;
+      editor = cell && cell.editor;
+    } else if (consoleTracker.currentWidget) {
+      const current = consoleTracker.currentWidget;
+      const cell = (current as ConsolePanel).console.promptCell;
+      editor = cell && cell.editor;
+    }
+    return editor;
+  }
+
+  /**
+   * Get a cluster model based on the application context menu click node.
+   */
+  export function clusterFromClick(
+    app: JupyterLab,
+    manager: DaskClusterManager
+  ): IClusterModel | undefined {
+    const test = (node: HTMLElement) => !!node.dataset.clusterId;
+    const node = app.contextMenuFirst(test);
+    if (!node) {
+      return undefined;
+    }
+    const id = node.dataset.clusterId;
+
+    return manager.clusters.find(cluster => cluster.id === id);
   }
 }

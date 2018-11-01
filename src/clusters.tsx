@@ -62,6 +62,13 @@ export class DaskClusterManager extends Widget {
   }
 
   /**
+   * Get the currently active clusters known to the manager.
+   */
+  get clusters(): IClusterModel[] {
+    return this._clusters;
+  }
+
+  /**
    * Handle an update request.
    */
   protected onUpdateRequest(msg: Message): void {
@@ -203,7 +210,7 @@ export interface IClusterListingProps {
 function ClusterListingItem(props: IClusterListingItemProps) {
   const { cluster, setDashboardUrl, stop } = props;
   return (
-    <li className="dask-ClusterListingItem">
+    <li className="dask-ClusterListingItem" data-cluster-id={cluster.id}>
       <span className="dask-DaskLogo jp-Icon jp-Icon-16" />
       <span
         className="dask-ClusterListingItem-label"
