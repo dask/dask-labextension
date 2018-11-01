@@ -64,7 +64,12 @@ export class DaskClusterManager extends Widget {
     }
 
     ReactDOM.render(
-      <ClusterListing clusters={this._clusters} />,
+      <ClusterListing
+        clusters={this._clusters}
+        stopById={(id: string) => {
+          return this._stopById(id);
+        }}
+      />,
       this._clusterList.node
     );
   }
@@ -85,8 +90,9 @@ export class DaskClusterManager extends Widget {
       { method: 'PUT' },
       this._serverSettings
     );
-    const data = (await response.json()) as IClusterModel;
-    console.log(data.id);
+    if (response.status !== 200) {
+      throw new Error('Failed to start Dask cluster');
+    }
     await this._updateClusterList();
   }
 
@@ -102,6 +108,21 @@ export class DaskClusterManager extends Widget {
     const data = (await response.json()) as IClusterModel[];
     this._clusters = data;
     this.update();
+  }
+
+  /**
+   * Stop a cluster by its id.
+   */
+  private async _stopById(id: string): Promise<void> {
+    const response = await ServerConnection.makeRequest(
+      `${this._serverSettings.baseUrl}dask/${id}`,
+      { method: 'DELETE' },
+      this._serverSettings
+    );
+    if (response.status !== 204) {
+      throw new Error(`Failed to close Dask cluster ${id}`);
+    }
+    await this._updateClusterList();
   }
 
   private _clusterList: Widget;
@@ -122,57 +143,88 @@ export namespace DaskClusterManager {
 /**
  * A React component for a launcher button listing.
  */
-export class ClusterListing extends React.Component<IClusterListingProps, {}> {
-  /**
-   * Render the listing.
-   */
-  render() {
-    let listing = this.props.clusters.map(cluster => {
-      return (
-        <li
-          className="dask-ClusterListing-item"
-          id={cluster.id}
-          key={cluster.id}
-        >
-          <p>{cluster.dashboard_link}</p>
-        </li>
-      );
-    });
-
-    // Return the JSX component.
+function ClusterListing(props: IClusterListingProps) {
+  let listing = props.clusters.map(cluster => {
     return (
-      <div>
-        <ul className="dask-ClusterListing-list">{listing}</ul>
-      </div>
+      <ClusterListingItem
+        cluster={cluster}
+        stop={() => props.stopById(cluster.id)}
+      />
     );
-  }
+  });
+
+  // Return the JSX component.
+  return (
+    <div>
+      <ul className="dask-ClusterListing-list">{listing}</ul>
+    </div>
+  );
 }
 
 /**
- * Props for the dashboard listing component.
+ * Props for the cluster listing component.
  */
-export interface IClusterListingProps extends React.Props<ClusterListing> {
+export interface IClusterListingProps {
   /**
    * A list of dashboard items to render.
    */
   clusters: IClusterModel[];
+
+  /**
+   * A function for stopping a cluster by ID.
+   */
+  stopById: (id: string) => Promise<void>;
 }
 
 /**
- * A namespace for DaskSidebar statics.
+ * A TSX functional component for rendering a single running cluster.
  */
-export namespace DaskSidebar {
+function ClusterListingItem(props: IClusterListingItemProps) {
+  return (
+    <li className="dask-ClusterListingItem" key={props.cluster.id}>
+      <span className="dask-DaskLogo" />
+      <span>{props.cluster.dashboard_link}</span>
+      <button
+        className="jp-RunningSessions-itemShutdown jp-mod-styled"
+        onClick={() => props.stop()}
+      >
+        SHUTDOWN
+      </button>
+    </li>
+  );
+}
+
+/**
+ * Props for the cluster listing component.
+ */
+export interface IClusterListingItemProps {
   /**
-   * Options for the constructor.
+   * A cluster model to render.
    */
-  export interface IOptions {}
+  cluster: IClusterModel;
+
+  /**
+   * A function for stopping the cluster.
+   */
+  stop: () => Promise<void>;
 }
 
 /**
  * An interface dashboard launcher item.
  */
 export interface IClusterModel extends JSONObject {
+  /**
+   * A unique string ID for the cluster.
+   */
   id: string;
+
+  /**
+   * A URL for the Dask dashboard.
+   */
   dashboard_link: string;
+
+  /**
+   * The number of workers for the cluster.
+   */
   workers: number;
 }

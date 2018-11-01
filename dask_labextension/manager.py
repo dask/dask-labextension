@@ -47,6 +47,7 @@ class DaskClusterManager:
         cluster = self._clusters.get(cluster_id)
         if cluster:
             cluster.close()
+            self._clusters.pop(cluster_id)
         return cluster_id
 
     def get_cluster(self, cluster_id) -> DaskCluster:
