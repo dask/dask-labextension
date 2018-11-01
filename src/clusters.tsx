@@ -20,6 +20,8 @@ export class DaskClusterManager extends Widget {
    */
   constructor(options: DaskClusterManager.IOptions = {}) {
     super();
+    this.addClass('dask-DaskClusterManager');
+
     const layout = (this.layout = new PanelLayout());
     this._serverSettings = ServerConnection.makeSettings();
 
@@ -27,6 +29,10 @@ export class DaskClusterManager extends Widget {
     this._clusterList.addClass('dask-ClusterListing');
 
     const toolbar = new Toolbar<Widget>();
+    const toolbarLabel = new Widget();
+    toolbarLabel.node.textContent = 'CLUSTERS';
+    toolbarLabel.addClass('dask-DaskClusterManager-label');
+    toolbar.addItem('label', toolbarLabel);
     toolbar.addItem(
       'refresh',
       new ToolbarButton({
