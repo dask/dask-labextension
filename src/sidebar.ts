@@ -19,13 +19,18 @@ export class DaskSidebar extends Widget {
     super();
     this.addClass('dask-DaskSidebar');
     let layout = (this.layout = new PanelLayout());
+
+    // Add the dashboard component/
     this._dashboard = new DaskDashboardLauncher({
       launchItem: options.launchDashboardItem,
       linkFinder: options.linkFinder
     });
+
+    // A callback that sets the url of the dashboard component.
     const setDashboardUrl = (url: string) => {
       this._dashboard.input.url = normalizeDashboardUrl(url);
     };
+    // Add the cluster manager component.
     this._clusters = new DaskClusterManager({ setDashboardUrl });
     layout.addWidget(this._dashboard);
     layout.addWidget(this._clusters);

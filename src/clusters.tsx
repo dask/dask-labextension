@@ -26,14 +26,19 @@ export class DaskClusterManager extends Widget {
     this._setDashboardUrl = options.setDashboardUrl;
     const layout = (this.layout = new PanelLayout());
 
-    this.clusterListing = new Widget();
-    this.clusterListing.addClass('dask-ClusterListing');
+    this._clusterListing = new Widget();
+    this._clusterListing.addClass('dask-ClusterListing');
 
+    // Create the toolbar.
     const toolbar = new Toolbar<Widget>();
+
+    // Make a label widget for the toolbar.
     const toolbarLabel = new Widget();
     toolbarLabel.node.textContent = 'CLUSTERS';
     toolbarLabel.addClass('dask-DaskClusterManager-label');
     toolbar.addItem('label', toolbarLabel);
+
+    // Make a refresh button for the toolbar.
     toolbar.addItem(
       'refresh',
       new ToolbarButton({
@@ -44,6 +49,8 @@ export class DaskClusterManager extends Widget {
         tooltip: 'Refresh Cluster List'
       })
     );
+
+    // Make a shutdown button for the toolbar.
     toolbar.addItem(
       'new',
       new ToolbarButton({
@@ -56,8 +63,9 @@ export class DaskClusterManager extends Widget {
     );
 
     layout.addWidget(toolbar);
-    layout.addWidget(this.clusterListing);
+    layout.addWidget(this._clusterListing);
 
+    // Do an initial refresh of the cluster list.
     this._updateClusterList();
   }
 
@@ -85,7 +93,7 @@ export class DaskClusterManager extends Widget {
         }}
         setDashboardUrl={this._setDashboardUrl}
       />,
-      this.clusterListing.node
+      this._clusterListing.node
     );
   }
 
@@ -140,7 +148,7 @@ export class DaskClusterManager extends Widget {
     await this._updateClusterList();
   }
 
-  private clusterListing: Widget;
+  private _clusterListing: Widget;
   private _clusters: IClusterModel[] = [];
   private _setDashboardUrl: (url: string) => void;
   private _serverSettings: ServerConnection.ISettings;

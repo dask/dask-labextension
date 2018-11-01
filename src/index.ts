@@ -94,6 +94,7 @@ function activate(
     return link;
   };
 
+  // Create the Dask sidebar panel.
   const sidebar = new DaskSidebar({
     launchDashboardItem: (item: IDashboardItem) => {
       app.commands.execute(CommandIDs.launchPanel, item);
@@ -104,12 +105,16 @@ function activate(
   sidebar.title.iconClass = 'dask-DaskLogo jp-SideBar-tabIcon';
   sidebar.title.caption = 'Dask';
 
+  // An instance tracker which is used for state restoration.
   const tracker = new InstanceTracker<MainAreaWidget<IFrame>>({
     namespace: 'dask-dashboard-launcher'
   });
 
+  // A map used to internally store the dashboard item associated with
+  // an iframe widget.
   const argsForWidget = new Map<MainAreaWidget<IFrame>, IDashboardItem>();
 
+  // Add state restoration for the dashboard items.
   restorer.add(sidebar, id);
   restorer.restore(tracker, {
     command: CommandIDs.launchPanel,
@@ -192,6 +197,10 @@ function activate(
     }
   });
 
+  // Add a command to inject client connection code for a given cluster model.
+  // This looks for a cluster model in the application context menu,
+  // and looks for an editor among the currently active notebooks and consoles.
+  // If either is not found, it bails.
   app.commands.addCommand(CommandIDs.injectClientCode, {
     label: 'Inject Dask Client Connection Code',
     execute: args => {
@@ -208,6 +217,7 @@ function activate(
     }
   });
 
+  // Add a context menu item for injecting client connection code.
   app.contextMenu.addItem({
     command: CommandIDs.injectClientCode,
     selector: '.dask-ClusterListingItem-label'
