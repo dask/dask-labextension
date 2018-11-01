@@ -2,7 +2,7 @@
   --dash-launch-button-height: 28px;
 }
 
-.dask-DaskDashboardLauncher {
+.dask-DaskSidebar {
   background: var(--jp-layout-color1);
   color: var(--jp-ui-font-color1);
   display: flex;

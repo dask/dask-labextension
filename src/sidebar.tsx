@@ -4,34 +4,34 @@ import { URLExt } from '@jupyterlab/coreutils';
 
 import { CommandRegistry } from '@phosphor/commands';
 
-import { JSONObject } from '@phosphor/coreutils';
-
 import { Message } from '@phosphor/messaging';
 
 import { ISignal, Signal } from '@phosphor/signaling';
 
 import { Widget, PanelLayout } from '@phosphor/widgets';
 
+import { DashboardListing, IDashboardItem } from './dashboard';
+
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
 /**
- * A widget for hosting a notebook table-of-contents.
+ * A widget for hosting Dask cluster management and dashboard launchers.
  */
-export class DaskDashboardLauncher extends Widget {
+export class DaskSidebar extends Widget {
   /**
-   * Create a new table of contents.
+   * Create a new Dask sidebar.
    */
-  constructor(options: DaskDashboardLauncher.IOptions) {
+  constructor(options: DaskSidebar.IOptions) {
     super();
     let layout = (this.layout = new PanelLayout());
     this._listing = new Widget();
     this._input = new URLInput(options.linkFinder);
     layout.addWidget(this._input);
     layout.addWidget(this._listing);
-    this.addClass('dask-DaskDashboardLauncher');
+    this.addClass('dask-DaskSidebar');
     this._commands = options.commands;
-    this._items = options.items || DaskDashboardLauncher.DEFAULT_ITEMS;
+    this._items = options.items || DaskSidebar.DEFAULT_ITEMS;
     this._input.urlChanged.connect(
       this.update,
       this
@@ -41,7 +41,7 @@ export class DaskDashboardLauncher extends Widget {
   /**
    * The list of dashboard items which can be launched.
    */
-  get items(): DaskDashboardLauncher.IItem[] {
+  get items(): IDashboardItem[] {
     return this._items;
   }
 
@@ -81,7 +81,7 @@ export class DaskDashboardLauncher extends Widget {
   private _listing: Widget;
   private _input: URLInput;
   private _commands: CommandRegistry;
-  private _items: DaskDashboardLauncher.IItem[];
+  private _items: IDashboardItem[];
 }
 
 /**
@@ -273,44 +273,6 @@ export class URLInput extends Widget {
 }
 
 /**
- * A React component for a launcher button listing.
- */
-export class DashboardListing extends React.Component<
-  IDashboardListingProps,
-  {}
-> {
-  /**
-   * Render the TOCTree.
-   */
-  render() {
-    let listing = this.props.items.map(item => {
-      const handler = () => {
-        this.props.commands.execute('dask:launch-dashboard', item);
-      };
-      return (
-        <li className="dask-DashboardListing-item" key={item.route}>
-          <button
-            className="jp-mod-styled jp-mod-accept"
-            value={item.label}
-            disabled={!this.props.isEnabled}
-            onClick={handler}
-          >
-            {item.label}
-          </button>
-        </li>
-      );
-    });
-
-    // Return the JSX component.
-    return (
-      <div>
-        <ul className="dask-DashboardListing-list">{listing}</ul>
-      </div>
-    );
-  }
-}
-
-/**
  * A namespace for URLInput statics.
  */
 export namespace URLInput {
@@ -336,43 +298,9 @@ export namespace URLInput {
 }
 
 /**
- * Props for the TOCTree component.
+ * A namespace for DaskSidebar statics.
  */
-export interface IDashboardListingProps extends React.Props<DashboardListing> {
-  /**
-   * A command registry.
-   */
-  commands: CommandRegistry;
-
-  /**
-   * A list of dashboard items to render.
-   */
-  items: DaskDashboardLauncher.IItem[];
-
-  /**
-   * Whether the items should be enabled.
-   */
-  isEnabled: boolean;
-}
-/**
- * A namespace for DaskDashboardLauncher statics.
- */
-export namespace DaskDashboardLauncher {
-  /**
-   * An interface dashboard launcher item.
-   */
-  export interface IItem extends JSONObject {
-    /**
-     * The route to add the the base url.
-     */
-    route: string;
-
-    /**
-     * The display label for the item.
-     */
-    label: string;
-  }
-
+export namespace DaskSidebar {
   /**
    * Options for the constructor.
    */
@@ -392,7 +320,7 @@ export namespace DaskDashboardLauncher {
     /**
      * A list of items for the launcher.
      */
-    items?: IItem[];
+    items?: IDashboardItem[];
   }
 
   export const DEFAULT_ITEMS = [

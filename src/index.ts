@@ -14,7 +14,9 @@ import { INotebookTracker, NotebookPanel } from '@jupyterlab/notebook';
 
 import { Kernel, KernelMessage } from '@jupyterlab/services';
 
-import { DaskDashboardLauncher, normalizeDashboardUrl } from './widget';
+import { IDashboardItem } from './dashboard';
+
+import { DaskSidebar, normalizeDashboardUrl } from './sidebar';
 
 import '../style/index.css';
 
@@ -93,7 +95,7 @@ function activate(
     return link;
   };
 
-  const dashboardLauncher = new DaskDashboardLauncher({
+  const dashboardLauncher = new DaskSidebar({
     commands: app.commands,
     linkFinder
   });
@@ -105,10 +107,7 @@ function activate(
     namespace: 'dask-dashboard-launcher'
   });
 
-  const argsForWidget = new Map<
-    MainAreaWidget<IFrame>,
-    DaskDashboardLauncher.IItem
-  >();
+  const argsForWidget = new Map<MainAreaWidget<IFrame>, IDashboardItem>();
 
   restorer.add(dashboardLauncher, id);
   restorer.restore(tracker, {
@@ -181,7 +180,7 @@ function activate(
       widget.title.label = `Dask ${(args['label'] as string) || ''}`;
       widget.title.icon = 'dask-DaskLogo';
 
-      argsForWidget.set(widget, args as DaskDashboardLauncher.IItem);
+      argsForWidget.set(widget, args as IDashboardItem);
       widget.disposed.connect(() => {
         argsForWidget.delete(widget);
       });
