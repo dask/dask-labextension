@@ -33,9 +33,6 @@ class DaskClusterHandler(APIHandler):
 
     @web.authenticated
     def get(self, cluster_id: str = "") -> None:
-        new_id = manager.start_cluster()
-        new_cluster = manager.get_cluster(new_id)
-
         if cluster_id == "":
             cluster_ids = manager.list_clusters()
             cluster_list = [
@@ -58,7 +55,7 @@ class DaskClusterHandler(APIHandler):
             self.finish(json.dumps(response))
 
     @web.authenticated
-    def put(self, cluster_id: str) -> None:
+    def put(self, cluster_id: str = "") -> None:
         if manager.get_cluster(cluster_id):
             raise web.HTTPError(
                 403, f"A Dask cluster with ID {cluster_id} already exists!"
