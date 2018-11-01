@@ -4,13 +4,13 @@ import {
   JupyterLabPlugin
 } from '@jupyterlab/application';
 
-import { IFrame, InstanceTracker, MainAreaWidget } from '@jupyterlab/apputils';
+import { InstanceTracker } from '@jupyterlab/apputils';
 
 import { CodeEditor } from '@jupyterlab/codeeditor';
 
 import { ConsolePanel, IConsoleTracker } from '@jupyterlab/console';
 
-import { ISettingRegistry, IStateDB, URLExt } from '@jupyterlab/coreutils';
+import { ISettingRegistry, IStateDB } from '@jupyterlab/coreutils';
 
 import { INotebookTracker, NotebookPanel } from '@jupyterlab/notebook';
 
@@ -18,7 +18,7 @@ import { Kernel, KernelMessage } from '@jupyterlab/services';
 
 import { IClusterModel, DaskClusterManager } from './clusters';
 
-import { IDashboardItem, normalizeDashboardUrl } from './dashboard';
+import { DaskDashboard, IDashboardItem } from './dashboard';
 
 import { DaskSidebar } from './sidebar';
 
@@ -106,20 +106,16 @@ function activate(
   sidebar.title.caption = 'Dask';
 
   // An instance tracker which is used for state restoration.
-  const tracker = new InstanceTracker<MainAreaWidget<IFrame>>({
+  const tracker = new InstanceTracker<DaskDashboard>({
     namespace: 'dask-dashboard-launcher'
   });
-
-  // A map used to internally store the dashboard item associated with
-  // an iframe widget.
-  const argsForWidget = new Map<MainAreaWidget<IFrame>, IDashboardItem>();
 
   // Add state restoration for the dashboard items.
   restorer.add(sidebar, id);
   restorer.restore(tracker, {
     command: CommandIDs.launchPanel,
-    args: widget => argsForWidget.get(widget)!,
-    name: widget => argsForWidget.get(widget)!.route
+    args: widget => widget.item,
+    name: widget => widget.item && widget.item.route
   });
 
   app.shell.addToLeftArea(sidebar, { rank: 200 });
@@ -128,12 +124,10 @@ function activate(
     // Update the urls of open dashboards.
     tracker.forEach(widget => {
       if (!args.isValid) {
-        widget.content.url = '';
+        widget.dashboardUrl = '';
         return;
       }
-      const item = argsForWidget.get(widget)!;
-      const url = URLExt.join(args.newValue, item.route);
-      widget.content.url = url;
+      widget.dashboardUrl = args.newValue;
     });
     // Save the current url to the state DB so it can be
     // reloaded on refresh.
@@ -162,18 +156,13 @@ function activate(
     caption: 'Launch a Dask dashboard',
     execute: args => {
       // Construct the url for the dashboard.
-      const valid = sidebar.dashboardLauncher.input.isValid;
-      const baseUrl = normalizeDashboardUrl(
-        sidebar.dashboardLauncher.input.url
-      );
-      const route = (args['route'] as string) || '';
-      const url = valid ? URLExt.join(baseUrl, route) : '';
+      const dashboardUrl = sidebar.dashboardLauncher.input.url;
+      const dashboardItem = args as IDashboardItem;
 
       // If we already have a dashboard open to this url, activate it
       // but don't create a duplicate.
       const w = tracker.find(w => {
-        let item = argsForWidget.get(w);
-        return !!item && item.route === route;
+        return !!(w && w.item && w.item.route === dashboardItem.route);
       });
       if (w) {
         app.shell.activateById(w.id);
@@ -181,19 +170,16 @@ function activate(
       }
 
       // Otherwise create the new dashboard widget.
-      const iframe = new IFrame();
-      iframe.url = url;
-      const widget = new MainAreaWidget({ content: iframe });
-      widget.id = `dask-dashboard-${Private.id++}`;
-      widget.title.label = `Dask ${(args['label'] as string) || ''}`;
-      widget.title.icon = 'dask-DaskLogo';
+      const dashboard = new DaskDashboard();
+      dashboard.dashboardUrl = dashboardUrl;
+      dashboard.item = dashboardItem;
+      dashboard.id = `dask-dashboard-${Private.id++}`;
+      dashboard.title.label = `Dask ${dashboardItem.label}`;
+      dashboard.title.icon = 'dask-DaskLogo';
 
-      argsForWidget.set(widget, args as IDashboardItem);
-      widget.disposed.connect(() => {
-        argsForWidget.delete(widget);
-      });
-      app.shell.addToMainArea(widget);
-      tracker.add(widget);
+      app.shell.addToMainArea(dashboard);
+      tracker.add(dashboard);
+      return dashboard;
     }
   });
 

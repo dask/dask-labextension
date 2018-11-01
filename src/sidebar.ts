@@ -1,10 +1,6 @@
 import { Widget, PanelLayout } from '@phosphor/widgets';
 
-import {
-  DaskDashboardLauncher,
-  IDashboardItem,
-  normalizeDashboardUrl
-} from './dashboard';
+import { DaskDashboardLauncher, IDashboardItem } from './dashboard';
 
 import { DaskClusterManager } from './clusters';
 
@@ -28,7 +24,7 @@ export class DaskSidebar extends Widget {
 
     // A callback that sets the url of the dashboard component.
     const setDashboardUrl = (url: string) => {
-      this._dashboard.input.url = normalizeDashboardUrl(url);
+      this._dashboard.input.url = url;
     };
     // Add the cluster manager component.
     this._clusters = new DaskClusterManager({ setDashboardUrl });

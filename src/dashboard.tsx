@@ -1,4 +1,4 @@
-import { ToolbarButton } from '@jupyterlab/apputils';
+import { IFrame, MainAreaWidget, ToolbarButton } from '@jupyterlab/apputils';
 
 import { URLExt } from '@jupyterlab/coreutils';
 
@@ -12,6 +12,52 @@ import { Widget, PanelLayout } from '@phosphor/widgets';
 
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
+
+/**
+ * A class for hosting a Dask dashboard in an iframe.
+ */
+export class DaskDashboard extends MainAreaWidget<IFrame> {
+  /**
+   * Construct a new dashboard widget.
+   */
+  constructor() {
+    super({ content: new IFrame() });
+    this.content.url = '';
+  }
+
+  /**
+   * The current dashboard item for the widget.
+   */
+  get item(): IDashboardItem | null {
+    return this._item;
+  }
+  set item(value: IDashboardItem | null) {
+    this._item = value;
+    this._updateUrl();
+  }
+
+  /**
+   * The current dashboard URL for the widget.
+   */
+  get dashboardUrl(): string {
+    return this._dashboardUrl;
+  }
+  set dashboardUrl(value: string) {
+    this._dashboardUrl = Private.normalizeDashboardUrl(value);
+    this._updateUrl();
+  }
+
+  private _updateUrl(): void {
+    if (!this.item || !this.dashboardUrl) {
+      this.content.url = '';
+      return;
+    }
+    this.content.url = URLExt.join(this.dashboardUrl, this.item!.route);
+  }
+
+  private _item: IDashboardItem | null = null;
+  private _dashboardUrl: string;
+}
 
 /**
  * A widget for hosting Dask dashboard launchers.
@@ -394,23 +440,24 @@ export interface IDashboardItem extends JSONObject {
    */
   label: string;
 }
-/**
- * Optionally remove a `status` route from a dashboard url.
- */
-export function normalizeDashboardUrl(url: string): string {
-  if (url.endsWith('status')) {
-    return url.slice(0, -'status'.length);
-  }
-  if (url.endsWith('status/')) {
-    return url.slice(0, -'status/'.length);
-  }
-  return url;
-}
 
 /**
  * A namespace for private functionality.
  */
 namespace Private {
+  /**
+   * Optionally remove a `status` route from a dashboard url.
+   */
+  export function normalizeDashboardUrl(url: string): string {
+    if (url.endsWith('status')) {
+      return url.slice(0, -'status'.length);
+    }
+    if (url.endsWith('status/')) {
+      return url.slice(0, -'status/'.length);
+    }
+    return url;
+  }
+
   /**
    * Test whether a given URL hosts a dask dashboard.
    */
