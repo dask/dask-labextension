@@ -14,9 +14,11 @@ import { INotebookTracker, NotebookPanel } from '@jupyterlab/notebook';
 
 import { Kernel, KernelMessage } from '@jupyterlab/services';
 
-import { IDashboardItem } from './dashboard';
-
-import { DaskSidebar, normalizeDashboardUrl } from './sidebar';
+import {
+  IDashboardItem,
+  DaskDashboardLauncher,
+  normalizeDashboardUrl
+} from './dashboard';
 
 import '../style/index.css';
 
@@ -95,7 +97,7 @@ function activate(
     return link;
   };
 
-  const dashboardLauncher = new DaskSidebar({
+  const dashboardLauncher = new DaskDashboardLauncher({
     commands: app.commands,
     linkFinder
   });
