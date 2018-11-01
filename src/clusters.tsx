@@ -16,17 +16,18 @@ import * as ReactDOM from 'react-dom';
  */
 export class DaskClusterManager extends Widget {
   /**
-   * Create a new Dask sidebar.
+   * Create a new Dask cluster manager.
    */
-  constructor(options: DaskClusterManager.IOptions = {}) {
+  constructor(options: DaskClusterManager.IOptions) {
     super();
     this.addClass('dask-DaskClusterManager');
 
-    const layout = (this.layout = new PanelLayout());
     this._serverSettings = ServerConnection.makeSettings();
+    this._setDashboardUrl = options.setDashboardUrl;
+    const layout = (this.layout = new PanelLayout());
 
-    this._clusterList = new Widget();
-    this._clusterList.addClass('dask-ClusterListing');
+    this.clusterListing = new Widget();
+    this.clusterListing.addClass('dask-ClusterListing');
 
     const toolbar = new Toolbar<Widget>();
     const toolbarLabel = new Widget();
@@ -55,7 +56,7 @@ export class DaskClusterManager extends Widget {
     );
 
     layout.addWidget(toolbar);
-    layout.addWidget(this._clusterList);
+    layout.addWidget(this.clusterListing);
 
     this._updateClusterList();
   }
@@ -75,8 +76,9 @@ export class DaskClusterManager extends Widget {
         stopById={(id: string) => {
           return this._stopById(id);
         }}
+        setDashboardUrl={this._setDashboardUrl}
       />,
-      this._clusterList.node
+      this.clusterListing.node
     );
   }
 
@@ -88,7 +90,7 @@ export class DaskClusterManager extends Widget {
   }
 
   /**
-   * Refresh the list of clusters on the server.
+   * Launch a new cluster on the server.
    */
   private async _launchCluster(): Promise<void> {
     const response = await ServerConnection.makeRequest(
@@ -131,8 +133,9 @@ export class DaskClusterManager extends Widget {
     await this._updateClusterList();
   }
 
-  private _clusterList: Widget;
+  private clusterListing: Widget;
   private _clusters: IClusterModel[] = [];
+  private _setDashboardUrl: (url: string) => void;
   private _serverSettings: ServerConnection.ISettings;
 }
 
@@ -143,7 +146,12 @@ export namespace DaskClusterManager {
   /**
    * Options for the constructor.
    */
-  export interface IOptions {}
+  export interface IOptions {
+    /**
+     * A callback to set the dashboard url.
+     */
+    setDashboardUrl: (url: string) => void;
+  }
 }
 
 /**
@@ -153,8 +161,10 @@ function ClusterListing(props: IClusterListingProps) {
   let listing = props.clusters.map(cluster => {
     return (
       <ClusterListingItem
+        key={cluster.id}
         cluster={cluster}
         stop={() => props.stopById(cluster.id)}
+        setDashboardUrl={() => props.setDashboardUrl(cluster.dashboard_link)}
       />
     );
   });
@@ -180,15 +190,20 @@ export interface IClusterListingProps {
    * A function for stopping a cluster by ID.
    */
   stopById: (id: string) => Promise<void>;
+
+  /**
+   * A callback to set the dashboard URL.
+   */
+  setDashboardUrl: (url: string) => void;
 }
 
 /**
  * A TSX functional component for rendering a single running cluster.
  */
 function ClusterListingItem(props: IClusterListingItemProps) {
-  const { cluster, stop } = props;
+  const { cluster, setDashboardUrl, stop } = props;
   return (
-    <li className="dask-ClusterListingItem" key={cluster.id}>
+    <li className="dask-ClusterListingItem">
       <span className="dask-DaskLogo jp-Icon jp-Icon-16" />
       <span
         className="dask-ClusterListingItem-label"
@@ -199,6 +214,13 @@ Number of workers:  ${cluster.workers}`}
       >
         {cluster.name}
       </span>
+      <button
+        title={`Set Dashboard to ${cluster.name}`}
+        className="jp-ToolbarButtonComponent"
+        onClick={setDashboardUrl}
+      >
+        <span className="jp-LinkIcon jp-Icon jp-Icon-16 jp-ToolbarButtonComponent-icon" />
+      </button>
       <button
         title={`Shutdown ${cluster.name}`}
         className="jp-ToolbarButtonComponent"
@@ -223,6 +245,11 @@ export interface IClusterListingItemProps {
    * A function for stopping the cluster.
    */
   stop: () => Promise<void>;
+
+  /**
+   * A callback function to set the Dask dashboard url.
+   */
+  setDashboardUrl: () => void;
 }
 
 /**

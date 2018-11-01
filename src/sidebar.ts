@@ -2,7 +2,7 @@ import { CommandRegistry } from '@phosphor/commands';
 
 import { Widget, PanelLayout } from '@phosphor/widgets';
 
-import { DaskDashboardLauncher } from './dashboard';
+import { DaskDashboardLauncher, normalizeDashboardUrl } from './dashboard';
 
 import { DaskClusterManager } from './clusters';
 
@@ -21,7 +21,10 @@ export class DaskSidebar extends Widget {
       commands: options.commands,
       linkFinder: options.linkFinder
     });
-    this._clusters = new DaskClusterManager();
+    const setDashboardUrl = (url: string) => {
+      this._dashboard.input.url = normalizeDashboardUrl(url);
+    };
+    this._clusters = new DaskClusterManager({ setDashboardUrl });
     layout.addWidget(this._dashboard);
     layout.addWidget(this._clusters);
   }

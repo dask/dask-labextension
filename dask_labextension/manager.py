@@ -87,6 +87,6 @@ def make_cluster_model(
         id=cluster_id,
         name=cluster_name,
         scheduler_address=cluster.scheduler_address,
-        dashboard_link=cluster.dashboard_link,
+        dashboard_link=cluster.dashboard_link or '',
         workers=len(cluster.workers),
     )
