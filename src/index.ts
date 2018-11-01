@@ -14,11 +14,9 @@ import { INotebookTracker, NotebookPanel } from '@jupyterlab/notebook';
 
 import { Kernel, KernelMessage } from '@jupyterlab/services';
 
-import {
-  IDashboardItem,
-  DaskDashboardLauncher,
-  normalizeDashboardUrl
-} from './dashboard';
+import { IDashboardItem, normalizeDashboardUrl } from './dashboard';
+
+import { DaskSidebar } from './sidebar';
 
 import '../style/index.css';
 
@@ -97,13 +95,13 @@ function activate(
     return link;
   };
 
-  const dashboardLauncher = new DaskDashboardLauncher({
+  const sidebar = new DaskSidebar({
     commands: app.commands,
     linkFinder
   });
-  dashboardLauncher.id = id;
-  dashboardLauncher.title.iconClass = 'dask-DaskLogo jp-SideBar-tabIcon';
-  dashboardLauncher.title.caption = 'Dask Dashboard Launcher';
+  sidebar.id = id;
+  sidebar.title.iconClass = 'dask-DaskLogo jp-SideBar-tabIcon';
+  sidebar.title.caption = 'Dask';
 
   const tracker = new InstanceTracker<MainAreaWidget<IFrame>>({
     namespace: 'dask-dashboard-launcher'
@@ -111,16 +109,16 @@ function activate(
 
   const argsForWidget = new Map<MainAreaWidget<IFrame>, IDashboardItem>();
 
-  restorer.add(dashboardLauncher, id);
+  restorer.add(sidebar, id);
   restorer.restore(tracker, {
     command: CommandIDs.launchPanel,
     args: widget => argsForWidget.get(widget)!,
     name: widget => argsForWidget.get(widget)!.route
   });
 
-  app.shell.addToLeftArea(dashboardLauncher, { rank: 200 });
+  app.shell.addToLeftArea(sidebar, { rank: 200 });
 
-  dashboardLauncher.input.urlChanged.connect((sender, args) => {
+  sidebar.dashboardLauncher.input.urlChanged.connect((sender, args) => {
     // Update the urls of open dashboards.
     tracker.forEach(widget => {
       if (!args.isValid) {
@@ -143,11 +141,11 @@ function activate(
       const url = (res[1] as { url: string }).url as string;
       if (url) {
         // If there is a URL in the statedb, let it have priority.
-        dashboardLauncher.input.url = url;
+        sidebar.dashboardLauncher.input.url = url;
         return;
       }
       // Otherwise set the default from the settings.
-      dashboardLauncher.input.url = settings.get('defaultURL')
+      sidebar.dashboardLauncher.input.url = settings.get('defaultURL')
         .composite as string;
     }
   );
@@ -158,8 +156,10 @@ function activate(
     caption: 'Launch a Dask dashboard',
     execute: args => {
       // Construct the url for the dashboard.
-      const valid = dashboardLauncher.input.isValid;
-      const baseUrl = normalizeDashboardUrl(dashboardLauncher.input.url);
+      const valid = sidebar.dashboardLauncher.input.isValid;
+      const baseUrl = normalizeDashboardUrl(
+        sidebar.dashboardLauncher.input.url
+      );
       const route = (args['route'] as string) || '';
       const url = valid ? URLExt.join(baseUrl, route) : '';
 

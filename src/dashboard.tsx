@@ -2,8 +2,6 @@ import { ToolbarButton } from '@jupyterlab/apputils';
 
 import { URLExt } from '@jupyterlab/coreutils';
 
-import { ServerConnection } from '@jupyterlab/services';
-
 import { CommandRegistry } from '@phosphor/commands';
 
 import { JSONObject } from '@phosphor/coreutils';
@@ -14,13 +12,11 @@ import { ISignal, Signal } from '@phosphor/signaling';
 
 import { Widget, PanelLayout } from '@phosphor/widgets';
 
-import { ClusterListing, IClusterModel } from './clusters';
-
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
 /**
- * A widget for hosting Dask cluster management and dashboard launchers.
+ * A widget for hosting Dask dashboard launchers.
  */
 export class DaskDashboardLauncher extends Widget {
   /**
@@ -36,15 +32,6 @@ export class DaskDashboardLauncher extends Widget {
     this.addClass('dask-DaskDashboardLauncher');
     this._commands = options.commands;
     this._items = options.items || DaskDashboardLauncher.DEFAULT_ITEMS;
-    this._serverSettings = ServerConnection.makeSettings();
-    const url = `${this._serverSettings.baseUrl}dask`;
-    ServerConnection.makeRequest(url, {}, this._serverSettings)
-      .then(response => response.json())
-      .then(data => {
-        console.log(data);
-        this._clusters = data as IClusterModel[];
-        this.update();
-      });
     this._input.urlChanged.connect(
       this.update,
       this
@@ -75,14 +62,11 @@ export class DaskDashboardLauncher extends Widget {
     }
 
     ReactDOM.render(
-      <div>
-        <DashboardListing
-          isEnabled={this.input.isValid}
-          commands={this._commands}
-          items={this._items}
-        />
-        <ClusterListing clusters={this._clusters} />
-      </div>,
+      <DashboardListing
+        isEnabled={this.input.isValid}
+        commands={this._commands}
+        items={this._items}
+      />,
       this._dashboard.node
     );
   }
@@ -98,8 +82,6 @@ export class DaskDashboardLauncher extends Widget {
   private _input: URLInput;
   private _commands: CommandRegistry;
   private _items: IDashboardItem[];
-  private _clusters: IClusterModel[] = [];
-  private _serverSettings: ServerConnection.ISettings;
 }
 
 /**
