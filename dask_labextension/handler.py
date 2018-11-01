@@ -23,7 +23,8 @@ class DaskClusterHandler(APIHandler):
         try:  # to delete the cluster.
             val = manager.close_cluster(cluster_id)
             if val is None:
-                self.set_status(404)
+                raise web.HTTPError(404, f"Dask cluster {cluster_id} not found")
+
             else:
                 self.set_status(204)
                 self.finish()
@@ -31,7 +32,10 @@ class DaskClusterHandler(APIHandler):
             raise web.HTTPError(500, str(e))
 
     @web.authenticated
-    def get(self, cluster_id: str) -> None:
+    def get(self, cluster_id: str = "") -> None:
+        new_id = manager.start_cluster()
+        new_cluster = manager.get_cluster(new_id)
+
         if cluster_id == "":
             cluster_ids = manager.list_clusters()
             cluster_list = [
@@ -41,9 +45,9 @@ class DaskClusterHandler(APIHandler):
             self.finish(json.dumps(cluster_list))
         else:
             cluster = manager.get_cluster(cluster_id)
+            self.log.info(str(cluster))
             if cluster is None:
-                self.set_status(404)
-                self.finish()
+                raise web.HTTPError(404, f"Dask cluster {cluster_id} not found")
 
             response = dict(
                 id=cluster_id,
@@ -56,8 +60,10 @@ class DaskClusterHandler(APIHandler):
     @web.authenticated
     def put(self, cluster_id: str) -> None:
         if manager.get_cluster(cluster_id):
-            self.set_status(403)
-            self.finish("A cluster with this ID already exists!")
+            raise web.HTTPError(
+                403, f"A Dask cluster with ID {cluster_id} already exists!"
+            )
+
         try:
             cluster_id = manager.start_cluster(cluster_id)
             cluster = manager.get_cluster(cluster_id)
@@ -69,6 +75,7 @@ class DaskClusterHandler(APIHandler):
     @web.authenticated
     def patch(self, cluster_id):
         pass
+
 
 def make_cluster_model(
     cluster_id: str, cluster: DaskCluster

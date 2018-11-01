@@ -36,7 +36,7 @@ class DaskClusterManager:
 
         self._clusters: Dict[str, DaskCluster] = dict()
 
-    def start_cluster(self, cluster_id: str) -> str:
+    def start_cluster(self, cluster_id: str = "") -> str:
         if not cluster_id:
             cluster_id = str(uuid4())
         cluster = self._cluster_factory()
