@@ -34,25 +34,16 @@ class DaskClusterHandler(APIHandler):
     @web.authenticated
     def get(self, cluster_id: str = "") -> None:
         if cluster_id == "":
-            cluster_ids = manager.list_clusters()
-            cluster_list = [
-                make_cluster_model(id, manager.get_cluster(id)) for id in cluster_ids
-            ]
+            cluster_list = manager.list_clusters()
             self.set_status(200)
             self.finish(json.dumps(cluster_list))
         else:
-            cluster = manager.get_cluster(cluster_id)
-            self.log.info(str(cluster))
-            if cluster is None:
+            cluster_model = manager.get_cluster(cluster_id)
+            if cluster_model is None:
                 raise web.HTTPError(404, f"Dask cluster {cluster_id} not found")
 
-            response = dict(
-                id=cluster_id,
-                dashboard_link=cluster.dashboard_link,
-                workers=len(cluster.workers),
-            )
             self.set_status(200)
-            self.finish(json.dumps(response))
+            self.finish(json.dumps(cluster_model))
 
     @web.authenticated
     def put(self, cluster_id: str = "") -> None:
@@ -60,25 +51,13 @@ class DaskClusterHandler(APIHandler):
             raise web.HTTPError(
                 403, f"A Dask cluster with ID {cluster_id} already exists!"
             )
-
         try:
-            cluster_id = manager.start_cluster(cluster_id)
-            cluster = manager.get_cluster(cluster_id)
+            cluster_model = manager.start_cluster(cluster_id)
             self.set_status(200)
-            self.finish(json.dumps(make_cluster_model(cluster_id, cluster)))
+            self.finish(json.dumps(cluster_model))
         except Exception as e:
             raise web.HTTPError(500, str(e))
 
     @web.authenticated
     def patch(self, cluster_id):
         pass
-
-
-def make_cluster_model(
-    cluster_id: str, cluster: DaskCluster
-) -> Dict[str, Union[str, int]]:
-    return dict(
-        id=cluster_id,
-        dashboard_link=cluster.dashboard_link,
-        workers=len(cluster.workers),
-    )

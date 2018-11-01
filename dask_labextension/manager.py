@@ -9,6 +9,7 @@ from uuid import uuid4
 from dask.distributed import LocalCluster
 
 DaskCluster = Any
+DaskClusterModel = Dict[str, Union[str, int]]
 DaskClusterFactory = Callable[[], DaskCluster]
 
 
@@ -35,28 +36,57 @@ class DaskClusterManager:
             self._cluster_factory: DaskClusterFactory = local_cluster_factory
 
         self._clusters: Dict[str, DaskCluster] = dict()
+        self._cluster_names: Dict[str, str] = dict()
+        self._n_clusters = 0
 
-    def start_cluster(self, cluster_id: str = "") -> str:
+    def start_cluster(self, cluster_id: str = "") -> Union[DaskClusterModel, None]:
         if not cluster_id:
             cluster_id = str(uuid4())
         cluster = self._cluster_factory()
+        self._n_clusters = self._n_clusters + 1
+        cluster_name = f"Dask Cluster {self._n_clusters}"
         self._clusters[cluster_id] = cluster
-        return cluster_id
+        self._cluster_names[cluster_id] = cluster_name
+        return make_cluster_model(cluster_id, cluster_name, cluster)
 
-    def close_cluster(self, cluster_id: str) -> str:
+    def close_cluster(self, cluster_id: str) -> Union[DaskClusterModel, None]:
         cluster = self._clusters.get(cluster_id)
         if cluster:
             cluster.close()
             self._clusters.pop(cluster_id)
-        return cluster_id
+            return make_cluster_model(
+                cluster_id, self._cluster_names[cluster_id], cluster
+            )
 
-    def get_cluster(self, cluster_id) -> DaskCluster:
+        else:
+            return None
+
+    def get_cluster(self, cluster_id) -> Union[DaskClusterModel, None]:
         cluster = self._clusters.get(cluster_id)
         return cluster
 
-    def list_clusters(self) -> List[str]:
-        return [cluster_id for cluster_id in self._clusters]
+    def list_clusters(self) -> List[DaskClusterModel]:
+        return [
+            make_cluster_model(
+                cluster_id, self._cluster_names[cluster_id], self._clusters[cluster_id]
+            )
+            for cluster_id in self._clusters
+        ]
 
 
 def local_cluster_factory():
     return LocalCluster(threads_per_worker=2, memory_limit="4GB")
+
+
+def make_cluster_model(
+    cluster_id: str, cluster_name: str, cluster: DaskCluster
+) -> Dict[str, Union[str, int]]:
+    # This would be a great target for a dataclass
+    # once python 3.7 is in wider use.
+    return dict(
+        id=cluster_id,
+        name=cluster_name,
+        scheduler_address=cluster.scheduler_address,
+        dashboard_link=cluster.dashboard_link,
+        workers=len(cluster.workers),
+    )
