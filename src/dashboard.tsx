@@ -2,8 +2,6 @@ import { ToolbarButton } from '@jupyterlab/apputils';
 
 import { URLExt } from '@jupyterlab/coreutils';
 
-import { CommandRegistry } from '@phosphor/commands';
-
 import { JSONObject } from '@phosphor/coreutils';
 
 import { Message } from '@phosphor/messaging';
@@ -30,8 +28,8 @@ export class DaskDashboardLauncher extends Widget {
     layout.addWidget(this._input);
     layout.addWidget(this._dashboard);
     this.addClass('dask-DaskDashboardLauncher');
-    this._commands = options.commands;
     this._items = options.items || DaskDashboardLauncher.DEFAULT_ITEMS;
+    this._launchItem = options.launchItem;
     this._input.urlChanged.connect(
       this.update,
       this
@@ -63,8 +61,8 @@ export class DaskDashboardLauncher extends Widget {
 
     ReactDOM.render(
       <DashboardListing
+        launchItem={this._launchItem}
         isEnabled={this.input.isValid}
-        commands={this._commands}
         items={this._items}
       />,
       this._dashboard.node
@@ -80,7 +78,7 @@ export class DaskDashboardLauncher extends Widget {
 
   private _dashboard: Widget;
   private _input: URLInput;
-  private _commands: CommandRegistry;
+  private _launchItem: (item: IDashboardItem) => void;
   private _items: IDashboardItem[];
 }
 
@@ -306,16 +304,16 @@ export namespace DaskDashboardLauncher {
    */
   export interface IOptions {
     /**
-     * The document manager for the application.
-     */
-    commands: CommandRegistry;
-
-    /**
      * A function that attempts to find a link to
      * a dask bokeh server in the current application
      * context.
      */
     linkFinder?: () => Promise<string>;
+
+    /**
+     * A callback to launch a dashboard item.
+     */
+    launchItem: (item: IDashboardItem) => void;
 
     /**
      * A list of items for the launcher.
@@ -338,54 +336,43 @@ export namespace DaskDashboardLauncher {
 /**
  * A React component for a launcher button listing.
  */
-export class DashboardListing extends React.Component<
-  IDashboardListingProps,
-  {}
-> {
-  /**
-   * Render the listing.
-   */
-  render() {
-    let listing = this.props.items.map(item => {
-      const handler = () => {
-        this.props.commands.execute('dask:launch-dashboard', item);
-      };
-      return (
-        <li className="dask-DashboardListing-item" key={item.route}>
-          <button
-            className="jp-mod-styled jp-mod-accept"
-            value={item.label}
-            disabled={!this.props.isEnabled}
-            onClick={handler}
-          >
-            {item.label}
-          </button>
-        </li>
-      );
-    });
-
-    // Return the JSX component.
+function DashboardListing(props: IDashboardListingProps) {
+  let listing = props.items.map(item => {
     return (
-      <div>
-        <ul className="dask-DashboardListing-list">{listing}</ul>
-      </div>
+      <li className="dask-DashboardListing-item" key={item.route}>
+        <button
+          className="jp-mod-styled jp-mod-accept"
+          value={item.label}
+          disabled={!props.isEnabled}
+          onClick={() => props.launchItem(item)}
+        >
+          {item.label}
+        </button>
+      </li>
     );
-  }
+  });
+
+  // Return the JSX component.
+  return (
+    <div>
+      <ul className="dask-DashboardListing-list">{listing}</ul>
+    </div>
+  );
 }
 
 /**
  * Props for the dashboard listing component.
  */
-export interface IDashboardListingProps extends React.Props<DashboardListing> {
-  /**
-   * A command registry.
-   */
-  commands: CommandRegistry;
-
+export interface IDashboardListingProps {
   /**
    * A list of dashboard items to render.
    */
   items: IDashboardItem[];
+
+  /**
+   * A callback to launch a dashboard item.
+   */
+  launchItem: (item: IDashboardItem) => void;
 
   /**
    * Whether the items should be enabled.

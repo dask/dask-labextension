@@ -96,7 +96,9 @@ function activate(
   };
 
   const sidebar = new DaskSidebar({
-    commands: app.commands,
+    launchDashboardItem: (item: IDashboardItem) => {
+      app.commands.execute(CommandIDs.launchPanel, item);
+    },
     linkFinder
   });
   sidebar.id = id;

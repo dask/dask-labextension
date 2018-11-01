@@ -1,8 +1,10 @@
-import { CommandRegistry } from '@phosphor/commands';
-
 import { Widget, PanelLayout } from '@phosphor/widgets';
 
-import { DaskDashboardLauncher, normalizeDashboardUrl } from './dashboard';
+import {
+  DaskDashboardLauncher,
+  IDashboardItem,
+  normalizeDashboardUrl
+} from './dashboard';
 
 import { DaskClusterManager } from './clusters';
 
@@ -18,7 +20,7 @@ export class DaskSidebar extends Widget {
     this.addClass('dask-DaskSidebar');
     let layout = (this.layout = new PanelLayout());
     this._dashboard = new DaskDashboardLauncher({
-      commands: options.commands,
+      launchItem: options.launchDashboardItem,
       linkFinder: options.linkFinder
     });
     const setDashboardUrl = (url: string) => {
@@ -56,9 +58,9 @@ export namespace DaskSidebar {
    */
   export interface IOptions {
     /**
-     * The document manager for the application.
+     * A callback to launch a dashboard item.
      */
-    commands: CommandRegistry;
+    launchDashboardItem: (item: IDashboardItem) => void;
 
     /**
      * A function that attempts to find a link to
