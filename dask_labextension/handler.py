@@ -1,4 +1,4 @@
-"""Tornado handlers for dask cluster management."""
+"""Tornado handler for dask cluster management."""
 
 # Copyright (c) Jupyter Development Team.
 # Distributed under the terms of the Modified BSD License.
@@ -17,9 +17,14 @@ manager = DaskClusterManager()
 
 
 class DaskClusterHandler(APIHandler):
-
+    """
+    A tornado HTTP handler for managing dask clusters.
+    """
     @web.authenticated
     def delete(self, cluster_id: str) -> None:
+        """
+        Delete a cluster by id.
+        """
         try:  # to delete the cluster.
             val = manager.close_cluster(cluster_id)
             if val is None:
@@ -33,6 +38,9 @@ class DaskClusterHandler(APIHandler):
 
     @web.authenticated
     def get(self, cluster_id: str = "") -> None:
+        """
+        Get a cluster by id. If no id is given, lists known clusters.
+        """
         if cluster_id == "":
             cluster_list = manager.list_clusters()
             self.set_status(200)
@@ -47,6 +55,10 @@ class DaskClusterHandler(APIHandler):
 
     @web.authenticated
     def put(self, cluster_id: str = "") -> None:
+        """
+        Create a new cluster with a given id. If no id is given, a random
+        one is selected.
+        """
         if manager.get_cluster(cluster_id):
             raise web.HTTPError(
                 403, f"A Dask cluster with ID {cluster_id} already exists!"
@@ -60,4 +72,8 @@ class DaskClusterHandler(APIHandler):
 
     @web.authenticated
     def patch(self, cluster_id):
+        """
+        Scale an existing cluster."
+        Not yet implemented.
+        """
         pass
