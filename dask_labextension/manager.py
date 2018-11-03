@@ -103,7 +103,10 @@ class DaskClusterManager:
             or None if it was not found.
         """
         cluster = self._clusters.get(cluster_id)
-        return cluster
+        name = self._cluster_names.get(cluster_id)
+        if not cluster:
+            return None
+        return make_cluster_model(cluster_id, name, cluster)
 
     def list_clusters(self) -> List[DaskClusterModel]:
         """
