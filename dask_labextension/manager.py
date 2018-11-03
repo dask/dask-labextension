@@ -24,6 +24,7 @@ class DaskClusterManager:
     A class for starting, stopping, and otherwise managing the lifecycle
     of Dask clusters.
     """
+
     def __init__(self, cluster_factory: Union[DaskClusterFactory, None] = None) -> None:
         """
         Initialize the cluster manager.
@@ -82,9 +83,8 @@ class DaskClusterManager:
         if cluster:
             cluster.close()
             self._clusters.pop(cluster_id)
-            return make_cluster_model(
-                cluster_id, self._cluster_names[cluster_id], cluster
-            )
+            name = self._cluster_names.pop(cluster_id)
+            return make_cluster_model(cluster_id, name, cluster)
 
         else:
             return None
@@ -131,7 +131,8 @@ def make_cluster_model(
     cluster_id: str, cluster_name: str, cluster: DaskCluster
 ) -> DaskClusterModel:
     """
-    Make a cluster model.
+    Make a cluster model. This is a JSON-serializable representation
+    of the information about a cluster that can be sent over the wire.
 
     Parameters
     ----------
@@ -150,6 +151,6 @@ def make_cluster_model(
         id=cluster_id,
         name=cluster_name,
         scheduler_address=cluster.scheduler_address,
-        dashboard_link=cluster.dashboard_link or '',
+        dashboard_link=cluster.dashboard_link or "",
         workers=len(cluster.workers),
     )
