@@ -8,6 +8,8 @@ import { Message } from '@phosphor/messaging';
 
 import { Widget, PanelLayout } from '@phosphor/widgets';
 
+import { showScalingDialog } from './scaling';
+
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
@@ -88,6 +90,9 @@ export class DaskClusterManager extends Widget {
     ReactDOM.render(
       <ClusterListing
         clusters={this._clusters}
+        scaleById={(id: string) => {
+          return this._scaleById(id);
+        }}
         stopById={(id: string) => {
           return this._stopById(id);
         }}
@@ -148,6 +153,19 @@ export class DaskClusterManager extends Widget {
     await this._updateClusterList();
   }
 
+  /**
+   * Scale a cluster by its id.
+   */
+  private async _scaleById(id: string): Promise<void> {
+    const cluster = this._clusters.find(c => c.id === id);
+    if (!cluster) {
+      throw Error(`Failed to find cluster ${id} to scale`);
+    }
+    return showScalingDialog(cluster).then(updated => {
+      console.log(updated);
+    });
+  }
+
   private _clusterListing: Widget;
   private _clusters: IClusterModel[] = [];
   private _setDashboardUrl: (url: string) => void;
@@ -178,6 +196,7 @@ function ClusterListing(props: IClusterListingProps) {
       <ClusterListingItem
         key={cluster.id}
         cluster={cluster}
+        scale={() => props.scaleById(cluster.id)}
         stop={() => props.stopById(cluster.id)}
         setDashboardUrl={() => props.setDashboardUrl(cluster.dashboard_link)}
       />
@@ -207,6 +226,11 @@ export interface IClusterListingProps {
   stopById: (id: string) => Promise<void>;
 
   /**
+   * Scale a cluster by id.
+   */
+  scaleById: (id: string) => Promise<void>;
+
+  /**
    * A callback to set the dashboard URL.
    */
   setDashboardUrl: (url: string) => void;
@@ -216,7 +240,7 @@ export interface IClusterListingProps {
  * A TSX functional component for rendering a single running cluster.
  */
 function ClusterListingItem(props: IClusterListingItemProps) {
-  const { cluster, setDashboardUrl, stop } = props;
+  const { cluster, scale, setDashboardUrl, stop } = props;
   return (
     <li className="dask-ClusterListingItem" data-cluster-id={cluster.id}>
       <span className="dask-DaskLogo jp-Icon jp-Icon-16" />
@@ -229,6 +253,13 @@ Number of workers:  ${cluster.workers}`}
       >
         {cluster.name}
       </span>
+      <button
+        title={'Scale Cluster'}
+        className="jp-ToolbarButtonComponent"
+        onClick={scale}
+      >
+        <span className="jp-LinkIcon jp-Icon jp-Icon-16 jp-ToolbarButtonComponent-icon" />
+      </button>
       <button
         title={`Set Dashboard to ${cluster.name}`}
         className="jp-ToolbarButtonComponent"
@@ -257,6 +288,11 @@ export interface IClusterListingItemProps {
   cluster: IClusterModel;
 
   /**
+   * A function for scaling the cluster.
+   */
+  scale: () => Promise<void>;
+
+  /**
    * A function for stopping the cluster.
    */
   stop: () => Promise<void>;
@@ -268,9 +304,9 @@ export interface IClusterListingItemProps {
 }
 
 /**
- * An interface dashboard launcher item.
+ * An interface for a JSON-serializable representation of a cluster.
  */
-export interface IClusterModel extends JSONObject {
+export interface IBaseClusterModel extends JSONObject {
   /**
    * A unique string ID for the cluster.
    */
@@ -295,4 +331,35 @@ export interface IClusterModel extends JSONObject {
    * The number of workers for the cluster.
    */
   workers: number;
+
+  /**
+   * The scaling type of the cluster model.
+   */
+  scaling: 'static' | 'adaptive';
 }
+
+export interface IStaticClusterModel extends IBaseClusterModel {
+  /**
+   * The scaling type of the cluster model.
+   */
+  scaling: 'static';
+}
+
+export interface IAdaptiveClusterModel extends IBaseClusterModel {
+  /**
+   * The scaling type of the cluster model.
+   */
+  scaling: 'adaptive';
+
+  /**
+   * The minimum number of workers.
+   */
+  minimum: number;
+
+  /**
+   * The maximum number of workers.
+   */
+  maximum: number;
+}
+
+export type IClusterModel = IStaticClusterModel | IAdaptiveClusterModel;
