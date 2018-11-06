@@ -118,7 +118,6 @@ export class ClusterScaling extends React.Component<
     this.setState({
       model: {
         ...this.state.model,
-        workers: minimum,
         maximum,
         minimum
       }
@@ -136,7 +135,6 @@ export class ClusterScaling extends React.Component<
     this.setState({
       model: {
         ...this.state.model,
-        workers: minimum,
         maximum,
         minimum
       }
