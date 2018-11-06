@@ -2,7 +2,7 @@ import { Toolbar, ToolbarButton } from '@jupyterlab/apputils';
 
 import { ServerConnection } from '@jupyterlab/services';
 
-import { JSONObject } from '@phosphor/coreutils';
+import { JSONObject, JSONExt } from '@phosphor/coreutils';
 
 import { Message } from '@phosphor/messaging';
 
@@ -12,6 +12,8 @@ import { showScalingDialog } from './scaling';
 
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
+
+const REFRESH_INTERVAL = 5000;
 
 /**
  * A widget for hosting Dask cluster management.
@@ -69,6 +71,10 @@ export class DaskClusterManager extends Widget {
 
     // Do an initial refresh of the cluster list.
     this._updateClusterList();
+    // Also refresh periodically.
+    window.setInterval(() => {
+      this._updateClusterList();
+    }, REFRESH_INTERVAL);
   }
 
   /**
@@ -161,9 +167,24 @@ export class DaskClusterManager extends Widget {
     if (!cluster) {
       throw Error(`Failed to find cluster ${id} to scale`);
     }
-    return showScalingDialog(cluster).then(updated => {
-      console.log(updated);
-    });
+    const update = await showScalingDialog(cluster);
+    if (JSONExt.deepEqual(update, cluster)) {
+      // If the user canceled, or the model is identical don't try to update.
+      return Promise.resolve(void 0);
+    }
+
+    const response = await ServerConnection.makeRequest(
+      `${this._serverSettings.baseUrl}dask/${id}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(update)
+      },
+      this._serverSettings
+    );
+    if (response.status !== 200) {
+      throw new Error(`Failed to scale cluster ${id}`);
+    }
+    await this._updateClusterList();
   }
 
   private _clusterListing: Widget;
@@ -241,16 +262,19 @@ export interface IClusterListingProps {
  */
 function ClusterListingItem(props: IClusterListingItemProps) {
   const { cluster, scale, setDashboardUrl, stop } = props;
+  let title = `${cluster.name}
+Scheduler Address:  ${cluster.scheduler_address}
+Dashboard URL:  ${cluster.dashboard_link}
+Number of Workers:  ${cluster.workers}`;
+  if (cluster.scaling === 'adaptive') {
+    title = `${title}
+Minimum Number of Workers: ${cluster.minimum}
+Maximum Number of Workers: ${cluster.maximum}`;
+  }
   return (
     <li className="dask-ClusterListingItem" data-cluster-id={cluster.id}>
       <span className="dask-DaskLogo jp-Icon jp-Icon-16" />
-      <span
-        className="dask-ClusterListingItem-label"
-        title={`${cluster.name}
-Scheduler Address:  ${cluster.scheduler_address}
-Dashboard URL:  ${cluster.dashboard_link}
-Number of workers:  ${cluster.workers}`}
-      >
+      <span className="dask-ClusterListingItem-label" title={title}>
         {cluster.name}
       </span>
       <button

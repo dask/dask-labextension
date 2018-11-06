@@ -179,6 +179,7 @@ export class ClusterScaling extends React.Component<
           <input
             className="dask-ScalingCheckbox"
             type="checkbox"
+            checked={adaptive}
             onChange={evt => {
               this.onScalingChanged(evt);
             }}

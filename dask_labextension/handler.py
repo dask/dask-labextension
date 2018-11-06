@@ -20,6 +20,7 @@ class DaskClusterHandler(APIHandler):
     """
     A tornado HTTP handler for managing dask clusters.
     """
+
     @web.authenticated
     def delete(self, cluster_id: str) -> None:
         """
@@ -63,6 +64,7 @@ class DaskClusterHandler(APIHandler):
             raise web.HTTPError(
                 403, f"A Dask cluster with ID {cluster_id} already exists!"
             )
+
         try:
             cluster_model = manager.start_cluster(cluster_id)
             self.set_status(200)
@@ -76,4 +78,15 @@ class DaskClusterHandler(APIHandler):
         Scale an existing cluster."
         Not yet implemented.
         """
-        pass
+        new_model = json.loads(self.request.body)
+        try:
+            if new_model["scaling"] == "adaptive":
+                cluster_model = manager.adapt_cluster(
+                    cluster_id, new_model["minimum"], new_model["maximum"]
+                )
+            elif new_model["scaling"] == "static":
+                cluster_model = manager.scale_cluster(cluster_id, new_model["workers"])
+            self.set_status(200)
+            self.finish(json.dumps(cluster_model))
+        except Exception as e:
+            raise web.HTTPError(500, str(e))

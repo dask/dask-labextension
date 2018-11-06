@@ -11,6 +11,9 @@ from dask.distributed import LocalCluster
 # A type stub for a dask cluster.
 DaskCluster = Any
 
+# A type stub for a dask adaptive instance.
+Adaptive = Any
+
 # A type for a dask cluster model: a serializable
 # representation of information about the cluster.
 DaskClusterModel = Dict[str, Union[str, int]]
@@ -41,6 +44,7 @@ class DaskClusterManager:
             self._cluster_factory: DaskClusterFactory = local_cluster_factory
 
         self._clusters: Dict[str, DaskCluster] = dict()
+        self._adaptives: Dict[str, Adaptive] = dict()
         self._cluster_names: Dict[str, str] = dict()
         self._n_clusters = 0
 
@@ -64,7 +68,7 @@ class DaskClusterManager:
         cluster_name = f"Dask Cluster {self._n_clusters}"
         self._clusters[cluster_id] = cluster
         self._cluster_names[cluster_id] = cluster_name
-        return make_cluster_model(cluster_id, cluster_name, cluster)
+        return make_cluster_model(cluster_id, cluster_name, cluster, adaptive=None)
 
     def close_cluster(self, cluster_id: str) -> Union[DaskClusterModel, None]:
         """
@@ -84,7 +88,8 @@ class DaskClusterManager:
             cluster.close()
             self._clusters.pop(cluster_id)
             name = self._cluster_names.pop(cluster_id)
-            return make_cluster_model(cluster_id, name, cluster)
+            adaptive = self._adaptives.pop(cluster_id, None)
+            return make_cluster_model(cluster_id, name, cluster, adaptive)
 
         else:
             return None
@@ -104,9 +109,11 @@ class DaskClusterManager:
         """
         cluster = self._clusters.get(cluster_id)
         name = self._cluster_names.get(cluster_id)
+        adaptive = self._adaptives.get(cluster_id)
         if not cluster:
             return None
-        return make_cluster_model(cluster_id, name, cluster)
+
+        return make_cluster_model(cluster_id, name, cluster, adaptive)
 
     def list_clusters(self) -> List[DaskClusterModel]:
         """
@@ -117,10 +124,54 @@ class DaskClusterManager:
         """
         return [
             make_cluster_model(
-                cluster_id, self._cluster_names[cluster_id], self._clusters[cluster_id]
+                cluster_id,
+                self._cluster_names[cluster_id],
+                self._clusters[cluster_id],
+                self._adaptives.get(cluster_id, None),
             )
             for cluster_id in self._clusters
         ]
+
+    def scale_cluster(self, cluster_id: str, n: int) -> Union[DaskClusterModel, None]:
+        cluster = self._clusters.get(cluster_id)
+        name = self._cluster_names.get(cluster_id)
+        adaptive = self._adaptives.pop(cluster_id, None)
+
+        # Check if the cluster exists
+        if not cluster:
+            return None
+
+        # Check if it is actually different.
+        model = make_cluster_model(cluster_id, name, cluster, adaptive)
+        if model["scaling"] == "static" and model["workers"] == n:
+            return model
+
+        # Otherwise, rescale the model.
+        cluster.scale(n)
+        return make_cluster_model(cluster_id, name, cluster, adaptive=None)
+
+    def adapt_cluster(
+        self, cluster_id: str, minimum: int, maximum: int
+    ) -> Union[DaskClusterModel, None]:
+        cluster = self._clusters.get(cluster_id)
+        name = self._cluster_names.get(cluster_id)
+        adaptive = self._adaptives.pop(cluster_id, None)
+
+        # Check if the cluster exists
+        if not cluster:
+            return None
+
+        # Check if it is actually different.
+        model = make_cluster_model(cluster_id, name, cluster, adaptive)
+        if model["scaling"] == "adaptive" and model["minimum"] == minimum and model[
+            "maximum"
+        ] == maximum:
+            return model
+
+        # Otherwise, rescale the model.
+        adaptive = cluster.adapt(minimum=minimum, maximum=maximum)
+        self._adaptives[cluster_id] = adaptive
+        return make_cluster_model(cluster_id, name, cluster, adaptive)
 
 
 def local_cluster_factory():
@@ -131,7 +182,10 @@ def local_cluster_factory():
 
 
 def make_cluster_model(
-    cluster_id: str, cluster_name: str, cluster: DaskCluster
+    cluster_id: str,
+    cluster_name: str,
+    cluster: DaskCluster,
+    adaptive: Union[Adaptive, None],
 ) -> DaskClusterModel:
     """
     Make a cluster model. This is a JSON-serializable representation
@@ -147,13 +201,24 @@ def make_cluster_model(
 
     cluster: DaskCluster
         The cluster out of which to make the cluster model.
+
+    adaptive: Adaptive
+        The adaptive controller for the number of workers for the cluster, or
+        none if the cluster is not scaled adaptively.
     """
     # This would be a great target for a dataclass
     # once python 3.7 is in wider use.
-    return dict(
+    scaling = "adaptive" if adaptive else "static"
+    model = dict(
         id=cluster_id,
         name=cluster_name,
+        scaling=scaling,
         scheduler_address=cluster.scheduler_address,
         dashboard_link=cluster.dashboard_link or "",
         workers=len(cluster.workers),
     )
+    if scaling == "adaptive":
+        model["maximum"] = adaptive.maximum
+        model["minimum"] = adaptive.minimum
+
+    return model
