@@ -148,7 +148,7 @@ export class URLInput extends Widget {
 
     if (linkFinder) {
       const findButton = new ToolbarButton({
-        iconClassName: 'dask-SearchLogo jp-Icon jp-Icon-16',
+        iconClassName: 'dask-SearchIcon jp-Icon jp-Icon-16',
         onClick: async () => {
           let link = await linkFinder();
           if (link) {
