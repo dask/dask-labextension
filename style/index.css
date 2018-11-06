@@ -2,12 +2,20 @@
   --dash-launch-button-height: 28px;
 }
 
+/**
+ * Rules related to the overall sidebar panel.
+ */
+
 .dask-DaskSidebar {
   background: var(--jp-layout-color1);
   color: var(--jp-ui-font-color1);
   font-size: var(--jp-ui-font-size1);
   overflow: auto;
 }
+
+/**
+ * Rules related to the dashboard launcher.
+ */
 
 .dask-DashboardListing-list {
   display: flex;
@@ -89,6 +97,10 @@
   min-width: 16px;
 }
 
+/**
+ * Rules related to the cluster manager.
+ */
+
 .dask-DaskClusterManager {
   border-top: 6px solid var(--jp-toolbar-border-color);
 }
@@ -135,6 +147,47 @@
   flex: 0 0 auto;
 }
 
+/**
+ * Rules for the scaling dialog.
+ */
+
+.dask-ScalingHeader {
+  font-size: var(--jp-ui-font-size2);
+}
+
+.dask-ScalingSection {
+  margin-left: 24px;
+}
+
+.dask-ScalingSection-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  margin: 12px 0 12px 0;
+}
+
+.dask-ScalingHeader input[type='checkbox'] {
+  position: relative;
+  top: 4px;
+  left: 4px;
+  margin: 0 0 0 8px;
+}
+
+.dask-ScalingSection input[type='number'] {
+  width: 72px;
+}
+
+.dask-ScalingSection-label.dask-mod-disabled {
+  color: var(--jp-ui-font-color3);
+}
+
+.dask-ScalingSection input[type='number']:disabled {
+  color: var(--jp-ui-font-color3);
+}
+
+/**
+ * Rules for the Dask logo.
+ */
 .dask-SearchLogo {
   background-image: var(--jp-icon-search);
 }
