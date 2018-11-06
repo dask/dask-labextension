@@ -282,7 +282,7 @@ Maximum Number of Workers: ${cluster.maximum}`;
         className="jp-ToolbarButtonComponent"
         onClick={scale}
       >
-        <span className="jp-LinkIcon jp-Icon jp-Icon-16 jp-ToolbarButtonComponent-icon" />
+        <span className="jp-ScaleIcon jp-Icon jp-Icon-16 jp-ToolbarButtonComponent-icon" />
       </button>
       <button
         title={`Set Dashboard to ${cluster.name}`}

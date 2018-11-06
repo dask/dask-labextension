@@ -138,10 +138,6 @@
   flex: 1 1 auto;
 }
 
-.dask-DaskLogo {
-  background-image: url(dask.svg);
-}
-
 .dask-ClusterListingItem .dask-DaskLogo {
   padding: 4px;
   flex: 0 0 auto;
@@ -186,10 +182,23 @@
 }
 
 /**
- * Rules for the Dask logo.
+ * Rules for the logos.
  */
+
 .dask-SearchLogo {
   background-image: var(--jp-icon-search);
+}
+
+[data-theme-light='true'] .dask-ScaleLogo {
+  background-image: url(scale-light.svg);
+}
+
+[data-theme-light='false'] .dask-ScaleLogo {
+  background-image: url(scale-dark.svg);
+}
+
+.dask-DaskLogo {
+  background-image: url(dask.svg);
 }
 
 #setting-editor .dask-DaskLogo {
