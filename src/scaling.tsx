@@ -38,13 +38,22 @@ namespace ClusterScaling {
   }
 }
 
+/**
+ * A component for an HTML form that allows the user
+ * to select scaling parameters.
+ */
 export class ClusterScaling extends React.Component<
   ClusterScaling.IProps,
   ClusterScaling.IState
 > {
+  /**
+   * Construct a new ClusterScaling component.
+   */
   constructor(props: ClusterScaling.IProps) {
     super(props);
     let model: IUnionClusterModel;
+    // If the initial model is static, enrich it
+    // with placeholder values for minimum and maximum workers.
     if (props.initialModel.scaling === 'static') {
       model = {
         ...(props.initialModel as IStaticClusterModel),
@@ -58,6 +67,11 @@ export class ClusterScaling extends React.Component<
     this.state = { model };
   }
 
+  /**
+   * When the component updates we take the opportunity to write
+   * the state of the cluster to an external object so this can
+   * be sent as the result of the dialog.
+   */
   componentDidUpdate(): void {
     let model: IUnionClusterModel = { ...this.state.model };
     if (model.scaling === 'static') {
@@ -67,6 +81,9 @@ export class ClusterScaling extends React.Component<
     this.props.stateEscapeHatch(this.state.model as IClusterModel);
   }
 
+  /**
+   * React to the number of workers changing.
+   */
   onScaleChanged(event: React.ChangeEvent): void {
     this.setState({
       model: {
@@ -76,6 +93,9 @@ export class ClusterScaling extends React.Component<
     });
   }
 
+  /**
+   * React to the user selecting the adapt checkbox.
+   */
   onScalingChanged(event: React.ChangeEvent): void {
     const value = (event.target as HTMLInputElement).checked;
     const scaling = value ? 'adaptive' : 'static';
@@ -87,6 +107,10 @@ export class ClusterScaling extends React.Component<
     });
   }
 
+  /**
+   * React to the minimum slider changing. We also update the maximum
+   * so that it is alway greater than or equal to the minimum.
+   */
   onMinimumChanged(event: React.ChangeEvent): void {
     const value = parseInt((event.target as HTMLInputElement).value, 10);
     const minimum = Math.max(0, value);
@@ -100,6 +124,11 @@ export class ClusterScaling extends React.Component<
       }
     });
   }
+
+  /**
+   * React to the maximum slider changing. We also update the minimum
+   * so that it is always less than or equal to the maximum.
+   */
   onMaximumChanged(event: React.ChangeEvent): void {
     const value = parseInt((event.target as HTMLInputElement).value, 10);
     const maximum = Math.max(0, value);
@@ -114,63 +143,103 @@ export class ClusterScaling extends React.Component<
     });
   }
 
+  /**
+   * Render the component..
+   */
   render() {
     const model = this.state.model;
     const adaptive = model.scaling === 'adaptive';
+    const disabledClass = 'dask-mod-disabled';
     return (
       <div>
         <span className="dask-ScalingHeader">Manual Scaling</span>
         <div className="dask-ScalingSection">
-          <input
-            className="dask-ScalingInput"
-            disabled={adaptive}
-            value={model.workers}
-            type="number"
-            step="1"
-            onChange={evt => {
-              this.onScaleChanged(evt);
-            }}
-          />
+          <div className="dask-ScalingSection-item">
+            <span
+              className={`dask-ScalingSection-label ${
+                adaptive ? disabledClass : ''
+              }`}
+            >
+              Workers
+            </span>
+            <input
+              className="dask-ScalingInput"
+              disabled={adaptive}
+              value={model.workers}
+              type="number"
+              step="1"
+              onChange={evt => {
+                this.onScaleChanged(evt);
+              }}
+            />
+          </div>
         </div>
-        <span className="dask-ScalingHeader">Adaptive Scaling</span>
-        <input
-          className="dask-ScalingCheckbox"
-          type="checkbox"
-          onChange={evt => {
-            this.onScalingChanged(evt);
-          }}
-        />
-        <div className="dask-ScalingSection">
-          <span>Minimum workers</span>
+        <div className="dask-ScalingHeader">
+          Adaptive Scaling
           <input
-            className="dask-ScalingInput"
-            disabled={!adaptive}
-            type="number"
-            value={(model as IAdaptiveClusterModel).minimum}
-            step="1"
+            className="dask-ScalingCheckbox"
+            type="checkbox"
             onChange={evt => {
-              this.onMinimumChanged(evt);
+              this.onScalingChanged(evt);
             }}
           />
         </div>
         <div className="dask-ScalingSection">
-          <span>Maximum workers</span>
-          <input
-            className="dask-ScalingInput"
-            disabled={!adaptive}
-            type="number"
-            value={(model as IAdaptiveClusterModel).maximum}
-            step="1"
-            onChange={evt => {
-              this.onMaximumChanged(evt);
-            }}
-          />
+          <div className="dask-ScalingSection-item">
+            <span
+              className={`dask-ScalingSection-label ${
+                !adaptive ? disabledClass : ''
+              }`}
+            >
+              Minimum workers
+            </span>
+            <input
+              className="dask-ScalingInput"
+              disabled={!adaptive}
+              type="number"
+              value={(model as IAdaptiveClusterModel).minimum}
+              step="1"
+              onChange={evt => {
+                this.onMinimumChanged(evt);
+              }}
+            />
+          </div>
+        </div>
+        <div className="dask-ScalingSection">
+          <div className="dask-ScalingSection-item">
+            <span
+              className={`dask-ScalingSection-label ${
+                !adaptive ? disabledClass : ''
+              }`}
+            >
+              Maximum workers
+            </span>
+            <input
+              className="dask-ScalingInput"
+              disabled={!adaptive}
+              type="number"
+              value={(model as IAdaptiveClusterModel).maximum}
+              step="1"
+              onChange={evt => {
+                this.onMaximumChanged(evt);
+              }}
+            />
+          </div>
         </div>
       </div>
     );
   }
 }
 
+/**
+ * Show a dialog for scaling a cluster model.
+ *
+ * @param model: the initial model.
+ *
+ * @returns a promse that resolves with the user-selected scalings for the
+ *   cluster model. If they pressed the cancel button, it resolves with
+ *   the original model.
+ */
 export function showScalingDialog(
   model: IClusterModel
 ): Promise<IClusterModel> {
