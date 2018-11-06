@@ -134,7 +134,7 @@
 }
 
 .dask-ClusterListing-list .dask-ClusterListingItem-label {
-  text-transform: uppercase;
+  margin: 0px 8px 0px 4px;
   flex: 1 1 auto;
 }
 

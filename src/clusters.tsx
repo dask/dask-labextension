@@ -273,7 +273,6 @@ Maximum Number of Workers: ${cluster.maximum}`;
   }
   return (
     <li className="dask-ClusterListingItem" data-cluster-id={cluster.id}>
-      <span className="dask-DaskLogo jp-Icon jp-Icon-16" />
       <span className="dask-ClusterListingItem-label" title={title}>
         {cluster.name}
       </span>
