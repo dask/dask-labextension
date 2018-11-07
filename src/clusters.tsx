@@ -275,16 +275,13 @@ Maximum Number of Workers: ${cluster.maximum}`;
   }
   return (
     <li className="dask-ClusterListingItem" data-cluster-id={cluster.id}>
-      <span className="dask-ClusterListingItem-label" title={title}>
-        {cluster.name}
-      </span>
-      <button
-        title={`Set Dashboard to ${cluster.name}`}
-        className="jp-ToolbarButtonComponent"
+      <span
+        className="dask-ClusterListingItem-label"
+        title={title}
         onClick={setDashboardUrl}
       >
-        <span className="jp-LinkIcon jp-Icon jp-Icon-16 jp-ToolbarButtonComponent-icon" />
-      </button>
+        {cluster.name}
+      </span>
       <button
         title={`Scale ${cluster.name}`}
         className="jp-ToolbarButtonComponent"
