@@ -7,6 +7,7 @@ from typing import Any, Callable, Dict, List, Union
 from uuid import uuid4
 
 from dask.distributed import LocalCluster
+from dask.distributed import utils
 
 # A type stub for a dask cluster.
 DaskCluster = Any
@@ -215,7 +216,11 @@ def make_cluster_model(
         scaling=scaling,
         scheduler_address=cluster.scheduler_address,
         dashboard_link=cluster.dashboard_link or "",
-        workers=len(cluster.workers),
+        workers=len(cluster.scheduler.workers),
+        memory=utils.format_bytes(
+            sum(ws.memory_limit for ws in cluster.scheduler.workers.values())
+        ),
+        cores=sum(ws.ncores for ws in cluster.scheduler.workers.values()),
     )
     if scaling == "adaptive":
         model["maximum"] = adaptive.maximum

@@ -265,6 +265,8 @@ function ClusterListingItem(props: IClusterListingItemProps) {
   let title = `${cluster.name}
 Scheduler Address:  ${cluster.scheduler_address}
 Dashboard URL:  ${cluster.dashboard_link}
+Number of Cores: ${cluster.cores}
+Memory: ${cluster.memory}
 Number of Workers:  ${cluster.workers}`;
   if (cluster.scaling === 'adaptive') {
     title = `${title}
@@ -349,6 +351,16 @@ export interface IBaseClusterModel extends JSONObject {
    * A URL for the Dask dashboard.
    */
   dashboard_link: string;
+
+  /**
+   * Total number of cores used by the cluster.
+   */
+  cores: number;
+
+  /**
+   * Total memory used by the cluster, as a human-readable string.
+   */
+  memory: string;
 
   /**
    * The number of workers for the cluster.
