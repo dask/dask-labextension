@@ -18,12 +18,14 @@ from notebook.base.handlers import IPythonHandler, utcnow
 
 from .manager import manager
 
+
 class PingableWSClientConnection(websocket.WebSocketClientConnection):
     """A WebSocketClientConnection with an on_ping callback."""
+
     def __init__(self, **kwargs):
-        if 'on_ping_callback' in kwargs:
-            self._on_ping_callback = kwargs['on_ping_callback']
-            del(kwargs['on_ping_callback'])
+        if "on_ping_callback" in kwargs:
+            self._on_ping_callback = kwargs["on_ping_callback"]
+            del (kwargs["on_ping_callback"])
         super().__init__(**kwargs)
 
     def on_ping(self, data):
@@ -31,8 +33,7 @@ class PingableWSClientConnection(websocket.WebSocketClientConnection):
             self._on_ping_callback(data)
 
 
-def pingable_ws_connect(request=None, on_message_callback=None,
-                        on_ping_callback=None):
+def pingable_ws_connect(request=None, on_message_callback=None, on_ping_callback=None):
     """
     A variation on websocket_connect that returns a PingableWSClientConnection
     with on_ping_callback.
@@ -40,25 +41,34 @@ def pingable_ws_connect(request=None, on_message_callback=None,
     # Copy and convert the headers dict/object (see comments in
     # AsyncHTTPClient.fetch)
     request.headers = httputil.HTTPHeaders(request.headers)
-    request = httpclient._RequestProxy(
-        request, httpclient.HTTPRequest._DEFAULTS)
+    request = httpclient._RequestProxy(request, httpclient.HTTPRequest._DEFAULTS)
 
     # for tornado 4.5.x compatibility
     if version_info[0] == 4:
-        conn = PingableWSClientConnection(io_loop=ioloop.IOLoop.current(),
+        conn = PingableWSClientConnection(
+            io_loop=ioloop.IOLoop.current(),
             request=request,
             on_message_callback=on_message_callback,
-            on_ping_callback=on_ping_callback)
+            on_ping_callback=on_ping_callback,
+        )
     else:
-        conn = PingableWSClientConnection(request=request,
+        conn = PingableWSClientConnection(
+            request=request,
             on_message_callback=on_message_callback,
             on_ping_callback=on_ping_callback,
-            max_message_size=getattr(websocket, '_default_max_message_size', 10 * 1024 * 1024))
+            max_message_size=getattr(
+                websocket, "_default_max_message_size", 10 * 1024 * 1024
+            ),
+        )
 
     return conn.connect_future
 
+
 # from https://stackoverflow.com/questions/38663666/how-can-i-serve-a-http-page-and-a-websocket-on-the-same-url-in-tornado
+
+
 class WebSocketHandlerMixin(websocket.WebSocketHandler):
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # since my parent doesn't keep calling the super() constructor,
@@ -69,30 +79,44 @@ class WebSocketHandlerMixin(websocket.WebSocketHandler):
         try:
             nextparent = bases[meindex + 1]
         except IndexError:
-            raise Exception("WebSocketHandlerMixin should be followed "
-                            "by another parent to make sense")
+            raise Exception(
+                "WebSocketHandlerMixin should be followed "
+                "by another parent to make sense"
+            )
 
         # undisallow methods --- t.ws.WebSocketHandler disallows methods,
         # we need to re-enable these methods
+
         def wrapper(method):
+
             def undisallow(*args2, **kwargs2):
                 getattr(nextparent, method)(self, *args2, **kwargs2)
+
             return undisallow
 
-        for method in ["write", "redirect", "set_header", "set_cookie",
-                       "set_status", "flush", "finish"]:
+        for method in [
+            "write",
+            "redirect",
+            "set_header",
+            "set_cookie",
+            "set_status",
+            "flush",
+            "finish",
+        ]:
             setattr(self, method, wrapper(method))
         nextparent.__init__(self, *args, **kwargs)
 
     async def get(self, *args, **kwargs):
-        if self.request.headers.get("Upgrade", "").lower() != 'websocket':
+        if self.request.headers.get("Upgrade", "").lower() != "websocket":
             return await self.http_get(*args, **kwargs)
+
         # super get is not async
         super().get(*args, **kwargs)
 
 
 class DaskDashboardHandler(WebSocketHandlerMixin, IPythonHandler):
-    async def open(self, cluster_id, proxied_path=''):
+
+    async def open(self, cluster_id, proxied_path=""):
         """
         Called when a client opens a websocket connection.
         We establish a websocket connection to the proxied backend &
@@ -101,19 +125,22 @@ class DaskDashboardHandler(WebSocketHandlerMixin, IPythonHandler):
 
         # Get the cluster by ID. If it is not found,
         # raise an error.
-        cluster = manager.get_cluster(cluster_id)
-        dashboard_link = cluster['dashboard_link'].split('/status')[0]
-        ws_link = 'ws'+dashboard_link[4:]
+        cluster_model = manager.get_cluster(cluster_id)
+        if not cluster_model:
+            raise web.HTTPError(404, f"Dask cluster {cluster_id} not found")
 
-        if not proxied_path.startswith('/'):
-            proxied_path = '/' + proxied_path
+        # Construct the proper websocket proxy link from the cluster dashboard
+        dashboard_link = cluster_model["dashboard_link"]
+        if dashboard_link.endswith("/status"):
+            dashboard_link = dashboard_link[:-len("/status")]
+        ws_link = "ws" + dashboard_link[4:]
 
-        client_uri = '{ws_link}{path}'.format(
-            ws_link=ws_link,
-            path=proxied_path
-        )
+        if not proxied_path.startswith("/"):
+            proxied_path = "/" + proxied_path
+
+        client_uri = "{ws_link}{path}".format(ws_link=ws_link, path=proxied_path)
         if self.request.query:
-            client_uri += '?' + self.request.query
+            client_uri += "?" + self.request.query
         headers = self.request.headers
 
         def message_cb(message):
@@ -138,13 +165,18 @@ class DaskDashboardHandler(WebSocketHandlerMixin, IPythonHandler):
             self.ping(data)
 
         async def start_websocket_connection():
-            self.log.info('Trying to establish websocket connection to {}'.format(client_uri))
+            self.log.info(
+                "Trying to establish websocket connection to {}".format(client_uri)
+            )
             self._record_activity()
             request = httpclient.HTTPRequest(url=client_uri, headers=headers)
-            self.ws = await pingable_ws_connect(request=request,
-                on_message_callback=message_cb, on_ping_callback=ping_cb)
+            self.ws = await pingable_ws_connect(
+                request=request,
+                on_message_callback=message_cb,
+                on_ping_callback=ping_cb,
+            )
             self._record_activity()
-            self.log.info('Websocket connection established to {}'.format(client_uri))
+            self.log.info("Websocket connection established to {}".format(client_uri))
 
         ioloop.IOLoop.current().add_callback(start_websocket_connection)
 
@@ -154,7 +186,7 @@ class DaskDashboardHandler(WebSocketHandlerMixin, IPythonHandler):
         We proxy it to the backend.
         """
         self._record_activity()
-        if hasattr(self, 'ws'):
+        if hasattr(self, "ws"):
             self.ws.write_message(message, binary=isinstance(message, bytes))
 
     def on_ping(self, data):
@@ -162,23 +194,23 @@ class DaskDashboardHandler(WebSocketHandlerMixin, IPythonHandler):
         Called when the client pings our websocket connection.
         We proxy it to the backend.
         """
-        self.log.debug('nbserverproxy: on_ping: {}'.format(data))
+        self.log.debug("nbserverproxy: on_ping: {}".format(data))
         self._record_activity()
-        if hasattr(self, 'ws'):
+        if hasattr(self, "ws"):
             self.ws.protocol.write_ping(data)
 
     def on_pong(self, data):
         """
         Called when we receive a ping back.
         """
-        self.log.debug('nbserverproxy: on_pong: {}'.format(data))
+        self.log.debug("nbserverproxy: on_pong: {}".format(data))
 
     def on_close(self):
         """
         Called when the client closes our websocket connection.
         We close our connection to the backend too.
         """
-        if hasattr(self, 'ws'):
+        if hasattr(self, "ws"):
             self.ws.close()
 
     def _record_activity(self):
@@ -186,52 +218,66 @@ class DaskDashboardHandler(WebSocketHandlerMixin, IPythonHandler):
         avoids proxied traffic being ignored by the notebook's
         internal idle-shutdown mechanism
         """
-        self.settings['api_last_activity'] = utcnow()
-
+        self.settings["api_last_activity"] = utcnow()
 
     @web.authenticated
     async def proxy(self, cluster_id, proxied_path):
-        '''
+        """
         While self.request.uri is
             (hub)    /user/username/proxy/([0-9]+)/something.
             (single) /proxy/([0-9]+)/something
         This serverextension is given {port}/{everything/after}.
-        '''
+        """
 
-        if 'Proxy-Connection' in self.request.headers:
-            del self.request.headers['Proxy-Connection']
+        if "Proxy-Connection" in self.request.headers:
+            del self.request.headers["Proxy-Connection"]
 
         self._record_activity()
 
-        if self.request.headers.get("Upgrade", "").lower() == 'websocket':
+        if self.request.headers.get("Upgrade", "").lower() == "websocket":
             # We wanna websocket!
             # jupyterhub/nbserverproxy@36b3214
-            self.log.info("we wanna websocket, but we don't define WebSocketProxyHandler")
+            self.log.info(
+                "we wanna websocket, but we don't define WebSocketProxyHandler"
+            )
             self.set_status(500)
 
         body = self.request.body
         if not body:
-            if self.request.method == 'POST':
-                body = b''
+            if self.request.method == "POST":
+                body = b""
             else:
                 body = None
 
-        cluster = manager.get_cluster(cluster_id)
-        dashboard_link = cluster['dashboard_link'].split('/status')[0]
+        # Get the cluster by ID. If it is not found,
+        # raise an error.
+        cluster_model = manager.get_cluster(cluster_id)
+        if not cluster_model:
+            raise web.HTTPError(404, f"Dask cluster {cluster_id} not found")
 
-        client_uri = '{dashboard_link}/{path}'.format(
-            dashboard_link=dashboard_link,
-            path=proxied_path
+        # Construct the proper proxy link from the cluster dashboard
+        dashboard_link = cluster_model["dashboard_link"]
+        if dashboard_link.endswith("/status"):
+            dashboard_link = dashboard_link[:-len("/status")]
+
+        # If a path is not provided, default to the individual plots listing.
+        proxied_path = proxied_path or "individual-plots.json"
+
+        client_uri = "{dashboard_link}/{path}".format(
+            dashboard_link=dashboard_link, path=proxied_path
         )
-        self.log.warn(client_uri)
         if self.request.query:
-            client_uri += '?' + self.request.query
+            client_uri += "?" + self.request.query
 
         client = httpclient.AsyncHTTPClient()
 
         req = httpclient.HTTPRequest(
-            client_uri, method=self.request.method, body=body,
-            headers=self.request.headers, follow_redirects=False)
+            client_uri,
+            method=self.request.method,
+            body=body,
+            headers=self.request.headers,
+            follow_redirects=False,
+        )
 
         response = await client.fetch(req, raise_error=False)
         # record activity at start and end of requests
@@ -248,8 +294,12 @@ class DaskDashboardHandler(WebSocketHandlerMixin, IPythonHandler):
             self._headers = httputil.HTTPHeaders()
 
             for header, v in response.headers.get_all():
-                if header not in ('Content-Length', 'Transfer-Encoding',
-                    'Content-Encoding', 'Connection'):
+                if header not in (
+                    "Content-Length",
+                    "Transfer-Encoding",
+                    "Content-Encoding",
+                    "Connection",
+                ):
                     # some header appear multiple times, eg 'Set-Cookie'
                     self.add_header(header, v)
 
@@ -259,38 +309,39 @@ class DaskDashboardHandler(WebSocketHandlerMixin, IPythonHandler):
     # Support all the methods that torando does by default except for GET which
     # is passed to WebSocketHandlerMixin and then to WebSocketHandler.
 
-    async def http_get(self, cluster_id, proxied_path=''):
-        '''Our non-websocket GET.'''
+    async def http_get(self, cluster_id, proxied_path=""):
+        """Our non-websocket GET."""
         return await self.proxy(cluster_id, proxied_path)
 
-    def post(self, cluster_id, proxied_path=''):
+    def post(self, cluster_id, proxied_path=""):
         return self.proxy(cluster_id, proxied_path)
 
-    def put(self, cluster_id, proxied_path=''):
+    def put(self, cluster_id, proxied_path=""):
         return self.proxy(cluster_id, proxied_path)
 
-    def delete(self, cluster_id, proxied_path=''):
+    def delete(self, cluster_id, proxied_path=""):
         return self.proxy(cluster_id, proxied_path)
 
-    def head(self, cluster_id, proxied_path=''):
+    def head(self, cluster_id, proxied_path=""):
         return self.proxy(cluster_id, proxied_path)
 
-    def patch(self, cluster_id, proxied_path=''):
+    def patch(self, cluster_id, proxied_path=""):
         return self.proxy(cluster_id, proxied_path)
 
-    def options(self, cluster_id, proxied_path=''):
+    def options(self, cluster_id, proxied_path=""):
         return self.proxy(cluster_id, proxied_path)
 
     def check_xsrf_cookie(self):
-        '''
+        """
         http://www.tornadoweb.org/en/stable/guide/security.html
         Defer to proxied apps.
-        '''
+        """
         pass
 
     def select_subprotocol(self, subprotocols):
-        '''Select a single Sec-WebSocket-Protocol during handshake.'''
+        """Select a single Sec-WebSocket-Protocol during handshake."""
         if isinstance(subprotocols, list) and subprotocols:
-            self.log.info('Client sent subprotocols: {}'.format(subprotocols))
+            self.log.info("Client sent subprotocols: {}".format(subprotocols))
             return subprotocols[0]
+
         return super().select_subprotocol(subprotocols)
