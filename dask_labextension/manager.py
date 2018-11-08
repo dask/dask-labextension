@@ -224,6 +224,7 @@ def make_cluster_model(
 
     return model
 
+
 # Create a default cluster manager
 # to keep track of clusters.
 manager = DaskClusterManager()

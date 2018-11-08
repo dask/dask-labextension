@@ -7,13 +7,9 @@ Modified from the nbserverproxy project.
 """
 
 import inspect
-import socket
-import os
-from urllib.parse import urlunparse, urlparse
 
-from tornado import gen, web, httpclient, httputil, process, websocket, ioloop, version_info
+from tornado import web, httpclient, httputil, websocket, ioloop, version_info
 
-from notebook.utils import url_path_join
 from notebook.base.handlers import IPythonHandler, utcnow
 
 from .manager import manager

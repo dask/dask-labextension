@@ -4,15 +4,11 @@
 # Distributed under the terms of the Modified BSD License.
 
 import json
-from typing import Dict, Union
 
 from tornado import web
-from tornado.httputil import url_concat, HTTPHeaders
-from tornado.httpclient import AsyncHTTPClient, HTTPRequest, HTTPError
-from notebook.base.handlers import APIHandler, IPythonHandler
-from notebook.utils import url_path_join, url_unescape
+from notebook.base.handlers import APIHandler
 
-from .manager import DaskCluster, manager
+from .manager import manager
 
 
 class DaskClusterHandler(APIHandler):
