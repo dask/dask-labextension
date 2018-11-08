@@ -12,7 +12,11 @@ import { ConsolePanel, IConsoleTracker } from '@jupyterlab/console';
 
 import { ISettingRegistry, IStateDB } from '@jupyterlab/coreutils';
 
-import { INotebookTracker, NotebookPanel } from '@jupyterlab/notebook';
+import {
+  INotebookTracker,
+  NotebookActions,
+  NotebookPanel
+} from '@jupyterlab/notebook';
 
 import { Kernel, KernelMessage } from '@jupyterlab/services';
 
@@ -253,8 +257,7 @@ namespace Private {
     const code = `from dask.distributed import Client
 
 client = Client("${cluster.scheduler_address}")
-client
-`;
+client`;
     editor.model.value.insert(offset, code);
   }
 
@@ -288,6 +291,8 @@ client
   /**
    * Get the currently focused editor in the application,
    * checking both notebooks and consoles.
+   * In the case of a notebook, it creates a new cell above the currently
+   * active cell and then returns that.
    */
   export function getCurrentEditor(
     app: JupyterLab,
@@ -299,6 +304,7 @@ client
     let current = app.shell.currentWidget;
     let editor: CodeEditor.IEditor | null | undefined;
     if (current && notebookTracker.has(current)) {
+      NotebookActions.insertAbove((current as NotebookPanel).content);
       const cell = (current as NotebookPanel).content.activeCell;
       editor = cell && cell.editor;
     } else if (current && consoleTracker.has(current)) {
@@ -306,11 +312,12 @@ client
       editor = cell && cell.editor;
     } else if (notebookTracker.currentWidget) {
       const current = notebookTracker.currentWidget;
-      const cell = (current as NotebookPanel).content.activeCell;
+      NotebookActions.insertAbove(current.content);
+      const cell = current.content.activeCell;
       editor = cell && cell.editor;
     } else if (consoleTracker.currentWidget) {
       const current = consoleTracker.currentWidget;
-      const cell = (current as ConsolePanel).console.promptCell;
+      const cell = current.console.promptCell;
       editor = cell && cell.editor;
     }
     return editor;
