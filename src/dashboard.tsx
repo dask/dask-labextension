@@ -2,6 +2,8 @@ import { IFrame, MainAreaWidget, ToolbarButton } from '@jupyterlab/apputils';
 
 import { URLExt } from '@jupyterlab/coreutils';
 
+import { ServerConnection } from '@jupyterlab/services';
+
 import { JSONObject } from '@phosphor/coreutils';
 
 import { Message } from '@phosphor/messaging';
@@ -146,6 +148,8 @@ export class URLInput extends Widget {
     wrapper.node.appendChild(this._input);
     layout.addWidget(wrapper);
 
+    this._serverSettings = ServerConnection.makeSettings();
+
     if (linkFinder) {
       const findButton = new ToolbarButton({
         iconClassName: 'dask-SearchIcon jp-Icon jp-Icon-16',
@@ -188,7 +192,7 @@ export class URLInput extends Widget {
     if (newValue === oldValue) {
       return;
     }
-    Private.testDaskDashboard(newValue).then(result => {
+    Private.testDaskDashboard(newValue, this._serverSettings).then(result => {
       this._url = newValue;
       this._isValid = result;
       this._urlChanged.emit({ isValid: result, oldValue, newValue });
@@ -286,7 +290,7 @@ export class URLInput extends Widget {
       if (!url) {
         return;
       }
-      Private.testDaskDashboard(url).then(result => {
+      Private.testDaskDashboard(url, this._serverSettings).then(result => {
         // No change.
         if (result === this._isValid) {
           return;
@@ -314,6 +318,7 @@ export class URLInput extends Widget {
   private _input: HTMLInputElement;
   private _timer: number;
   private _isDisposed: boolean;
+  private _serverSettings: ServerConnection.ISettings;
 }
 
 /**
@@ -461,8 +466,28 @@ namespace Private {
   /**
    * Test whether a given URL hosts a dask dashboard.
    */
-  export function testDaskDashboard(url: string): Promise<boolean> {
+  export function testDaskDashboard(
+    url: string,
+    settings: ServerConnection.ISettings
+  ): Promise<boolean> {
     url = normalizeDashboardUrl(url);
+
+    // If this is a url that we are proxying under the notebook server,
+    // it is easier to check for a valid dashboard.
+    if (URLExt.isLocal(url)) {
+      return ServerConnection.makeRequest(
+        URLExt.join(settings.baseUrl, url),
+        {},
+        settings
+      ).then(response => {
+        if (response.status === 200) {
+          return true;
+        } else {
+          return false;
+        }
+      });
+    }
+
     return new Promise<boolean>(resolve => {
       // Hack Alert! We would like to test whether a given URL is actually
       // a dask dashboard, since we will be iframe-ing it sight-unseen.
