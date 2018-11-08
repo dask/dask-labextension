@@ -3,10 +3,13 @@
 # Copyright (c) Jupyter Development Team.
 # Distributed under the terms of the Modified BSD License.
 
+import functools
+import importlib
 from typing import Any, Callable, Dict, List, Union
 from uuid import uuid4
 
-from dask.distributed import LocalCluster, Adaptive, utils
+import dask
+from dask.distributed import Adaptive, utils
 
 # A type stub for a dask cluster.
 DaskCluster = Any
@@ -18,6 +21,14 @@ DaskClusterModel = Dict[str, Union[str, int]]
 # A type stub for a Dask cluster factory.
 DaskClusterFactory = Callable[[], DaskCluster]
 
+# Get default cluster factory from configuration
+default_factory_module = importlib.import_module(dask.config.get('labextension.factory.module'))
+default_factory = getattr(default_factory_module, dask.config.get('labextension.factory.class'))
+if dask.config.get('labextension.factory.args') or dask.config.get('labextension.factory.kwargs'):
+    default_factory = functools.partial(default_factory,
+                                        *dask.config.get('labextension.factory.args'),
+                                        **dask.config.get('labextension.factory.kwargs'))
+
 
 class DaskClusterManager:
     """
@@ -25,7 +36,7 @@ class DaskClusterManager:
     of Dask clusters.
     """
 
-    def __init__(self, cluster_factory: DaskClusterFactory = LocalCluster) -> None:
+    def __init__(self, cluster_factory: DaskClusterFactory = default_factory) -> None:
         """
         Initialize the cluster manager.
 

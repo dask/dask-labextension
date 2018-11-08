@@ -1,0 +1,6 @@
+labextension:
+  factory:
+    module: 'dask.distributed'
+    class: 'LocalCluster'
+    args: []
+    kwargs: {}

@@ -2,6 +2,7 @@
 
 from notebook.utils import url_path_join
 
+from . import config
 from .clusterhandler import DaskClusterHandler
 from .dashboardhandler import DaskDashboardHandler
 
