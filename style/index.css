@@ -143,6 +143,7 @@
 }
 
 .dask-ClusterListing-list li.dask-ClusterListingItem.jp-mod-active {
+  color: white;
   background: var(--jp-brand-color0);
 }
 
@@ -216,6 +217,14 @@
 
 [data-theme-light='false'] .dask-ScaleIcon {
   background-image: url(scale-dark.svg);
+}
+
+.dask-ClusterListingItem.jp-mod-active .dask-ScaleIcon {
+  background-image: url(scale-dark.svg);
+}
+
+.dask-ClusterListingItem.jp-mod-active .jp-CloseIcon {
+  background-image: var(--jp-icon-inverse-close);
 }
 
 .dask-DaskLogo {
