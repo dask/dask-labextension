@@ -27,7 +27,18 @@ export class DaskClusterManager extends Widget {
     this.addClass('dask-DaskClusterManager');
 
     this._serverSettings = ServerConnection.makeSettings();
-    this._setDashboardUrl = options.setDashboardUrl;
+
+    // A function to set the active cluster.
+    this._setActiveById = (id: string) => {
+      const cluster = this._clusters.find(c => c.id === id);
+      if (!cluster) {
+        return;
+      }
+      options.setDashboardUrl(cluster.dashboard_link);
+      this._activeClusterId = id;
+      this.update();
+    };
+
     const layout = (this.layout = new PanelLayout());
 
     this._clusterListing = new Widget();
@@ -96,13 +107,14 @@ export class DaskClusterManager extends Widget {
     ReactDOM.render(
       <ClusterListing
         clusters={this._clusters}
+        activeClusterId={this._activeClusterId}
         scaleById={(id: string) => {
           return this._scaleById(id);
         }}
         stopById={(id: string) => {
           return this._stopById(id);
         }}
-        setDashboardUrl={this._setDashboardUrl}
+        setActiveById={this._setActiveById}
       />,
       this._clusterListing.node
     );
@@ -189,7 +201,8 @@ export class DaskClusterManager extends Widget {
 
   private _clusterListing: Widget;
   private _clusters: IClusterModel[] = [];
-  private _setDashboardUrl: (url: string) => void;
+  private _activeClusterId: string = '';
+  private _setActiveById: (id: string) => void;
   private _serverSettings: ServerConnection.ISettings;
 }
 
@@ -215,11 +228,12 @@ function ClusterListing(props: IClusterListingProps) {
   let listing = props.clusters.map(cluster => {
     return (
       <ClusterListingItem
+        isActive={cluster.id === props.activeClusterId}
         key={cluster.id}
         cluster={cluster}
         scale={() => props.scaleById(cluster.id)}
         stop={() => props.stopById(cluster.id)}
-        setDashboardUrl={() => props.setDashboardUrl(cluster.dashboard_link)}
+        setActive={() => props.setActiveById(cluster.id)}
       />
     );
   });
@@ -242,6 +256,11 @@ export interface IClusterListingProps {
   clusters: IClusterModel[];
 
   /**
+   * The id of the active cluster.
+   */
+  activeClusterId: string;
+
+  /**
    * A function for stopping a cluster by ID.
    */
   stopById: (id: string) => Promise<void>;
@@ -252,16 +271,16 @@ export interface IClusterListingProps {
   scaleById: (id: string) => Promise<void>;
 
   /**
-   * A callback to set the dashboard URL.
+   * A callback to set the active cluster by id.
    */
-  setDashboardUrl: (url: string) => void;
+  setActiveById: (id: string) => void;
 }
 
 /**
  * A TSX functional component for rendering a single running cluster.
  */
 function ClusterListingItem(props: IClusterListingItemProps) {
-  const { cluster, scale, setDashboardUrl, stop } = props;
+  const { cluster, isActive, scale, setActive, stop } = props;
   let title = `${cluster.name}
 Scheduler Address:  ${cluster.scheduler_address}
 Dashboard URL:  ${cluster.dashboard_link}
@@ -273,12 +292,14 @@ Number of Workers:  ${cluster.workers}`;
 Minimum Number of Workers: ${cluster.minimum}
 Maximum Number of Workers: ${cluster.maximum}`;
   }
+  let itemClass = 'dask-ClusterListingItem';
+  itemClass = isActive ? `${itemClass} jp-mod-active` : itemClass;
   return (
-    <li className="dask-ClusterListingItem" data-cluster-id={cluster.id}>
+    <li className={itemClass} data-cluster-id={cluster.id}>
       <span
         className="dask-ClusterListingItem-label"
         title={title}
-        onClick={setDashboardUrl}
+        onClick={setActive}
       >
         {cluster.name}
       </span>
@@ -310,6 +331,12 @@ export interface IClusterListingItemProps {
   cluster: IClusterModel;
 
   /**
+   * Whether the cluster is currently active (i.e., if
+   * it is being displayed in the dashboard).
+   */
+  isActive: boolean;
+
+  /**
    * A function for scaling the cluster.
    */
   scale: () => Promise<void>;
@@ -320,9 +347,9 @@ export interface IClusterListingItemProps {
   stop: () => Promise<void>;
 
   /**
-   * A callback function to set the Dask dashboard url.
+   * A callback function to set the active cluster.
    */
-  setDashboardUrl: () => void;
+  setActive: () => void;
 }
 
 /**

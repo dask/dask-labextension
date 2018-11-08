@@ -142,6 +142,10 @@
   background: var(--jp-layout-color2);
 }
 
+.dask-ClusterListing-list li.dask-ClusterListingItem.jp-mod-active {
+  background: var(--jp-brand-color0);
+}
+
 .dask-ClusterListing-list
   li.dask-ClusterListingItem
   .jp-ToolbarButtonComponent {
@@ -152,6 +156,12 @@
   li.dask-ClusterListingItem
   .jp-ToolbarButtonComponent:hover {
   background: var(--jp-layout-color3);
+}
+
+.dask-ClusterListing-list
+  li.dask-ClusterListingItem.jp-mod-active
+  .jp-ToolbarButtonComponent:hover {
+  background: var(--jp-brand-color1);
 }
 
 /**
