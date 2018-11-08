@@ -2,7 +2,8 @@
 
 from notebook.utils import url_path_join
 
-from .handler import DaskClusterHandler
+from .clusterhandler import DaskClusterHandler
+from .dashboardhandler import DaskDashboardHandler
 
 __version__ = "0.1.0"
 
@@ -18,11 +19,18 @@ def load_jupyter_server_extension(nb_server_app):
     Args:
         nb_server_app (NotebookWebApplication): handle to the Notebook webserver instance.
     """
+    cluster_id_regex = r"(?P<cluster_id>\w+-\w+-\w+-\w+-\w+)"
+    dashboard_regex = r"individual-graph|individual-nbytes|individual-nprocessing|individual-profile|individual-profile-server|individual-progress|individual-task-stream|individual-workers"
     web_app = nb_server_app.web_app
     base_url = web_app.settings["base_url"]
-    get_cluster_path = url_path_join(base_url, "dask/" + "(?P<cluster_id>.+)")
-    list_clusters_path = url_path_join(base_url, "dask/" + "?")
+    get_cluster_path = url_path_join(base_url, "dask/clusters/" + cluster_id_regex)
+    list_clusters_path = url_path_join(base_url, "dask/clusters/" + "?")
+    get_dashboard_path = url_path_join(
+        base_url, f"dask/dashboard/{cluster_id_regex}/(?P<proxied_path>.+)"
+    )
     handlers = [
-        (get_cluster_path, DaskClusterHandler), (list_clusters_path, DaskClusterHandler)
+        (get_cluster_path, DaskClusterHandler),
+        (list_clusters_path, DaskClusterHandler),
+        (get_dashboard_path, DaskDashboardHandler),
     ]
     web_app.add_handlers(".*$", handlers)

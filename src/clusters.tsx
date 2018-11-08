@@ -34,7 +34,7 @@ export class DaskClusterManager extends Widget {
       if (!cluster) {
         return;
       }
-      options.setDashboardUrl(cluster.dashboard_link);
+      options.setDashboardUrl(`dask/dashboard/${cluster.id}`);
       this._activeClusterId = id;
       this.update();
     };
@@ -132,7 +132,7 @@ export class DaskClusterManager extends Widget {
    */
   private async _launchCluster(): Promise<void> {
     const response = await ServerConnection.makeRequest(
-      `${this._serverSettings.baseUrl}dask`,
+      `${this._serverSettings.baseUrl}dask/clusters`,
       { method: 'PUT' },
       this._serverSettings
     );
@@ -147,7 +147,7 @@ export class DaskClusterManager extends Widget {
    */
   private async _updateClusterList(): Promise<void> {
     const response = await ServerConnection.makeRequest(
-      `${this._serverSettings.baseUrl}dask`,
+      `${this._serverSettings.baseUrl}dask/clusters`,
       {},
       this._serverSettings
     );
@@ -161,7 +161,7 @@ export class DaskClusterManager extends Widget {
    */
   private async _stopById(id: string): Promise<void> {
     const response = await ServerConnection.makeRequest(
-      `${this._serverSettings.baseUrl}dask/${id}`,
+      `${this._serverSettings.baseUrl}dask/clusters/${id}`,
       { method: 'DELETE' },
       this._serverSettings
     );
@@ -186,7 +186,7 @@ export class DaskClusterManager extends Widget {
     }
 
     const response = await ServerConnection.makeRequest(
-      `${this._serverSettings.baseUrl}dask/${id}`,
+      `${this._serverSettings.baseUrl}dask/clusters/${id}`,
       {
         method: 'PATCH',
         body: JSON.stringify(update)

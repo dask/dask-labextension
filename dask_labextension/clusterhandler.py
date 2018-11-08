@@ -7,13 +7,12 @@ import json
 from typing import Dict, Union
 
 from tornado import web
-from notebook.base.handlers import APIHandler
+from tornado.httputil import url_concat, HTTPHeaders
+from tornado.httpclient import AsyncHTTPClient, HTTPRequest, HTTPError
+from notebook.base.handlers import APIHandler, IPythonHandler
+from notebook.utils import url_path_join, url_unescape
 
-from .manager import DaskCluster, DaskClusterManager
-
-# Create a default cluster manager
-# to keep track of clusters.
-manager = DaskClusterManager()
+from .manager import DaskCluster, manager
 
 
 class DaskClusterHandler(APIHandler):

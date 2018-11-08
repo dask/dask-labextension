@@ -227,3 +227,7 @@ def make_cluster_model(
         model["minimum"] = adaptive.minimum
 
     return model
+
+# Create a default cluster manager
+# to keep track of clusters.
+manager = DaskClusterManager()
