@@ -9,17 +9,14 @@ from typing import Any, Callable, Dict, List, Union
 from uuid import uuid4
 
 import dask
-from dask.distributed import Adaptive, utils
-
-# A type stub for a dask cluster.
-DaskCluster = Any
+from dask.distributed import Adaptive, Cluster, utils
 
 # A type for a dask cluster model: a serializable
 # representation of information about the cluster.
-DaskClusterModel = Dict[str, Union[str, int]]
+ClusterModel = Dict[str, Union[str, int]]
 
 # A type stub for a Dask cluster factory.
-DaskClusterFactory = Callable[[], DaskCluster]
+DaskClusterFactory = Callable[[], Cluster]
 
 # Get default cluster factory from configuration
 default_factory_module = importlib.import_module(dask.config.get('labextension.factory.module'))
@@ -47,12 +44,12 @@ class DaskClusterManager:
             Dask cluster for usage. If not given, defaults to a LocalCluster.
         """
         self._cluster_factory: DaskClusterFactory = cluster_factory
-        self._clusters: Dict[str, DaskCluster] = dict()
+        self._clusters: Dict[str, Cluster] = dict()
         self._adaptives: Dict[str, Adaptive] = dict()
         self._cluster_names: Dict[str, str] = dict()
         self._n_clusters = 0
 
-    def start_cluster(self, cluster_id: str = "") -> DaskClusterModel:
+    def start_cluster(self, cluster_id: str = "") -> ClusterModel:
         """
         Start a new Dask cluster.
 
@@ -74,7 +71,7 @@ class DaskClusterManager:
         self._cluster_names[cluster_id] = cluster_name
         return make_cluster_model(cluster_id, cluster_name, cluster, adaptive=None)
 
-    def close_cluster(self, cluster_id: str) -> Union[DaskClusterModel, None]:
+    def close_cluster(self, cluster_id: str) -> Union[ClusterModel, None]:
         """
         Close a Dask cluster.
 
@@ -98,7 +95,7 @@ class DaskClusterManager:
         else:
             return None
 
-    def get_cluster(self, cluster_id) -> Union[DaskClusterModel, None]:
+    def get_cluster(self, cluster_id) -> Union[ClusterModel, None]:
         """
         Get a Dask cluster model.
 
@@ -119,7 +116,7 @@ class DaskClusterManager:
 
         return make_cluster_model(cluster_id, name, cluster, adaptive)
 
-    def list_clusters(self) -> List[DaskClusterModel]:
+    def list_clusters(self) -> List[ClusterModel]:
         """
         List the Dask cluster models known to the manager.
 
@@ -136,7 +133,7 @@ class DaskClusterManager:
             for cluster_id in self._clusters
         ]
 
-    def scale_cluster(self, cluster_id: str, n: int) -> Union[DaskClusterModel, None]:
+    def scale_cluster(self, cluster_id: str, n: int) -> Union[ClusterModel, None]:
         cluster = self._clusters.get(cluster_id)
         name = self._cluster_names[cluster_id]
         adaptive = self._adaptives.pop(cluster_id, None)
@@ -156,7 +153,7 @@ class DaskClusterManager:
 
     def adapt_cluster(
         self, cluster_id: str, minimum: int, maximum: int
-    ) -> Union[DaskClusterModel, None]:
+    ) -> Union[ClusterModel, None]:
         cluster = self._clusters.get(cluster_id)
         name = self._cluster_names[cluster_id]
         adaptive = self._adaptives.pop(cluster_id, None)
@@ -181,9 +178,9 @@ class DaskClusterManager:
 def make_cluster_model(
     cluster_id: str,
     cluster_name: str,
-    cluster: DaskCluster,
+    cluster: Cluster,
     adaptive: Union[Adaptive, None],
-) -> DaskClusterModel:
+) -> ClusterModel:
     """
     Make a cluster model. This is a JSON-serializable representation
     of the information about a cluster that can be sent over the wire.
@@ -196,7 +193,7 @@ def make_cluster_model(
     cluster_name: string
         A display name for the cluster.
 
-    cluster: DaskCluster
+    cluster: Cluster
         The cluster out of which to make the cluster model.
 
     adaptive: Adaptive
