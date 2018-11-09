@@ -34,9 +34,8 @@ setup_dict = dict(
         'Programming Language :: Python :: 3',
     ],
     install_requires=[
-        'dask',
-        'distributed',
-        'notebook',
+        'distributed>=1.24.1',
+        'notebook>=4.3.1',
     ]
 )
 
