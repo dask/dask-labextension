@@ -65,7 +65,7 @@ class DaskClusterManager:
         if not cluster_id:
             cluster_id = str(uuid4())
         cluster = self._cluster_factory()
-        self._n_clusters = self._n_clusters + 1
+        self._n_clusters += 1
         cluster_name = f"Cluster {self._n_clusters}"
         self._clusters[cluster_id] = cluster
         self._cluster_names[cluster_id] = cluster_name
