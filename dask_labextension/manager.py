@@ -9,11 +9,14 @@ from typing import Any, Callable, Dict, List, Union
 from uuid import uuid4
 
 import dask
-from dask.distributed import Adaptive, Cluster, utils
+from dask.distributed import Adaptive, utils
 
 # A type for a dask cluster model: a serializable
 # representation of information about the cluster.
 ClusterModel = Dict[str, Union[str, int]]
+
+# A type stub for a Dask cluster.
+Cluster = Any
 
 # A type stub for a Dask cluster factory.
 DaskClusterFactory = Callable[[], Cluster]
