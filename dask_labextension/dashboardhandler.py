@@ -11,6 +11,7 @@ import inspect
 from tornado import web, httpclient, httputil, websocket, ioloop, version_info
 
 from notebook.base.handlers import IPythonHandler, utcnow
+from notebook.utils import url_path_join
 
 from .manager import manager
 
@@ -127,14 +128,15 @@ class DaskDashboardHandler(WebSocketHandlerMixin, IPythonHandler):
 
         # Construct the proper websocket proxy link from the cluster dashboard
         dashboard_link = cluster_model["dashboard_link"]
-        if dashboard_link.endswith("/status"):
-            dashboard_link = dashboard_link[:-len("/status")]
+        dashboard_link = _normalize_dashboard_link(dashboard_link, self.request)
+        # Convert to a websocket protocol.
         ws_link = "ws" + dashboard_link[4:]
 
         if not proxied_path.startswith("/"):
             proxied_path = "/" + proxied_path
 
         client_uri = "{ws_link}{path}".format(ws_link=ws_link, path=proxied_path)
+        self.log.warn(ws_link)
         if self.request.query:
             client_uri += "?" + self.request.query
         headers = self.request.headers
@@ -253,8 +255,7 @@ class DaskDashboardHandler(WebSocketHandlerMixin, IPythonHandler):
 
         # Construct the proper proxy link from the cluster dashboard
         dashboard_link = cluster_model["dashboard_link"]
-        if dashboard_link.endswith("/status"):
-            dashboard_link = dashboard_link[:-len("/status")]
+        dashboard_link = _normalize_dashboard_link(dashboard_link, self.request)
 
         # If a path is not provided, default to the individual plots listing.
         proxied_path = proxied_path or "individual-plots.json"
@@ -341,3 +342,17 @@ class DaskDashboardHandler(WebSocketHandlerMixin, IPythonHandler):
             return subprotocols[0]
 
         return super().select_subprotocol(subprotocols)
+
+
+def _normalize_dashboard_link(link, request):
+    """
+    Given a dashboard link, make sure it conforms to what we expect.
+    """
+    if not link.startswith('http'):
+        # If a local url is given, assume it is using the same host
+        # as the application, and prepend that.
+        link = url_path_join(f"{request.protocol}://{request.host}", link)
+    if link.endswith("/status"):
+        # If the default "status" dashboard is give, strip it.
+        link = link[:-len("/status")]
+    return link

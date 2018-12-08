@@ -476,7 +476,7 @@ namespace Private {
     // it is easier to check for a valid dashboard.
     if (URLExt.isLocal(url)) {
       return ServerConnection.makeRequest(
-        URLExt.join(settings.baseUrl, url),
+        URLExt.join(settings.baseUrl, url, 'individual-plots.json'),
         {},
         settings
       ).then(response => {
