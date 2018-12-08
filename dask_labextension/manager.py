@@ -69,7 +69,8 @@ class DaskClusterManager:
             cluster_id = str(uuid4())
         cluster = self._cluster_factory()
         self._n_clusters += 1
-        cluster_name = f"Cluster {self._n_clusters}"
+        cluster_type = type(cluster).__name__
+        cluster_name = f"{cluster_type} {self._n_clusters}"
         self._clusters[cluster_id] = cluster
         self._cluster_names[cluster_id] = cluster_name
         return make_cluster_model(cluster_id, cluster_name, cluster, adaptive=None)
