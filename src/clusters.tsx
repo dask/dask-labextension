@@ -70,6 +70,7 @@ export class DaskClusterManager extends Widget {
       'new',
       new ToolbarButton({
         iconClassName: 'jp-AddIcon jp-Icon jp-Icon-16',
+        label: 'NEW',
         onClick: () => {
           this._launchCluster();
         },
@@ -280,43 +281,67 @@ export interface IClusterListingProps {
  * A TSX functional component for rendering a single running cluster.
  */
 function ClusterListingItem(props: IClusterListingItemProps) {
-  const { cluster, isActive, scale, setActive, stop } = props;
-  let title = `${cluster.name}
-Scheduler Address:  ${cluster.scheduler_address}
-Dashboard URL:  ${cluster.dashboard_link}
-Number of Cores: ${cluster.cores}
-Memory: ${cluster.memory}
-Number of Workers:  ${cluster.workers}`;
-  if (cluster.scaling === 'adaptive') {
-    title = `${title}
-Minimum Number of Workers: ${cluster.minimum}
-Maximum Number of Workers: ${cluster.maximum}`;
-  }
+  const { cluster, isActive, setActive, scale, stop } = props;
   let itemClass = 'dask-ClusterListingItem';
   itemClass = isActive ? `${itemClass} jp-mod-active` : itemClass;
+
   return (
-    <li className={itemClass} data-cluster-id={cluster.id}>
-      <span
-        className="dask-ClusterListingItem-label"
-        title={title}
-        onClick={setActive}
+    <li
+      className={itemClass}
+      data-cluster-id={cluster.id}
+      onClick={evt => {
+        setActive();
+        evt.stopPropagation();
+      }}
+    >
+      <div className="dask-ClusterListingItem-title">{cluster.name}</div>
+      <div
+        className="dask-ClusterListingItem-link"
+        title={cluster.scheduler_address}
       >
-        {cluster.name}
-      </span>
-      <button
-        title={`Scale ${cluster.name}`}
-        className="jp-ToolbarButtonComponent"
-        onClick={scale}
-      >
-        <span className="dask-ScaleIcon jp-Icon jp-Icon-16 jp-ToolbarButtonComponent-icon" />
-      </button>
-      <button
-        title={`Shutdown ${cluster.name}`}
-        className="jp-ToolbarButtonComponent"
-        onClick={stop}
-      >
-        <span className="jp-CloseIcon jp-Icon jp-Icon-16 jp-ToolbarButtonComponent-icon" />
-      </button>
+        Scheduler Address: {cluster.scheduler_address}
+      </div>
+      <div className="dask-ClusterListingItem-link">
+        Dashboard URL:{' '}
+        <a
+          target="_blank"
+          href={cluster.dashboard_link}
+          title={cluster.dashboard_link}
+        >
+          {cluster.dashboard_link}
+        </a>
+      </div>
+      <div className="dask-ClusterListingItem-stats">
+        Number of Cores: {cluster.cores}
+      </div>
+      <div className="dask-ClusterListingItem-stats">
+        Memory: {cluster.memory}
+      </div>
+      <div className="dask-ClusterListingItem-stats">
+        Number of Workers: {cluster.workers}
+      </div>
+      <div className="dask-ClusterListingItem-button-panel">
+        <button
+          className="dask-ClusterListingItem-button dask-ClusterListingItem-scale jp-mod-styled"
+          onClick={evt => {
+            scale();
+            evt.stopPropagation();
+          }}
+          title={`Rescale ${cluster.name}`}
+        >
+          SCALE
+        </button>
+        <button
+          className="dask-ClusterListingItem-button dask-ClusterListingItem-stop jp-mod-styled"
+          onClick={evt => {
+            stop();
+            evt.stopPropagation();
+          }}
+          title={`Shutdown ${cluster.name}`}
+        >
+          SHUTDOWN
+        </button>
+      </div>
     </li>
   );
 }

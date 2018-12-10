@@ -1,3 +1,6 @@
+distributed:
+  dashboard:
+    link: /proxy/{port}/status
 labextension:
   factory:
     module: 'dask.distributed'

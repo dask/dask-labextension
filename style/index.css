@@ -125,44 +125,68 @@
   margin: 0;
 }
 
-.dask-ClusterListing-list li.dask-ClusterListingItem {
-  display: flex;
+.dask-ClusterListingItem {
+  display: inline-block;
   list-style-type: none;
-  padding: 4px;
-  align-items: center;
+  padding: 8px;
+  width: 100%;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.dask-ClusterListing-list .dask-ClusterListingItem-label {
-  margin: 0px 8px 0px 4px;
-  flex: 1 1 auto;
+.dask-ClusterListingItem-title {
+  margin: 0px;
+  font-size: var(--jp-ui-font-size2);
 }
 
-.dask-ClusterListing-list li.dask-ClusterListingItem:hover {
+.dask-ClusterListingItem-link a {
+  text-decoration: none;
+  color: var(--jp-content-link-color);
+}
+
+.dask-ClusterListingItem-link a:hover {
+  text-decoration: underline;
+}
+
+.dask-ClusterListingItem-link a:visited {
+  color: var(--jp-content-link-color);
+}
+
+.dask-ClusterListingItem:hover {
   background: var(--jp-layout-color2);
 }
 
-.dask-ClusterListing-list li.dask-ClusterListingItem.jp-mod-active {
+.dask-ClusterListingItem.jp-mod-active {
   color: white;
   background: var(--jp-brand-color0);
 }
 
-.dask-ClusterListing-list
-  li.dask-ClusterListingItem
-  .jp-ToolbarButtonComponent {
+.dask-ClusterListingItem.jp-mod-active a,
+.dask-ClusterListingItem.jp-mod-active a:visited {
+  color: white;
+}
+
+.dask-ClusterListingItem button.jp-mod-styled {
   background: transparent;
 }
 
-.dask-ClusterListing-list
-  li.dask-ClusterListingItem
-  .jp-ToolbarButtonComponent:hover {
+.dask-ClusterListingItem button.jp-mod-styled:hover {
   background: var(--jp-layout-color3);
 }
 
-.dask-ClusterListing-list
-  li.dask-ClusterListingItem.jp-mod-active
-  .jp-ToolbarButtonComponent:hover {
+.dask-ClusterListingItem.jp-mod-active button.jp-mod-styled:hover {
   background: var(--jp-brand-color1);
+}
+
+button.dask-ClusterListingItem-stop {
+  color: var(--jp-warn-color1);
+  font-weight: 600;
+}
+
+button.dask-ClusterListingItem-scale {
+  color: var(--jp-accent-color1);
+  font-weight: 600;
 }
 
 /**
