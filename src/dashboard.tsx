@@ -1,6 +1,6 @@
 import { IFrame, MainAreaWidget, ToolbarButton } from '@jupyterlab/apputils';
 
-import { URLExt } from '@jupyterlab/coreutils';
+import { PageConfig, URLExt } from '@jupyterlab/coreutils';
 
 import { ServerConnection } from '@jupyterlab/services';
 
@@ -453,12 +453,25 @@ namespace Private {
   /**
    * Optionally remove a `status` route from a dashboard url.
    */
-  export function normalizeDashboardUrl(url: string): string {
-    if (url.endsWith('status')) {
-      return url.slice(0, -'status'.length);
+  export function normalizeDashboardUrl(url: string, baseUrl = ''): string {
+    if (URLExt.isLocal(url)) {
+      if (!baseUrl) {
+        baseUrl = PageConfig.getBaseUrl();
+      }
+      // If the path-portion of the baseUrl has been included,
+      // strip that off.
+      const tmp = new URL(baseUrl);
+      if (url.startsWith(tmp.pathname)) {
+        url = url.slice(tmp.pathname.length);
+      }
+      // Fully qualify the local URL to remove any relative-path confusion.
+      url = baseUrl + url;
     }
-    if (url.endsWith('status/')) {
-      return url.slice(0, -'status/'.length);
+    // If 'status' has been included at the end, strip it.
+    if (url.endsWith('status')) {
+      url = url.slice(0, -'status'.length);
+    } else if (url.endsWith('status/')) {
+      url = url.slice(0, -'status/'.length);
     }
     return url;
   }
@@ -470,13 +483,13 @@ namespace Private {
     url: string,
     settings: ServerConnection.ISettings
   ): Promise<boolean> {
-    url = normalizeDashboardUrl(url);
+    url = normalizeDashboardUrl(url, settings.baseUrl);
 
     // If this is a url that we are proxying under the notebook server,
     // it is easier to check for a valid dashboard.
-    if (URLExt.isLocal(url)) {
+    if (url.indexOf(settings.baseUrl) === 0) {
       return ServerConnection.makeRequest(
-        URLExt.join(settings.baseUrl, url, 'individual-plots.json'),
+        URLExt.join(url, 'individual-plots.json'),
         {},
         settings
       ).then(response => {
