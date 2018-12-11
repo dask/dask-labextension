@@ -27,6 +27,7 @@ export class DaskClusterManager extends Widget {
     this.addClass('dask-DaskClusterManager');
 
     this._serverSettings = ServerConnection.makeSettings();
+    this._injectClientCodeForCluster = options.injectClientCodeForCluster;
 
     // A function to set the active cluster.
     this._setActiveById = (id: string) => {
@@ -116,6 +117,7 @@ export class DaskClusterManager extends Widget {
           return this._stopById(id);
         }}
         setActiveById={this._setActiveById}
+        injectClientCodeForCluster={this._injectClientCodeForCluster}
       />,
       this._clusterListing.node
     );
@@ -204,6 +206,7 @@ export class DaskClusterManager extends Widget {
   private _clusters: IClusterModel[] = [];
   private _activeClusterId: string = '';
   private _setActiveById: (id: string) => void;
+  private _injectClientCodeForCluster: (model: IClusterModel) => void;
   private _serverSettings: ServerConnection.ISettings;
 }
 
@@ -219,6 +222,11 @@ export namespace DaskClusterManager {
      * A callback to set the dashboard url.
      */
     setDashboardUrl: (url: string) => void;
+
+    /**
+     * A callback to inject client connection cdoe.
+     */
+    injectClientCodeForCluster: (model: IClusterModel) => void;
   }
 }
 
@@ -235,6 +243,7 @@ function ClusterListing(props: IClusterListingProps) {
         scale={() => props.scaleById(cluster.id)}
         stop={() => props.stopById(cluster.id)}
         setActive={() => props.setActiveById(cluster.id)}
+        injectClientCode={() => props.injectClientCodeForCluster(cluster)}
       />
     );
   });
@@ -275,13 +284,18 @@ export interface IClusterListingProps {
    * A callback to set the active cluster by id.
    */
   setActiveById: (id: string) => void;
+
+  /**
+   * A callback to inject client code for a cluster.
+   */
+  injectClientCodeForCluster: (model: IClusterModel) => void;
 }
 
 /**
  * A TSX functional component for rendering a single running cluster.
  */
 function ClusterListingItem(props: IClusterListingItemProps) {
-  const { cluster, isActive, setActive, scale, stop } = props;
+  const { cluster, isActive, setActive, scale, stop, injectClientCode } = props;
   let itemClass = 'dask-ClusterListingItem';
   itemClass = isActive ? `${itemClass} jp-mod-active` : itemClass;
 
@@ -339,6 +353,14 @@ function ClusterListingItem(props: IClusterListingItemProps) {
       {maximum}
       <div className="dask-ClusterListingItem-button-panel">
         <button
+          className="dask-ClusterListingItem-button dask-ClusterListingItem-code dask-CodeIcon jp-mod-styled"
+          onClick={evt => {
+            injectClientCode();
+            evt.stopPropagation();
+          }}
+          title={`Inject client code for ${cluster.name}`}
+        />
+        <button
           className="dask-ClusterListingItem-button dask-ClusterListingItem-scale jp-mod-styled"
           onClick={evt => {
             scale();
@@ -392,6 +414,11 @@ export interface IClusterListingItemProps {
    * A callback function to set the active cluster.
    */
   setActive: () => void;
+
+  /**
+   * A callback to inject client code into an editor.
+   */
+  injectClientCode: () => void;
 }
 
 /**

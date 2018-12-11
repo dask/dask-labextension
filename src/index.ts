@@ -98,12 +98,25 @@ function activate(
     return link;
   };
 
+  const clientCodeInjector = (model: IClusterModel) => {
+    const editor = Private.getCurrentEditor(
+      app,
+      notebookTracker,
+      consoleTracker
+    );
+    if (!editor) {
+      return;
+    }
+    Private.injectClientCode(model, editor);
+  };
+
   // Create the Dask sidebar panel.
   const sidebar = new DaskSidebar({
     launchDashboardItem: (item: IDashboardItem) => {
       app.commands.execute(CommandIDs.launchPanel, item);
     },
-    linkFinder
+    linkFinder,
+    clientCodeInjector
   });
   sidebar.id = id;
   sidebar.title.iconClass = 'dask-DaskLogo jp-SideBar-tabIcon';
@@ -193,17 +206,12 @@ function activate(
   // If either is not found, it bails.
   app.commands.addCommand(CommandIDs.injectClientCode, {
     label: 'Inject Dask Client Connection Code',
-    execute: args => {
+    execute: () => {
       const cluster = Private.clusterFromClick(app, sidebar.clusterManager);
-      const editor = Private.getCurrentEditor(
-        app,
-        notebookTracker,
-        consoleTracker
-      );
-      if (!editor || !cluster) {
+      if (!cluster) {
         return;
       }
-      Private.injectClientCode(cluster, editor);
+      clientCodeInjector(cluster);
     }
   });
 

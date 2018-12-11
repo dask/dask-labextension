@@ -2,7 +2,7 @@ import { Widget, PanelLayout } from '@phosphor/widgets';
 
 import { DaskDashboardLauncher, IDashboardItem } from './dashboard';
 
-import { DaskClusterManager } from './clusters';
+import { DaskClusterManager, IClusterModel } from './clusters';
 
 /**
  * A widget for hosting Dask dashboard launchers.
@@ -26,8 +26,12 @@ export class DaskSidebar extends Widget {
     const setDashboardUrl = (url: string) => {
       this._dashboard.input.url = url;
     };
+    const injectClientCodeForCluster = options.clientCodeInjector;
     // Add the cluster manager component.
-    this._clusters = new DaskClusterManager({ setDashboardUrl });
+    this._clusters = new DaskClusterManager({
+      setDashboardUrl,
+      injectClientCodeForCluster
+    });
     layout.addWidget(this._dashboard);
     layout.addWidget(this._clusters);
   }
@@ -69,5 +73,10 @@ export namespace DaskSidebar {
      * context.
      */
     linkFinder?: () => Promise<string>;
+
+    /**
+     * A function that injects client-connection code for a given cluster.
+     */
+    clientCodeInjector: (model: IClusterModel) => void;
   }
 }

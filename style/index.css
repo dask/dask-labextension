@@ -168,15 +168,15 @@
 }
 
 .dask-ClusterListingItem button.jp-mod-styled {
-  background: transparent;
+  background-color: transparent;
 }
 
 .dask-ClusterListingItem button.jp-mod-styled:hover {
-  background: var(--jp-layout-color3);
+  background-color: var(--jp-layout-color3);
 }
 
 .dask-ClusterListingItem.jp-mod-active button.jp-mod-styled:hover {
-  background: var(--jp-brand-color1);
+  background-color: var(--jp-brand-color1);
 }
 
 button.dask-ClusterListingItem-stop {
@@ -187,6 +187,14 @@ button.dask-ClusterListingItem-stop {
 button.dask-ClusterListingItem-scale {
   color: var(--jp-accent-color1);
   font-weight: 600;
+}
+
+.dask-ClusterListingItem button.dask-ClusterListingItem-code.jp-mod-styled {
+  position: relative;
+  margin: 0 4px 0 4px;
+  top: -4px;
+  background-repeat: no-repeat;
+  background-position: center;
 }
 
 /**
@@ -235,20 +243,16 @@ button.dask-ClusterListingItem-scale {
   background-image: var(--jp-icon-search);
 }
 
-[data-theme-light='true'] .dask-ScaleIcon {
-  background-image: url(scale-light.svg);
+[data-theme-light='true'] .dask-CodeIcon {
+  background-image: url(code-light.svg);
 }
 
-[data-theme-light='false'] .dask-ScaleIcon {
-  background-image: url(scale-dark.svg);
+[data-theme-light='false'] .dask-CodeIcon {
+  background-image: url(code-dark.svg);
 }
 
-.dask-ClusterListingItem.jp-mod-active .dask-ScaleIcon {
-  background-image: url(scale-dark.svg);
-}
-
-.dask-ClusterListingItem.jp-mod-active .jp-CloseIcon {
-  background-image: var(--jp-icon-inverse-close);
+.dask-ClusterListingItem.jp-mod-active .dask-CodeIcon {
+  background-image: url(code-dark.svg);
 }
 
 .dask-DaskLogo {
