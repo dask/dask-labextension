@@ -285,6 +285,21 @@ function ClusterListingItem(props: IClusterListingItemProps) {
   let itemClass = 'dask-ClusterListingItem';
   itemClass = isActive ? `${itemClass} jp-mod-active` : itemClass;
 
+  let minimum: JSX.Element | null = null;
+  let maximum: JSX.Element | null = null;
+  if (cluster.scaling === 'adaptive') {
+    minimum = (
+      <div className="dask-ClusterListingItem-stats">
+        Minimum Workers: {cluster.minimum}
+      </div>
+    );
+    maximum = (
+      <div className="dask-ClusterListingItem-stats">
+        Maximum Workers: {cluster.maximum}
+      </div>
+    );
+  }
+
   return (
     <li
       className={itemClass}
@@ -320,6 +335,8 @@ function ClusterListingItem(props: IClusterListingItemProps) {
       <div className="dask-ClusterListingItem-stats">
         Number of Workers: {cluster.workers}
       </div>
+      {minimum}
+      {maximum}
       <div className="dask-ClusterListingItem-button-panel">
         <button
           className="dask-ClusterListingItem-button dask-ClusterListingItem-scale jp-mod-styled"

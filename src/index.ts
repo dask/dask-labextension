@@ -210,7 +210,7 @@ function activate(
   // Add a context menu item for injecting client connection code.
   app.contextMenu.addItem({
     command: CommandIDs.injectClientCode,
-    selector: '.dask-ClusterListingItem-label'
+    selector: '.dask-ClusterListingItem'
   });
 }
 
