@@ -98,6 +98,37 @@ export class DaskClusterManager extends Widget {
   }
 
   /**
+   * Start a new cluster.
+   */
+  async start(): Promise<IClusterModel> {
+    const cluster = await this._launchCluster();
+    return cluster;
+  }
+
+  /**
+   * Stop a cluster by ID.
+   */
+  async stop(id: string): Promise<void> {
+    const cluster = this._clusters.find(c => c.id === id);
+    if (!cluster) {
+      throw Error(`Cannot find cluster ${id}`);
+    }
+    await this._stopById(id);
+  }
+
+  /**
+   * Scale a cluster by ID.
+   */
+  async scale(id: string): Promise<IClusterModel> {
+    const cluster = this._clusters.find(c => c.id === id);
+    if (!cluster) {
+      throw Error(`Cannot find cluster ${id}`);
+    }
+    const newCluster = await this._scaleById(id);
+    return newCluster;
+  }
+
+  /**
    * Handle an update request.
    */
   protected onUpdateRequest(msg: Message): void {
@@ -133,7 +164,7 @@ export class DaskClusterManager extends Widget {
   /**
    * Launch a new cluster on the server.
    */
-  private async _launchCluster(): Promise<void> {
+  private async _launchCluster(): Promise<IClusterModel> {
     const response = await ServerConnection.makeRequest(
       `${this._serverSettings.baseUrl}dask/clusters`,
       { method: 'PUT' },
@@ -142,7 +173,9 @@ export class DaskClusterManager extends Widget {
     if (response.status !== 200) {
       throw new Error('Failed to start Dask cluster');
     }
+    const model = (await response.json()) as IClusterModel;
     await this._updateClusterList();
+    return model;
   }
 
   /**
@@ -177,7 +210,7 @@ export class DaskClusterManager extends Widget {
   /**
    * Scale a cluster by its id.
    */
-  private async _scaleById(id: string): Promise<void> {
+  private async _scaleById(id: string): Promise<IClusterModel> {
     const cluster = this._clusters.find(c => c.id === id);
     if (!cluster) {
       throw Error(`Failed to find cluster ${id} to scale`);
@@ -185,7 +218,7 @@ export class DaskClusterManager extends Widget {
     const update = await showScalingDialog(cluster);
     if (JSONExt.deepEqual(update, cluster)) {
       // If the user canceled, or the model is identical don't try to update.
-      return Promise.resolve(void 0);
+      return Promise.resolve(cluster);
     }
 
     const response = await ServerConnection.makeRequest(
@@ -199,7 +232,9 @@ export class DaskClusterManager extends Widget {
     if (response.status !== 200) {
       throw new Error(`Failed to scale cluster ${id}`);
     }
+    const model = (await response.json()) as IClusterModel;
     await this._updateClusterList();
+    return model;
   }
 
   private _clusterListing: Widget;
@@ -278,7 +313,7 @@ export interface IClusterListingProps {
   /**
    * Scale a cluster by id.
    */
-  scaleById: (id: string) => Promise<void>;
+  scaleById: (id: string) => Promise<IClusterModel>;
 
   /**
    * A callback to set the active cluster by id.
@@ -403,7 +438,7 @@ export interface IClusterListingItemProps {
   /**
    * A function for scaling the cluster.
    */
-  scale: () => Promise<void>;
+  scale: () => Promise<IClusterModel>;
 
   /**
    * A function for stopping the cluster.

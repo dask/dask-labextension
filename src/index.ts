@@ -38,6 +38,21 @@ namespace CommandIDs {
    * Inject client code into the active editor.
    */
   export const injectClientCode = 'dask:inject-client-code';
+
+  /**
+   * Launch a new cluster.
+   */
+  export const launchCluster = 'dask:launch-cluster';
+
+  /**
+   * Shutdown a cluster.
+   */
+  export const stopCluster = 'dask:stop-cluster';
+
+  /**
+   * Scale a cluster.
+   */
+  export const scaleCluster = 'dask:scale-cluster';
 }
 
 const PLUGIN_ID = 'dask-labextension:plugin';
@@ -215,10 +230,58 @@ function activate(
     }
   });
 
-  // Add a context menu item for injecting client connection code.
+  // Add a command to launch a new cluster.
+  app.commands.addCommand(CommandIDs.launchCluster, {
+    label: 'Launch New Cluster',
+    execute: () => {
+      return sidebar.clusterManager.start();
+    }
+  });
+
+  // Add a command to launch a new cluster.
+  app.commands.addCommand(CommandIDs.stopCluster, {
+    label: 'Shutdown Cluster',
+    execute: () => {
+      const cluster = Private.clusterFromClick(app, sidebar.clusterManager);
+      if (!cluster) {
+        return;
+      }
+      return sidebar.clusterManager.stop(cluster.id);
+    }
+  });
+
+  // Add a command to launch a new cluster.
+  app.commands.addCommand(CommandIDs.scaleCluster, {
+    label: 'Scale Cluster…',
+    execute: () => {
+      const cluster = Private.clusterFromClick(app, sidebar.clusterManager);
+      if (!cluster) {
+        return;
+      }
+      return sidebar.clusterManager.scale(cluster.id);
+    }
+  });
+
+  // Add a context menu items.
   app.contextMenu.addItem({
     command: CommandIDs.injectClientCode,
-    selector: '.dask-ClusterListingItem'
+    selector: '.dask-ClusterListingItem',
+    rank: 10
+  });
+  app.contextMenu.addItem({
+    command: CommandIDs.stopCluster,
+    selector: '.dask-ClusterListingItem',
+    rank: 3
+  });
+  app.contextMenu.addItem({
+    command: CommandIDs.scaleCluster,
+    selector: '.dask-ClusterListingItem',
+    rank: 2
+  });
+  app.contextMenu.addItem({
+    command: CommandIDs.launchCluster,
+    selector: '.dask-ClusterListing-list',
+    rank: 1
   });
 }
 
