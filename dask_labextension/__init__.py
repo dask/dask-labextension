@@ -6,7 +6,7 @@ from . import config
 from .clusterhandler import DaskClusterHandler
 from .dashboardhandler import DaskDashboardHandler
 
-__version__ = "0.1.0"
+__version__ = "0.3.0"
 
 
 def _jupyter_server_extension_paths():

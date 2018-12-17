@@ -14,8 +14,9 @@ data_files_spec = [
 cmdclass = create_cmdclass(data_files_spec=data_files_spec)
 
 setup_dict = dict(
-    name='dask-labextension',
+    name='dask_labextension',
     description='A Jupyter Notebook server extension manages Dask clusters.',
+    long_description='A Jupyter Notebook server extension manages Dask clusters. Meant to be used in conjunction with the dask-labextension JupyterLab extension.',
     packages=find_packages(),
     cmdclass=cmdclass,
     author          = 'Jupyter Development Team',
