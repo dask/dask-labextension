@@ -1,0 +1,9 @@
+recursive-include dask_labextension *.py
+recursive-include dask_labextension *.yaml
+
+include setupbase.py
+include setup.py
+include setup.cfg
+include README.md
+include LICENSE
+include MANIFEST.in

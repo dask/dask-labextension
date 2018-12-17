@@ -8,7 +8,7 @@ as well as embed Dask's dashboard plots directly into JupyterLab panes.
 ## Requirements
 
 JupyterLab >= 0.35
-distributed >= 0.19
+distributed >= 1.24.1
 
 ## Installation
 

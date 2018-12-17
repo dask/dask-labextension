@@ -11,7 +11,12 @@ data_files_spec = [
      'jupyter-config/jupyter_notebook_config.d', 'dask_labextension.json'),
 ]
 
-cmdclass = create_cmdclass(data_files_spec=data_files_spec)
+package_data_spec = {
+    'dask_labextension': ['*.yaml']
+    }
+
+
+cmdclass = create_cmdclass(package_data_spec=package_data_spec, data_files_spec=data_files_spec)
 
 setup_dict = dict(
     name='dask_labextension',
@@ -19,6 +24,7 @@ setup_dict = dict(
     long_description='A Jupyter Notebook server extension manages Dask clusters. Meant to be used in conjunction with the dask-labextension JupyterLab extension.',
     packages=find_packages(),
     cmdclass=cmdclass,
+    include_package_data=True,
     author          = 'Jupyter Development Team',
     author_email    = 'jupyter@googlegroups.com',
     url             = 'http://jupyter.org',
