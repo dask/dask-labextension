@@ -179,6 +179,11 @@
   background-color: var(--jp-brand-color1);
 }
 
+.dask-ClusterListingItem-button-panel {
+  display: flex;
+  align-content: center;
+}
+
 button.dask-ClusterListingItem-stop {
   color: var(--jp-warn-color1);
   font-weight: 600;
@@ -190,9 +195,7 @@ button.dask-ClusterListingItem-scale {
 }
 
 .dask-ClusterListingItem button.dask-ClusterListingItem-code.jp-mod-styled {
-  position: relative;
   margin: 0 4px 0 4px;
-  top: -4px;
   background-repeat: no-repeat;
   background-position: center;
 }
