@@ -1,8 +1,8 @@
-import { ToolbarButton } from '@jupyterlab/apputils';
+import { IFrame, MainAreaWidget, ToolbarButton } from '@jupyterlab/apputils';
 
-import { URLExt } from '@jupyterlab/coreutils';
+import { PageConfig, URLExt } from '@jupyterlab/coreutils';
 
-import { CommandRegistry } from '@phosphor/commands';
+import { ServerConnection } from '@jupyterlab/services';
 
 import { JSONObject } from '@phosphor/coreutils';
 
@@ -16,22 +16,68 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
 /**
- * A widget for hosting a notebook table-of-contents.
+ * A class for hosting a Dask dashboard in an iframe.
+ */
+export class DaskDashboard extends MainAreaWidget<IFrame> {
+  /**
+   * Construct a new dashboard widget.
+   */
+  constructor() {
+    super({ content: new IFrame() });
+    this.content.url = '';
+  }
+
+  /**
+   * The current dashboard item for the widget.
+   */
+  get item(): IDashboardItem | null {
+    return this._item;
+  }
+  set item(value: IDashboardItem | null) {
+    this._item = value;
+    this._updateUrl();
+  }
+
+  /**
+   * The current dashboard URL for the widget.
+   */
+  get dashboardUrl(): string {
+    return this._dashboardUrl;
+  }
+  set dashboardUrl(value: string) {
+    this._dashboardUrl = Private.normalizeDashboardUrl(value);
+    this._updateUrl();
+  }
+
+  private _updateUrl(): void {
+    if (!this.item || !this.dashboardUrl) {
+      this.content.url = '';
+      return;
+    }
+    this.content.url = URLExt.join(this.dashboardUrl, this.item!.route);
+  }
+
+  private _item: IDashboardItem | null = null;
+  private _dashboardUrl: string;
+}
+
+/**
+ * A widget for hosting Dask dashboard launchers.
  */
 export class DaskDashboardLauncher extends Widget {
   /**
-   * Create a new table of contents.
+   * Create a new Dask sidebar.
    */
   constructor(options: DaskDashboardLauncher.IOptions) {
     super();
     let layout = (this.layout = new PanelLayout());
-    this._listing = new Widget();
+    this._dashboard = new Widget();
     this._input = new URLInput(options.linkFinder);
     layout.addWidget(this._input);
-    layout.addWidget(this._listing);
+    layout.addWidget(this._dashboard);
     this.addClass('dask-DaskDashboardLauncher');
-    this._commands = options.commands;
     this._items = options.items || DaskDashboardLauncher.DEFAULT_ITEMS;
+    this._launchItem = options.launchItem;
     this._input.urlChanged.connect(
       this.update,
       this
@@ -41,7 +87,7 @@ export class DaskDashboardLauncher extends Widget {
   /**
    * The list of dashboard items which can be launched.
    */
-  get items(): DaskDashboardLauncher.IItem[] {
+  get items(): IDashboardItem[] {
     return this._items;
   }
 
@@ -56,18 +102,18 @@ export class DaskDashboardLauncher extends Widget {
    * Handle an update request.
    */
   protected onUpdateRequest(msg: Message): void {
-    // Don't bother if the TOC is not visible
+    // Don't bother if the sidebar is not visible
     if (!this.isVisible) {
       return;
     }
 
     ReactDOM.render(
       <DashboardListing
+        launchItem={this._launchItem}
         isEnabled={this.input.isValid}
-        commands={this._commands}
         items={this._items}
       />,
-      this._listing.node
+      this._dashboard.node
     );
   }
 
@@ -78,10 +124,10 @@ export class DaskDashboardLauncher extends Widget {
     this.update();
   }
 
-  private _listing: Widget;
+  private _dashboard: Widget;
   private _input: URLInput;
-  private _commands: CommandRegistry;
-  private _items: DaskDashboardLauncher.IItem[];
+  private _launchItem: (item: IDashboardItem) => void;
+  private _items: IDashboardItem[];
 }
 
 /**
@@ -102,9 +148,11 @@ export class URLInput extends Widget {
     wrapper.node.appendChild(this._input);
     layout.addWidget(wrapper);
 
+    this._serverSettings = ServerConnection.makeSettings();
+
     if (linkFinder) {
       const findButton = new ToolbarButton({
-        iconClassName: 'dask-SearchLogo jp-Icon jp-Icon-16',
+        iconClassName: 'dask-SearchIcon jp-Icon jp-Icon-16',
         onClick: async () => {
           let link = await linkFinder();
           if (link) {
@@ -144,7 +192,7 @@ export class URLInput extends Widget {
     if (newValue === oldValue) {
       return;
     }
-    Private.testDaskDashboard(newValue).then(result => {
+    Private.testDaskDashboard(newValue, this._serverSettings).then(result => {
       this._url = newValue;
       this._isValid = result;
       this._urlChanged.emit({ isValid: result, oldValue, newValue });
@@ -242,7 +290,7 @@ export class URLInput extends Widget {
       if (!url) {
         return;
       }
-      Private.testDaskDashboard(url).then(result => {
+      Private.testDaskDashboard(url, this._serverSettings).then(result => {
         // No change.
         if (result === this._isValid) {
           return;
@@ -270,44 +318,7 @@ export class URLInput extends Widget {
   private _input: HTMLInputElement;
   private _timer: number;
   private _isDisposed: boolean;
-}
-
-/**
- * A React component for a launcher button listing.
- */
-export class DashboardListing extends React.Component<
-  IDashboardListingProps,
-  {}
-> {
-  /**
-   * Render the TOCTree.
-   */
-  render() {
-    let listing = this.props.items.map(item => {
-      const handler = () => {
-        this.props.commands.execute('dask:launch-dashboard', item);
-      };
-      return (
-        <li className="dask-DashboardListing-item" key={item.route}>
-          <button
-            className="jp-mod-styled jp-mod-accept"
-            value={item.label}
-            disabled={!this.props.isEnabled}
-            onClick={handler}
-          >
-            {item.label}
-          </button>
-        </li>
-      );
-    });
-
-    // Return the JSX component.
-    return (
-      <div>
-        <ul className="dask-DashboardListing-list">{listing}</ul>
-      </div>
-    );
-  }
+  private _serverSettings: ServerConnection.ISettings;
 }
 
 /**
@@ -336,52 +347,13 @@ export namespace URLInput {
 }
 
 /**
- * Props for the TOCTree component.
- */
-export interface IDashboardListingProps extends React.Props<DashboardListing> {
-  /**
-   * A command registry.
-   */
-  commands: CommandRegistry;
-
-  /**
-   * A list of dashboard items to render.
-   */
-  items: DaskDashboardLauncher.IItem[];
-
-  /**
-   * Whether the items should be enabled.
-   */
-  isEnabled: boolean;
-}
-/**
  * A namespace for DaskDashboardLauncher statics.
  */
 export namespace DaskDashboardLauncher {
   /**
-   * An interface dashboard launcher item.
-   */
-  export interface IItem extends JSONObject {
-    /**
-     * The route to add the the base url.
-     */
-    route: string;
-
-    /**
-     * The display label for the item.
-     */
-    label: string;
-  }
-
-  /**
    * Options for the constructor.
    */
   export interface IOptions {
-    /**
-     * The document manager for the application.
-     */
-    commands: CommandRegistry;
-
     /**
      * A function that attempts to find a link to
      * a dask bokeh server in the current application
@@ -390,9 +362,14 @@ export namespace DaskDashboardLauncher {
     linkFinder?: () => Promise<string>;
 
     /**
+     * A callback to launch a dashboard item.
+     */
+    launchItem: (item: IDashboardItem) => void;
+
+    /**
      * A list of items for the launcher.
      */
-    items?: IItem[];
+    items?: IDashboardItem[];
   }
 
   export const DEFAULT_ITEMS = [
@@ -408,16 +385,65 @@ export namespace DaskDashboardLauncher {
 }
 
 /**
- * Optionally remove a `status` route from a dashboard url.
+ * A React component for a launcher button listing.
  */
-export function normalizeDashboardUrl(url: string): string {
-  if (url.endsWith('status')) {
-    return url.slice(0, -'status'.length);
-  }
-  if (url.endsWith('status/')) {
-    return url.slice(0, -'status/'.length);
-  }
-  return url;
+function DashboardListing(props: IDashboardListingProps) {
+  let listing = props.items.map(item => {
+    return (
+      <li className="dask-DashboardListing-item" key={item.route}>
+        <button
+          className="jp-mod-styled jp-mod-accept"
+          value={item.label}
+          disabled={!props.isEnabled}
+          onClick={() => props.launchItem(item)}
+        >
+          {item.label}
+        </button>
+      </li>
+    );
+  });
+
+  // Return the JSX component.
+  return (
+    <div>
+      <ul className="dask-DashboardListing-list">{listing}</ul>
+    </div>
+  );
+}
+
+/**
+ * Props for the dashboard listing component.
+ */
+export interface IDashboardListingProps {
+  /**
+   * A list of dashboard items to render.
+   */
+  items: IDashboardItem[];
+
+  /**
+   * A callback to launch a dashboard item.
+   */
+  launchItem: (item: IDashboardItem) => void;
+
+  /**
+   * Whether the items should be enabled.
+   */
+  isEnabled: boolean;
+}
+
+/**
+ * An interface dashboard launcher item.
+ */
+export interface IDashboardItem extends JSONObject {
+  /**
+   * The route to add the the base url.
+   */
+  route: string;
+
+  /**
+   * The display label for the item.
+   */
+  label: string;
 }
 
 /**
@@ -425,10 +451,56 @@ export function normalizeDashboardUrl(url: string): string {
  */
 namespace Private {
   /**
+   * Optionally remove a `status` route from a dashboard url.
+   */
+  export function normalizeDashboardUrl(url: string, baseUrl = ''): string {
+    if (URLExt.isLocal(url)) {
+      if (!baseUrl) {
+        baseUrl = PageConfig.getBaseUrl();
+      }
+      // If the path-portion of the baseUrl has been included,
+      // strip that off.
+      const tmp = new URL(baseUrl);
+      if (url.startsWith(tmp.pathname)) {
+        url = url.slice(tmp.pathname.length);
+      }
+      // Fully qualify the local URL to remove any relative-path confusion.
+      url = baseUrl + url;
+    }
+    // If 'status' has been included at the end, strip it.
+    if (url.endsWith('status')) {
+      url = url.slice(0, -'status'.length);
+    } else if (url.endsWith('status/')) {
+      url = url.slice(0, -'status/'.length);
+    }
+    return url;
+  }
+
+  /**
    * Test whether a given URL hosts a dask dashboard.
    */
-  export function testDaskDashboard(url: string): Promise<boolean> {
-    url = normalizeDashboardUrl(url);
+  export function testDaskDashboard(
+    url: string,
+    settings: ServerConnection.ISettings
+  ): Promise<boolean> {
+    url = normalizeDashboardUrl(url, settings.baseUrl);
+
+    // If this is a url that we are proxying under the notebook server,
+    // it is easier to check for a valid dashboard.
+    if (url.indexOf(settings.baseUrl) === 0) {
+      return ServerConnection.makeRequest(
+        URLExt.join(url, 'individual-plots.json'),
+        {},
+        settings
+      ).then(response => {
+        if (response.status === 200) {
+          return true;
+        } else {
+          return false;
+        }
+      });
+    }
+
     return new Promise<boolean>(resolve => {
       // Hack Alert! We would like to test whether a given URL is actually
       // a dask dashboard, since we will be iframe-ing it sight-unseen.
