@@ -25,6 +25,8 @@ export class DaskDashboard extends MainAreaWidget<IFrame> {
   constructor() {
     super({ content: new IFrame() });
     this.content.url = '';
+    this._inactivePanel = Private.createInactivePanel();
+    this.active = false;
   }
 
   /**
@@ -49,6 +51,25 @@ export class DaskDashboard extends MainAreaWidget<IFrame> {
     this._updateUrl();
   }
 
+  /**
+   * Whether the dashboard is active. When inactive,
+   * it will show a placeholder panel.
+   */
+  get active(): boolean {
+    return this._active;
+  }
+  set active(value: boolean) {
+    if (value === this._active) {
+      return;
+    }
+    this._active = value;
+    if (this._active) {
+      this.content.node.appendChild(this._inactivePanel);
+    } else {
+      this.content.node.removeChild(this._inactivePanel);
+    }
+  }
+
   private _updateUrl(): void {
     if (!this.item || !this.dashboardUrl) {
       this.content.url = '';
@@ -59,6 +80,8 @@ export class DaskDashboard extends MainAreaWidget<IFrame> {
 
   private _item: IDashboardItem | null = null;
   private _dashboardUrl: string;
+  private _active: boolean;
+  private _inactivePanel: HTMLElement;
 }
 
 /**
@@ -525,5 +548,13 @@ namespace Private {
       };
       img.src = logoUrl;
     });
+  }
+
+  export function createInactivePanel(): HTMLElement {
+    const panel = document.createElement('div');
+    const info = 'Cannot find dashboard';
+    panel.textContent = info;
+    panel.className = 'dask-DaskDashboard-inactive';
+    return panel;
   }
 }
