@@ -9,3 +9,4 @@ labextension:
     adapt: null
       # minimum: 0
       # maximum: 10
+  initial: []
