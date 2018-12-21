@@ -9,6 +9,7 @@ from uuid import uuid4
 
 import dask
 from dask.distributed import Adaptive, utils
+from tornado.ioloop import IOLoop
 
 # A type for a dask cluster model: a serializable
 # representation of information about the cluster.
@@ -18,11 +19,12 @@ ClusterModel = Dict[str, Any]
 Cluster = Any
 
 
-def make_cluster(configuration: dict) -> Cluster:
+async def make_cluster(configuration: dict) -> Cluster:
     module = importlib.import_module(dask.config.get('labextension.factory.module'))
     Cluster = getattr(module, dask.config.get('labextension.factory.class'))
-    cluster = Cluster(*dask.config.get('labextension.factory.args'),
-                      **dask.config.get('labextension.factory.kwargs'))
+    cluster = await Cluster(*dask.config.get('labextension.factory.args'),
+                            **dask.config.get('labextension.factory.kwargs'),
+                            asynchronous=True)
 
     configuration = dask.config.merge(
         dask.config.get('labextension.default'),
@@ -55,10 +57,14 @@ class DaskClusterManager:
         self._cluster_names: Dict[str, str] = dict()
         self._n_clusters = 0
         initial_models = initial_cluster_models()
-        for model in initial_models:
-            self.start_cluster(configuration=model)
 
-    def start_cluster(self, cluster_id: str = "", configuration: dict = {}) -> ClusterModel:
+        async def start_clusters():
+            for model in initial_models:
+                await self.start_cluster(configuration=model)
+
+        IOLoop.current().add_callback(start_clusters)
+
+    async def start_cluster(self, cluster_id: str = "", configuration: dict = {}) -> ClusterModel:
         """
         Start a new Dask cluster.
 
@@ -74,7 +80,7 @@ class DaskClusterManager:
         if not cluster_id:
             cluster_id = str(uuid4())
 
-        cluster, adaptive = make_cluster(configuration)
+        cluster, adaptive = await make_cluster(configuration)
         self._n_clusters += 1
 
         # Check for a name in the config
