@@ -32,8 +32,8 @@ def make_cluster(configuration: dict) -> Cluster:
     if configuration.get('workers') is not None:
         cluster.scale(configuration.get('workers'))
 
-    if configuration.get('adapt') is not None:
-        cluster.adapt(**configuration.get('adapt'))
+    if configuration.get('adaptive') is not None:
+        cluster.adapt(**configuration.get('adaptive'))
 
     return cluster
 
@@ -220,8 +220,10 @@ def make_cluster_model(
         cores=sum(ws.ncores for ws in cluster.scheduler.workers.values()),
     )
     if adaptive:
-        model["maximum"] = adaptive.maximum
-        model["minimum"] = adaptive.minimum
+        model['adaptive'] = {
+            'minimum': adaptive.minimum,
+            'maximum': adaptive.maximum,
+        }
 
     return model
 
