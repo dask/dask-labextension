@@ -3,9 +3,8 @@
 # Copyright (c) Jupyter Development Team.
 # Distributed under the terms of the Modified BSD License.
 
-import functools
 import importlib
-from typing import Any, Callable, Dict, List, Union
+from typing import Any, Dict, List, Union
 from uuid import uuid4
 
 import dask
@@ -18,16 +17,25 @@ ClusterModel = Dict[str, Union[str, int]]
 # A type stub for a Dask cluster.
 Cluster = Any
 
-# A type stub for a Dask cluster factory.
-DaskClusterFactory = Callable[[], Cluster]
 
-# Get default cluster factory from configuration
-default_factory_module = importlib.import_module(dask.config.get('labextension.factory.module'))
-default_factory = getattr(default_factory_module, dask.config.get('labextension.factory.class'))
-if dask.config.get('labextension.factory.args') or dask.config.get('labextension.factory.kwargs'):
-    default_factory = functools.partial(default_factory,
-                                        *dask.config.get('labextension.factory.args'),
-                                        **dask.config.get('labextension.factory.kwargs'))
+def make_cluster(configuration: dict) -> Cluster:
+    module = importlib.import_module(dask.config.get('labextension.factory.module'))
+    Cluster = getattr(module, dask.config.get('labextension.factory.class'))
+    cluster = Cluster(*dask.config.get('labextension.factory.args'),
+                      **dask.config.get('labextension.factory.kwargs'))
+
+    configuration = dask.config.merge(
+        dask.config.get('labextension.defaults'),
+        configuration
+    )
+
+    if configuration.get('workers') is not None:
+        cluster.scale(configuration.get('workers'))
+
+    if configuration.get('adapt') is not None:
+        cluster.adapt(**configuration.get('adapt'))
+
+    return cluster
 
 
 class DaskClusterManager:
@@ -36,23 +44,14 @@ class DaskClusterManager:
     of Dask clusters.
     """
 
-    def __init__(self, cluster_factory: DaskClusterFactory = default_factory) -> None:
-        """
-        Initialize the cluster manager.
-
-        Parameters
-        ----------
-        cluster_factory : function
-            An optional function that, when called, creates a new
-            Dask cluster for usage. If not given, defaults to a LocalCluster.
-        """
-        self._cluster_factory: DaskClusterFactory = cluster_factory
+    def __init__(self) -> None:
+        """ Initialize the cluster manager """
         self._clusters: Dict[str, Cluster] = dict()
         self._adaptives: Dict[str, Adaptive] = dict()
         self._cluster_names: Dict[str, str] = dict()
         self._n_clusters = 0
 
-    def start_cluster(self, cluster_id: str = "") -> ClusterModel:
+    def start_cluster(self, cluster_id: str = "", configuration: dict = {}) -> ClusterModel:
         """
         Start a new Dask cluster.
 
@@ -67,7 +66,8 @@ class DaskClusterManager:
         """
         if not cluster_id:
             cluster_id = str(uuid4())
-        cluster = self._cluster_factory()
+
+        cluster = make_cluster(configuration)
         self._n_clusters += 1
         cluster_type = type(cluster).__name__
         cluster_name = f"{cluster_type} {self._n_clusters}"
