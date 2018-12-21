@@ -29,13 +29,17 @@ def make_cluster(configuration: dict) -> Cluster:
         configuration
     )
 
-    if configuration.get('workers') is not None:
+    adaptive = None
+    if configuration.get('adapt'):
+        adaptive = cluster.adapt(**configuration.get('adapt'))
+    elif configuration.get('workers') is not None:
         cluster.scale(configuration.get('workers'))
 
-    if configuration.get('adapt') is not None:
-        cluster.adapt(**configuration.get('adapt'))
+    return cluster, adaptive
 
-    return cluster
+def initial_cluster_models() -> List[ClusterModel]:
+    models = dask.config.get('labextension.initial')
+    return models
 
 
 class DaskClusterManager:
@@ -50,6 +54,9 @@ class DaskClusterManager:
         self._adaptives: Dict[str, Adaptive] = dict()
         self._cluster_names: Dict[str, str] = dict()
         self._n_clusters = 0
+        initial_models = initial_cluster_models()
+        for model in initial_models:
+            self.start_cluster(configuration=model)
 
     def start_cluster(self, cluster_id: str = "", configuration: dict = {}) -> ClusterModel:
         """
@@ -67,13 +74,23 @@ class DaskClusterManager:
         if not cluster_id:
             cluster_id = str(uuid4())
 
-        cluster = make_cluster(configuration)
+        cluster, adaptive = make_cluster(configuration)
         self._n_clusters += 1
-        cluster_type = type(cluster).__name__
-        cluster_name = f"{cluster_type} {self._n_clusters}"
+
+        # Check for a name in the config
+        if not configuration.get('name'):
+            cluster_type = type(cluster).__name__
+            cluster_name = f"{cluster_type} {self._n_clusters}"
+        else:
+            cluster_name = configuration['name']
+
+        # Check if the cluster was started adaptively
+        if adaptive:
+            self._adaptives[cluster_id] = adaptive
+
         self._clusters[cluster_id] = cluster
         self._cluster_names[cluster_id] = cluster_name
-        return make_cluster_model(cluster_id, cluster_name, cluster, adaptive=None)
+        return make_cluster_model(cluster_id, cluster_name, cluster, adaptive=adaptive)
 
     def close_cluster(self, cluster_id: str) -> Union[ClusterModel, None]:
         """

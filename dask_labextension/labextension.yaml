@@ -7,3 +7,5 @@ labextension:
   default:
     workers: null
     adapt: null
+      # minimum: 0
+      # maximum: 10
