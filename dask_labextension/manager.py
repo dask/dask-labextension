@@ -12,7 +12,7 @@ from dask.distributed import Adaptive, utils
 
 # A type for a dask cluster model: a serializable
 # representation of information about the cluster.
-ClusterModel = Dict[str, Union[str, int]]
+ClusterModel = Dict[str, Any]
 
 # A type stub for a Dask cluster.
 Cluster = Any
@@ -25,15 +25,15 @@ def make_cluster(configuration: dict) -> Cluster:
                       **dask.config.get('labextension.factory.kwargs'))
 
     configuration = dask.config.merge(
-        dask.config.get('labextension.defaults'),
+        dask.config.get('labextension.default'),
         configuration
     )
 
     if configuration.get('workers') is not None:
         cluster.scale(configuration.get('workers'))
 
-    if configuration.get('adaptive') is not None:
-        cluster.adapt(**configuration.get('adaptive'))
+    if configuration.get('adapt') is not None:
+        cluster.adapt(**configuration.get('adapt'))
 
     return cluster
 
@@ -148,7 +148,7 @@ class DaskClusterManager:
 
         # Check if it is actually different.
         model = make_cluster_model(cluster_id, name, cluster, adaptive)
-        if model["scaling"] == "static" and model["workers"] == n:
+        if model.get("adapt") != None and model["workers"] == n:
             return model
 
         # Otherwise, rescale the model.
@@ -168,9 +168,7 @@ class DaskClusterManager:
 
         # Check if it is actually different.
         model = make_cluster_model(cluster_id, name, cluster, adaptive)
-        if model["scaling"] == "adaptive" and model["minimum"] == minimum and model[
-            "maximum"
-        ] == maximum:
+        if model.get("adapt") != None and model["adapt"]["minimum"] == minimum and model["adapt"]["maximum"] == maximum:
             return model
 
         # Otherwise, rescale the model.
@@ -206,11 +204,9 @@ def make_cluster_model(
     """
     # This would be a great target for a dataclass
     # once python 3.7 is in wider use.
-    scaling = "adaptive" if adaptive else "static"
     model = dict(
         id=cluster_id,
         name=cluster_name,
-        scaling=scaling,
         scheduler_address=cluster.scheduler_address,
         dashboard_link=cluster.dashboard_link or "",
         workers=len(cluster.scheduler.workers),
@@ -220,7 +216,7 @@ def make_cluster_model(
         cores=sum(ws.ncores for ws in cluster.scheduler.workers.values()),
     )
     if adaptive:
-        model['adaptive'] = {
+        model['adapt'] = {
             'minimum': adaptive.minimum,
             'maximum': adaptive.maximum,
         }

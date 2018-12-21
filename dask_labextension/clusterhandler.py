@@ -50,7 +50,7 @@ class DaskClusterHandler(APIHandler):
             self.finish(json.dumps(cluster_model))
 
     @web.authenticated
-    def put(self, cluster_id: str = "", configuration: str = "") -> None:
+    def put(self, cluster_id: str = "") -> None:
         """
         Create a new cluster with a given id. If no id is given, a random
         one is selected.
@@ -61,8 +61,7 @@ class DaskClusterHandler(APIHandler):
             )
 
         try:
-            configuration = json.loads(configuration)
-            cluster_model = manager.start_cluster(cluster_id, configuration)
+            cluster_model = manager.start_cluster(cluster_id)
             self.set_status(200)
             self.finish(json.dumps(cluster_model))
         except Exception as e:
@@ -76,11 +75,11 @@ class DaskClusterHandler(APIHandler):
         """
         new_model = json.loads(self.request.body)
         try:
-            if new_model["scaling"] == "adaptive":
+            if new_model.get("adapt") != None:
                 cluster_model = manager.adapt_cluster(
-                    cluster_id, new_model["minimum"], new_model["maximum"]
+                    cluster_id, new_model["adapt"]["minimum"], new_model["adapt"]["maximum"]
                 )
-            elif new_model["scaling"] == "static":
+            elif new_model.get("adapt") == None:
                 cluster_model = manager.scale_cluster(cluster_id, new_model["workers"])
             self.set_status(200)
             self.finish(json.dumps(cluster_model))

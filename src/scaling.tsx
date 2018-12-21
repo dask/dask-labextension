@@ -56,7 +56,7 @@ export class ClusterScaling extends React.Component<
   constructor(props: ClusterScaling.IProps) {
     super(props);
     let model: IClusterModel;
-    const adaptive = props.initialModel.adapt !== null;
+    const adaptive = !!props.initialModel.adapt;
     // If the initial model is static, enrich it
     // with placeholder values for minimum and maximum workers.
     if (!adaptive) {

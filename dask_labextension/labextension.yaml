@@ -6,6 +6,4 @@ labextension:
     kwargs: {}
   default:
     workers: null
-    adaptive: null
-      minimum: 0
-      maximum: 100
+    adapt: null
