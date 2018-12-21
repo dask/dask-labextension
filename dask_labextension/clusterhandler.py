@@ -50,7 +50,7 @@ class DaskClusterHandler(APIHandler):
             self.finish(json.dumps(cluster_model))
 
     @web.authenticated
-    def put(self, cluster_id: str = "") -> None:
+    async def put(self, cluster_id: str = "") -> None:
         """
         Create a new cluster with a given id. If no id is given, a random
         one is selected.
@@ -61,7 +61,7 @@ class DaskClusterHandler(APIHandler):
             )
 
         try:
-            cluster_model = manager.start_cluster(cluster_id)
+            cluster_model = await manager.start_cluster(cluster_id)
             self.set_status(200)
             self.finish(json.dumps(cluster_model))
         except Exception as e:
