@@ -9,6 +9,7 @@ from uuid import uuid4
 
 import dask
 from dask.distributed import Adaptive, utils
+from distributed.utils import All
 from tornado.ioloop import IOLoop
 
 # A type for a dask cluster model: a serializable
@@ -98,7 +99,7 @@ class DaskClusterManager:
         self._cluster_names[cluster_id] = cluster_name
         return make_cluster_model(cluster_id, cluster_name, cluster, adaptive=adaptive)
 
-    def close_cluster(self, cluster_id: str) -> Union[ClusterModel, None]:
+    async def close_cluster(self, cluster_id: str) -> Union[ClusterModel, None]:
         """
         Close a Dask cluster.
 
@@ -113,7 +114,7 @@ class DaskClusterManager:
         """
         cluster = self._clusters.get(cluster_id)
         if cluster:
-            cluster.close()
+            await cluster.close()
             self._clusters.pop(cluster_id)
             name = self._cluster_names.pop(cluster_id)
             adaptive = self._adaptives.pop(cluster_id, None)
@@ -198,6 +199,17 @@ class DaskClusterManager:
         adaptive = cluster.adapt(minimum=minimum, maximum=maximum)
         self._adaptives[cluster_id] = adaptive
         return make_cluster_model(cluster_id, name, cluster, adaptive)
+
+    async def __aenter__(self):
+        return self
+
+    async def close(self):
+        """ Close all clusters and cleanup """
+        await All([self.close_cluster(cluster_id) for cluster_id in self._clusters])
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.close()
+
 
 
 def make_cluster_model(

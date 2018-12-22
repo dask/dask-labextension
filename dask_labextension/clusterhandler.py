@@ -17,12 +17,12 @@ class DaskClusterHandler(APIHandler):
     """
 
     @web.authenticated
-    def delete(self, cluster_id: str) -> None:
+    async def delete(self, cluster_id: str) -> None:
         """
         Delete a cluster by id.
         """
         try:  # to delete the cluster.
-            val = manager.close_cluster(cluster_id)
+            val = await manager.close_cluster(cluster_id)
             if val is None:
                 raise web.HTTPError(404, f"Dask cluster {cluster_id} not found")
 
