@@ -4,7 +4,7 @@ import {
   JupyterLabPlugin
 } from '@jupyterlab/application';
 
-import { InstanceTracker } from '@jupyterlab/apputils';
+import { IClientSession, InstanceTracker } from '@jupyterlab/apputils';
 
 import { CodeEditor } from '@jupyterlab/codeeditor';
 
@@ -91,6 +91,14 @@ function activate(
 ): void {
   const id = 'dask-dashboard-launcher';
 
+  // Whether a kernel should be used. Only evaluates to true
+  // if it is valid and in python.
+  const shouldUseKernel = (
+    kernel: Kernel.IKernelConnection | null | undefined
+  ) => {
+    return kernel && kernel.info && kernel.info.language_info.name === 'python';
+  };
+
   // Attempt to find a link to the dask dashboard
   // based on the currently active notebook/console
   const linkFinder = async () => {
@@ -101,15 +109,11 @@ function activate(
     );
     // Check to see if we found a kernel, and if its
     // language is python.
-    if (
-      !kernel ||
-      !kernel.info ||
-      kernel.info.language_info.name !== 'python'
-    ) {
+    if (!shouldUseKernel(kernel)) {
       return '';
     }
     // If so, find the link if we can.
-    const link = await Private.checkKernel(kernel);
+    const link = await Private.checkKernel(kernel!);
     return link;
   };
 
@@ -164,6 +168,48 @@ function activate(
     // Save the current url to the state DB so it can be
     // reloaded on refresh.
     state.save(id, { url: args.newValue });
+  });
+
+  const createClientForSession = (session: IClientSession) => {
+    const cluster = sidebar.clusterManager.activeCluster;
+    if (!cluster || !session.kernel) {
+      return;
+    }
+    Private.createClientForKernel(cluster, session.kernel);
+  };
+
+  // When the active cluster changes, inject a new client
+  // into all the active notebook and console sessions.
+  sidebar.clusterManager.activeClusterChanged.connect(() => {
+    consoleTracker.forEach(console => {
+      if (shouldUseKernel(console.session.kernel)) {
+        createClientForSession(console.session);
+      }
+    });
+    notebookTracker.forEach(notebook => {
+      if (shouldUseKernel(notebook.session.kernel)) {
+        createClientForSession(notebook.session);
+      }
+    });
+  });
+
+  // When a new console or notebook is created, inject
+  // a new client into it.
+  consoleTracker.widgetAdded.connect((sender, console) => {
+    console.session.statusChanged.connect(() => {
+      if (console.session.status === 'connected') {
+        createClientForSession(console.session);
+      }
+    });
+    createClientForSession(console.session);
+  });
+  notebookTracker.widgetAdded.connect((sender, notebook) => {
+    notebook.session.statusChanged.connect(() => {
+      if (notebook.session.status === 'connected') {
+        createClientForSession(notebook.session);
+      }
+    });
+    createClientForSession(notebook.session);
   });
 
   // Fetch the initial state of the settings.
@@ -312,6 +358,31 @@ namespace Private {
         const url = (data['text/plain'] as string) || '';
         console.log(`Found dashboard link at ${url}`);
         resolve(url.replace(/'/g, '').split('status')[0]);
+      };
+    });
+  }
+
+  /**
+   * Connect a kernel to a cluster by creating a new Client.
+   */
+  export function createClientForKernel(
+    model: IClusterModel,
+    kernel: Kernel.IKernelConnection
+  ): Promise<string> {
+    const code = `import dask; from dask.distributed import Client
+dask.config.set({'scheduler-address': '${model.scheduler_address}'})
+client = Client()`;
+    const content: KernelMessage.IExecuteRequest = {
+      store_history: false,
+      code
+    };
+    return new Promise<string>((resolve, reject) => {
+      const future = kernel.requestExecute(content);
+      future.onIOPub = msg => {
+        if (msg.header.msg_type !== 'display_data') {
+          return;
+        }
+        resolve(void 0);
       };
     });
   }

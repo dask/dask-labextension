@@ -1,10 +1,14 @@
 import { Toolbar, ToolbarButton } from '@jupyterlab/apputils';
 
+import { IChangedArgs } from '@jupyterlab/coreutils';
+
 import { ServerConnection } from '@jupyterlab/services';
 
 import { JSONObject, JSONExt } from '@phosphor/coreutils';
 
 import { Message } from '@phosphor/messaging';
+
+import { ISignal, Signal } from '@phosphor/signaling';
 
 import { Widget, PanelLayout } from '@phosphor/widgets';
 
@@ -36,7 +40,17 @@ export class DaskClusterManager extends Widget {
         return;
       }
       options.setDashboardUrl(`dask/dashboard/${cluster.id}`);
-      this._activeClusterId = id;
+
+      const old = this._activeCluster;
+      if (old && old.id === cluster.id) {
+        return;
+      }
+      this._activeCluster = cluster;
+      this._activeClusterChanged.emit({
+        name: 'cluster',
+        oldValue: old,
+        newValue: cluster
+      });
       this.update();
     };
 
@@ -91,7 +105,24 @@ export class DaskClusterManager extends Widget {
   }
 
   /**
-   * Get the currently active clusters known to the manager.
+   * The currently selected cluster, or undefined if there is none.
+   */
+  get activeCluster(): IClusterModel | undefined {
+    return this._activeCluster;
+  }
+
+  /**
+   * A signal that is emitted when an active cluster changes.
+   */
+  get activeClusterChanged(): ISignal<
+    this,
+    IChangedArgs<IClusterModel | undefined>
+  > {
+    return this._activeClusterChanged;
+  }
+
+  /**
+   * Get the current clusters known to the manager.
    */
   get clusters(): IClusterModel[] {
     return this._clusters;
@@ -140,7 +171,7 @@ export class DaskClusterManager extends Widget {
     ReactDOM.render(
       <ClusterListing
         clusters={this._clusters}
-        activeClusterId={this._activeClusterId}
+        activeClusterId={(this._activeCluster && this._activeCluster.id) || ''}
         scaleById={(id: string) => {
           return this._scaleById(id);
         }}
@@ -239,10 +270,14 @@ export class DaskClusterManager extends Widget {
 
   private _clusterListing: Widget;
   private _clusters: IClusterModel[] = [];
-  private _activeClusterId: string = '';
+  private _activeCluster: IClusterModel | undefined;
   private _setActiveById: (id: string) => void;
   private _injectClientCodeForCluster: (model: IClusterModel) => void;
   private _serverSettings: ServerConnection.ISettings;
+  private _activeClusterChanged = new Signal<
+    this,
+    IChangedArgs<IClusterModel | undefined>
+  >(this);
 }
 
 /**
