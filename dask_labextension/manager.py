@@ -40,6 +40,7 @@ async def make_cluster(configuration: dict) -> Cluster:
 
     return cluster, adaptive
 
+
 def initial_cluster_models() -> List[ClusterModel]:
     models = dask.config.get('labextension.initial')
     return models
@@ -209,7 +210,6 @@ class DaskClusterManager:
 
     async def __aexit__(self, exc_type, exc, tb):
         await self.close()
-
 
 
 def make_cluster_model(
