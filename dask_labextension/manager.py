@@ -41,11 +41,6 @@ async def make_cluster(configuration: dict) -> Cluster:
     return cluster, adaptive
 
 
-def initial_cluster_models() -> List[ClusterModel]:
-    models = dask.config.get('labextension.initial')
-    return models
-
-
 class DaskClusterManager:
     """
     A class for starting, stopping, and otherwise managing the lifecycle
@@ -58,10 +53,9 @@ class DaskClusterManager:
         self._adaptives: Dict[str, Adaptive] = dict()
         self._cluster_names: Dict[str, str] = dict()
         self._n_clusters = 0
-        initial_models = initial_cluster_models()
 
         async def start_clusters():
-            for model in initial_models:
+            for model in dask.config.get('labextension.initial'):
                 await self.start_cluster(configuration=model)
 
         IOLoop.current().add_callback(start_clusters)
@@ -206,7 +200,8 @@ class DaskClusterManager:
 
     async def close(self):
         """ Close all clusters and cleanup """
-        await All([self.close_cluster(cluster_id) for cluster_id in self._clusters])
+        for cluster_id in list(self._clusters):
+            await self.close_cluster(cluster_id)
 
     async def __aexit__(self, exc_type, exc, tb):
         await self.close()

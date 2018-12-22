@@ -1,6 +1,8 @@
 import dask
-from dask_labextension.manager import DaskClusterManager
 from distributed.utils_test import gen_test
+from tornado import gen
+
+from dask_labextension.manager import DaskClusterManager
 
 
 @gen_test()
@@ -23,3 +25,16 @@ async def test_core():
             assert not manager._clusters
 
             await manager.close()
+
+
+@gen_test()
+async def test_initial():
+    with dask.config.set({
+        'labextension.defaults.kwargs': {'processes': False},  # for speed
+        'labextension.initial': [{'name': 'foo'}],
+    }):
+        async with DaskClusterManager() as manager:
+            while not manager._clusters:
+                await gen.sleep(0.01)
+            [(id, cluster)] = manager._clusters.items()
+            assert manager._cluster_names[id] == 'foo'
