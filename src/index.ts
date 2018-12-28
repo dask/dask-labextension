@@ -95,14 +95,6 @@ function activate(
 ): void {
   const id = 'dask-dashboard-launcher';
 
-  // Whether a kernel should be used. Only evaluates to true
-  // if it is valid and in python.
-  const shouldUseKernel = (
-    kernel: Kernel.IKernelConnection | null | undefined
-  ) => {
-    return kernel && kernel.info && kernel.info.language_info.name === 'python';
-  };
-
   // Attempt to find a link to the dask dashboard
   // based on the currently active notebook/console
   const linkFinder = async () => {
@@ -113,7 +105,7 @@ function activate(
     );
     // Check to see if we found a kernel, and if its
     // language is python.
-    if (!shouldUseKernel(kernel)) {
+    if (!Private.shouldUseKernel(kernel)) {
       return '';
     }
     // If so, find the link if we can.
@@ -194,7 +186,7 @@ function activate(
     trackers.forEach(tracker => {
       tracker.forEach(widget => {
         const session = widget.session;
-        if (shouldUseKernel(session.kernel)) {
+        if (Private.shouldUseKernel(session.kernel)) {
           createClientForSession(session);
         }
       });
@@ -338,6 +330,18 @@ namespace Private {
    * A private counter for ids.
    */
   export let id = 0;
+
+  /**
+   * Whether a kernel should be used. Only evaluates to true
+   * if it is valid and in python.
+   */
+  export function shouldUseKernel(
+    kernel: Kernel.IKernelConnection | null | undefined
+  ): boolean {
+    return (
+      !!kernel && !!kernel.info && kernel.info.language_info.name === 'python'
+    );
+  }
 
   /**
    * Check a kernel for whether it has a default client dashboard address.
