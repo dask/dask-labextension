@@ -4,7 +4,11 @@ import {
   JupyterLabPlugin
 } from '@jupyterlab/application';
 
-import { IClientSession, InstanceTracker } from '@jupyterlab/apputils';
+import {
+  IClientSession,
+  IInstanceTracker,
+  InstanceTracker
+} from '@jupyterlab/apputils';
 
 import { CodeEditor } from '@jupyterlab/codeeditor';
 
@@ -178,38 +182,36 @@ function activate(
     Private.createClientForKernel(cluster, session.kernel);
   };
 
+  // An array of the trackers to check for active sessions.
+  const trackers: IInstanceTracker<NotebookPanel | ConsolePanel>[] = [
+    notebookTracker,
+    consoleTracker
+  ];
+
   // When the active cluster changes, inject a new client
   // into all the active notebook and console sessions.
   sidebar.clusterManager.activeClusterChanged.connect(() => {
-    consoleTracker.forEach(console => {
-      if (shouldUseKernel(console.session.kernel)) {
-        createClientForSession(console.session);
-      }
-    });
-    notebookTracker.forEach(notebook => {
-      if (shouldUseKernel(notebook.session.kernel)) {
-        createClientForSession(notebook.session);
-      }
+    trackers.forEach(tracker => {
+      tracker.forEach(widget => {
+        const session = widget.session;
+        if (shouldUseKernel(session.kernel)) {
+          createClientForSession(session);
+        }
+      });
     });
   });
 
   // When a new console or notebook is created, inject
   // a new client into it.
-  consoleTracker.widgetAdded.connect((sender, console) => {
-    console.session.statusChanged.connect(() => {
-      if (console.session.status === 'connected') {
-        createClientForSession(console.session);
-      }
+  trackers.forEach(tracker => {
+    tracker.widgetAdded.connect((sender, widget) => {
+      const session = widget.session;
+      session.statusChanged.connect(() => {
+        if (session.status === 'connected') {
+          createClientForSession(session);
+        }
+      });
     });
-    createClientForSession(console.session);
-  });
-  notebookTracker.widgetAdded.connect((sender, notebook) => {
-    notebook.session.statusChanged.connect(() => {
-      if (notebook.session.status === 'connected') {
-        createClientForSession(notebook.session);
-      }
-    });
-    createClientForSession(notebook.session);
   });
 
   // Fetch the initial state of the settings.
