@@ -112,6 +112,13 @@ export class DaskClusterManager extends Widget {
   }
 
   /**
+   * Set an active cluster by id.
+   */
+  setActiveCluster(id: string): void {
+    this._setActiveById(id);
+  }
+
+  /**
    * A signal that is emitted when an active cluster changes.
    */
   get activeClusterChanged(): ISignal<
@@ -126,6 +133,13 @@ export class DaskClusterManager extends Widget {
    */
   get clusters(): IClusterModel[] {
     return this._clusters;
+  }
+
+  /**
+   * Refresh the current list of clusters.
+   */
+  async refresh(): Promise<void> {
+    await this._updateClusterList();
   }
 
   /**
@@ -220,6 +234,17 @@ export class DaskClusterManager extends Widget {
     );
     const data = (await response.json()) as IClusterModel[];
     this._clusters = data;
+
+    // Check to see if the active cluster still exits.
+    // If it doesn't, or if there is no active cluster,
+    // select the first one.
+    const active = this._clusters.find(
+      c => c.id === (this._activeCluster && this._activeCluster.id)
+    );
+    if (!active) {
+      const id = (this._clusters[0] && this._clusters[0].id) || '';
+      this._setActiveById(id);
+    }
     this.update();
   }
 

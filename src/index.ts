@@ -165,7 +165,18 @@ function activate(
     });
     // Save the current url to the state DB so it can be
     // reloaded on refresh.
-    state.save(id, { url: args.newValue });
+    const active = sidebar.clusterManager.activeCluster;
+    state.save(id, {
+      url: args.newValue,
+      cluster: active ? active.id : ''
+    });
+  });
+  sidebar.clusterManager.activeClusterChanged.connect(() => {
+    const active = sidebar.clusterManager.activeCluster;
+    state.save(id, {
+      url: sidebar.dashboardLauncher.input.url,
+      cluster: active ? active.id : ''
+    });
   });
 
   // A function to create a new dask client for a session.
@@ -248,9 +259,11 @@ function activate(
 
   // Fetch the initial state of the settings.
   Promise.all([settings.load(PLUGIN_ID), state.fetch(id), app.restored]).then(
-    res => {
+    async res => {
       const settings = res[0];
-      const url = (res[1] as { url: string }).url as string;
+      const state = res[1] as { url?: string; cluster?: string };
+      const url = state.url;
+      const cluster = state.cluster;
       if (url) {
         // If there is a URL in the statedb, let it have priority.
         sidebar.dashboardLauncher.input.url = url;
@@ -269,6 +282,12 @@ function activate(
       onSettingsChanged();
       // React to a change in the settings.
       settings.changed.connect(onSettingsChanged);
+
+      // If an active cluster is in the state, reset it.
+      if (cluster) {
+        await sidebar.clusterManager.refresh();
+        sidebar.clusterManager.setActiveCluster(cluster);
+      }
     }
   );
 
