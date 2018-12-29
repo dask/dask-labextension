@@ -336,15 +336,15 @@ function ClusterListingItem(props: IClusterListingItemProps) {
 
   let minimum: JSX.Element | null = null;
   let maximum: JSX.Element | null = null;
-  if (cluster.scaling === 'adaptive') {
+  if (cluster.adapt) {
     minimum = (
       <div className="dask-ClusterListingItem-stats">
-        Minimum Workers: {cluster.minimum}
+        Minimum Workers: {cluster.adapt.minimum}
       </div>
     );
     maximum = (
       <div className="dask-ClusterListingItem-stats">
-        Maximum Workers: {cluster.maximum}
+        Maximum Workers: {cluster.adapt.maximum}
       </div>
     );
   }
@@ -459,7 +459,7 @@ export interface IClusterListingItemProps {
 /**
  * An interface for a JSON-serializable representation of a cluster.
  */
-export interface IBaseClusterModel extends JSONObject {
+export interface IClusterModel extends JSONObject {
   /**
    * A unique string ID for the cluster.
    */
@@ -496,33 +496,8 @@ export interface IBaseClusterModel extends JSONObject {
   workers: number;
 
   /**
-   * The scaling type of the cluster model.
+   * If adaptive is enabled for the cluster, this contains an object
+   * with the minimum and maximum number of workers. Otherwise it is `null`.
    */
-  scaling: 'static' | 'adaptive';
+  adapt: null | { minimum: number; maximum: number };
 }
-
-export interface IStaticClusterModel extends IBaseClusterModel {
-  /**
-   * The scaling type of the cluster model.
-   */
-  scaling: 'static';
-}
-
-export interface IAdaptiveClusterModel extends IBaseClusterModel {
-  /**
-   * The scaling type of the cluster model.
-   */
-  scaling: 'adaptive';
-
-  /**
-   * The minimum number of workers.
-   */
-  minimum: number;
-
-  /**
-   * The maximum number of workers.
-   */
-  maximum: number;
-}
-
-export type IClusterModel = IStaticClusterModel | IAdaptiveClusterModel;

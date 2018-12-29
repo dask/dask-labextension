@@ -1,10 +1,6 @@
 import { Dialog, showDialog } from '@jupyterlab/apputils';
 
-import {
-  IAdaptiveClusterModel,
-  IClusterModel,
-  IStaticClusterModel
-} from './clusters';
+import { IClusterModel } from './clusters';
 import * as React from 'react';
 
 /**
@@ -34,7 +30,15 @@ namespace ClusterScaling {
     /**
      * The proposed cluster model shown in the scaling.
      */
-    model: IUnionClusterModel;
+    model: IClusterModel;
+
+    /**
+     * Whether the proposed cluster is adaptive. We keep
+     * an extra flag here so that the transient adaptive
+     * min/max in the `model` is not overwritten while
+     * the user interacts with the dialog.
+     */
+    adaptive: boolean;
   }
 }
 
@@ -51,20 +55,23 @@ export class ClusterScaling extends React.Component<
    */
   constructor(props: ClusterScaling.IProps) {
     super(props);
-    let model: IUnionClusterModel;
+    let model: IClusterModel;
+    const adaptive = !!props.initialModel.adapt;
     // If the initial model is static, enrich it
     // with placeholder values for minimum and maximum workers.
-    if (props.initialModel.scaling === 'static') {
+    if (!adaptive) {
       model = {
-        ...(props.initialModel as IStaticClusterModel),
-        minimum: props.initialModel.workers,
-        maximum: props.initialModel.workers
-      } as IUnionClusterModel;
+        ...props.initialModel,
+        adapt: {
+          minimum: props.initialModel.workers,
+          maximum: props.initialModel.workers
+        }
+      };
     } else {
-      model = props.initialModel as IUnionClusterModel;
+      model = props.initialModel;
     }
 
-    this.state = { model };
+    this.state = { adaptive, model };
   }
 
   /**
@@ -73,12 +80,11 @@ export class ClusterScaling extends React.Component<
    * be sent as the result of the dialog.
    */
   componentDidUpdate(): void {
-    let model: IUnionClusterModel = { ...this.state.model };
-    if (model.scaling === 'static') {
-      delete model['maximum'];
-      delete model['minimum'];
+    let model: IClusterModel = { ...this.state.model };
+    if (!this.state.adaptive) {
+      model.adapt = null;
     }
-    this.props.stateEscapeHatch(this.state.model as IClusterModel);
+    this.props.stateEscapeHatch(model);
   }
 
   /**
@@ -98,12 +104,9 @@ export class ClusterScaling extends React.Component<
    */
   onScalingChanged(event: React.ChangeEvent): void {
     const value = (event.target as HTMLInputElement).checked;
-    const scaling = value ? 'adaptive' : 'static';
     this.setState({
-      model: {
-        ...this.state.model,
-        scaling
-      } as IUnionClusterModel
+      model: this.state.model,
+      adaptive: value
     });
   }
 
@@ -114,12 +117,14 @@ export class ClusterScaling extends React.Component<
   onMinimumChanged(event: React.ChangeEvent): void {
     const value = parseInt((event.target as HTMLInputElement).value, 10);
     const minimum = Math.max(0, value);
-    const maximum = Math.max(this.state.model.maximum, minimum);
+    const maximum = Math.max(this.state.model.adapt!.maximum, minimum);
     this.setState({
       model: {
         ...this.state.model,
-        maximum,
-        minimum
+        adapt: {
+          maximum,
+          minimum
+        }
       }
     });
   }
@@ -131,12 +136,14 @@ export class ClusterScaling extends React.Component<
   onMaximumChanged(event: React.ChangeEvent): void {
     const value = parseInt((event.target as HTMLInputElement).value, 10);
     const maximum = Math.max(0, value);
-    const minimum = Math.min(this.state.model.minimum, maximum);
+    const minimum = Math.min(this.state.model.adapt!.minimum, maximum);
     this.setState({
       model: {
         ...this.state.model,
-        maximum,
-        minimum
+        adapt: {
+          maximum,
+          minimum
+        }
       }
     });
   }
@@ -146,7 +153,8 @@ export class ClusterScaling extends React.Component<
    */
   render() {
     const model = this.state.model;
-    const adaptive = model.scaling === 'adaptive';
+    const adapt = model.adapt!;
+    const adaptive = this.state.adaptive;
     const disabledClass = 'dask-mod-disabled';
     return (
       <div>
@@ -196,7 +204,7 @@ export class ClusterScaling extends React.Component<
               className="dask-ScalingInput"
               disabled={!adaptive}
               type="number"
-              value={(model as IAdaptiveClusterModel).minimum}
+              value={adapt.minimum}
               step="1"
               onChange={evt => {
                 this.onMinimumChanged(evt);
@@ -217,7 +225,7 @@ export class ClusterScaling extends React.Component<
               className="dask-ScalingInput"
               disabled={!adaptive}
               type="number"
-              value={(model as IAdaptiveClusterModel).maximum}
+              value={adapt.maximum}
               step="1"
               onChange={evt => {
                 this.onMaximumChanged(evt);
@@ -261,10 +269,3 @@ export function showScalingDialog(
     }
   });
 }
-
-/**
- * A module-private union type so that we always can refer
- * to the maximum/minimum values for the current cluster model
- * when we are in the dialog.
- */
-type IUnionClusterModel = IStaticClusterModel & IAdaptiveClusterModel;

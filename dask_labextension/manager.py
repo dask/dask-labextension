@@ -3,31 +3,42 @@
 # Copyright (c) Jupyter Development Team.
 # Distributed under the terms of the Modified BSD License.
 
-import functools
 import importlib
-from typing import Any, Callable, Dict, List, Union
+from typing import Any, Dict, List, Union
 from uuid import uuid4
 
 import dask
 from dask.distributed import Adaptive, utils
+from distributed.utils import All
+from tornado.ioloop import IOLoop
 
 # A type for a dask cluster model: a serializable
 # representation of information about the cluster.
-ClusterModel = Dict[str, Union[str, int]]
+ClusterModel = Dict[str, Any]
 
 # A type stub for a Dask cluster.
 Cluster = Any
 
-# A type stub for a Dask cluster factory.
-DaskClusterFactory = Callable[[], Cluster]
 
-# Get default cluster factory from configuration
-default_factory_module = importlib.import_module(dask.config.get('labextension.factory.module'))
-default_factory = getattr(default_factory_module, dask.config.get('labextension.factory.class'))
-if dask.config.get('labextension.factory.args') or dask.config.get('labextension.factory.kwargs'):
-    default_factory = functools.partial(default_factory,
-                                        *dask.config.get('labextension.factory.args'),
-                                        **dask.config.get('labextension.factory.kwargs'))
+async def make_cluster(configuration: dict) -> Cluster:
+    module = importlib.import_module(dask.config.get('labextension.factory.module'))
+    Cluster = getattr(module, dask.config.get('labextension.factory.class'))
+    cluster = await Cluster(*dask.config.get('labextension.factory.args'),
+                            **dask.config.get('labextension.factory.kwargs'),
+                            asynchronous=True)
+
+    configuration = dask.config.merge(
+        dask.config.get('labextension.default'),
+        configuration
+    )
+
+    adaptive = None
+    if configuration.get('adapt'):
+        adaptive = cluster.adapt(**configuration.get('adapt'))
+    elif configuration.get('workers') is not None:
+        cluster.scale(configuration.get('workers'))
+
+    return cluster, adaptive
 
 
 class DaskClusterManager:
@@ -36,23 +47,20 @@ class DaskClusterManager:
     of Dask clusters.
     """
 
-    def __init__(self, cluster_factory: DaskClusterFactory = default_factory) -> None:
-        """
-        Initialize the cluster manager.
-
-        Parameters
-        ----------
-        cluster_factory : function
-            An optional function that, when called, creates a new
-            Dask cluster for usage. If not given, defaults to a LocalCluster.
-        """
-        self._cluster_factory: DaskClusterFactory = cluster_factory
+    def __init__(self) -> None:
+        """ Initialize the cluster manager """
         self._clusters: Dict[str, Cluster] = dict()
         self._adaptives: Dict[str, Adaptive] = dict()
         self._cluster_names: Dict[str, str] = dict()
         self._n_clusters = 0
 
-    def start_cluster(self, cluster_id: str = "") -> ClusterModel:
+        async def start_clusters():
+            for model in dask.config.get('labextension.initial'):
+                await self.start_cluster(configuration=model)
+
+        IOLoop.current().add_callback(start_clusters)
+
+    async def start_cluster(self, cluster_id: str = "", configuration: dict = {}) -> ClusterModel:
         """
         Start a new Dask cluster.
 
@@ -67,15 +75,26 @@ class DaskClusterManager:
         """
         if not cluster_id:
             cluster_id = str(uuid4())
-        cluster = self._cluster_factory()
+
+        cluster, adaptive = await make_cluster(configuration)
         self._n_clusters += 1
-        cluster_type = type(cluster).__name__
-        cluster_name = f"{cluster_type} {self._n_clusters}"
+
+        # Check for a name in the config
+        if not configuration.get('name'):
+            cluster_type = type(cluster).__name__
+            cluster_name = f"{cluster_type} {self._n_clusters}"
+        else:
+            cluster_name = configuration['name']
+
+        # Check if the cluster was started adaptively
+        if adaptive:
+            self._adaptives[cluster_id] = adaptive
+
         self._clusters[cluster_id] = cluster
         self._cluster_names[cluster_id] = cluster_name
-        return make_cluster_model(cluster_id, cluster_name, cluster, adaptive=None)
+        return make_cluster_model(cluster_id, cluster_name, cluster, adaptive=adaptive)
 
-    def close_cluster(self, cluster_id: str) -> Union[ClusterModel, None]:
+    async def close_cluster(self, cluster_id: str) -> Union[ClusterModel, None]:
         """
         Close a Dask cluster.
 
@@ -90,7 +109,7 @@ class DaskClusterManager:
         """
         cluster = self._clusters.get(cluster_id)
         if cluster:
-            cluster.close()
+            await cluster.close()
             self._clusters.pop(cluster_id)
             name = self._cluster_names.pop(cluster_id)
             adaptive = self._adaptives.pop(cluster_id, None)
@@ -148,7 +167,7 @@ class DaskClusterManager:
 
         # Check if it is actually different.
         model = make_cluster_model(cluster_id, name, cluster, adaptive)
-        if model["scaling"] == "static" and model["workers"] == n:
+        if model.get("adapt") != None and model["workers"] == n:
             return model
 
         # Otherwise, rescale the model.
@@ -168,15 +187,24 @@ class DaskClusterManager:
 
         # Check if it is actually different.
         model = make_cluster_model(cluster_id, name, cluster, adaptive)
-        if model["scaling"] == "adaptive" and model["minimum"] == minimum and model[
-            "maximum"
-        ] == maximum:
+        if model.get("adapt") != None and model["adapt"]["minimum"] == minimum and model["adapt"]["maximum"] == maximum:
             return model
 
         # Otherwise, rescale the model.
         adaptive = cluster.adapt(minimum=minimum, maximum=maximum)
         self._adaptives[cluster_id] = adaptive
         return make_cluster_model(cluster_id, name, cluster, adaptive)
+
+    async def __aenter__(self):
+        return self
+
+    async def close(self):
+        """ Close all clusters and cleanup """
+        for cluster_id in list(self._clusters):
+            await self.close_cluster(cluster_id)
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.close()
 
 
 def make_cluster_model(
@@ -206,11 +234,9 @@ def make_cluster_model(
     """
     # This would be a great target for a dataclass
     # once python 3.7 is in wider use.
-    scaling = "adaptive" if adaptive else "static"
     model = dict(
         id=cluster_id,
         name=cluster_name,
-        scaling=scaling,
         scheduler_address=cluster.scheduler_address,
         dashboard_link=cluster.dashboard_link or "",
         workers=len(cluster.scheduler.workers),
@@ -220,8 +246,10 @@ def make_cluster_model(
         cores=sum(ws.ncores for ws in cluster.scheduler.workers.values()),
     )
     if adaptive:
-        model["maximum"] = adaptive.maximum
-        model["minimum"] = adaptive.minimum
+        model['adapt'] = {
+            'minimum': adaptive.minimum,
+            'maximum': adaptive.maximum,
+        }
 
     return model
 

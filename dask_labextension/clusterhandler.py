@@ -17,12 +17,12 @@ class DaskClusterHandler(APIHandler):
     """
 
     @web.authenticated
-    def delete(self, cluster_id: str) -> None:
+    async def delete(self, cluster_id: str) -> None:
         """
         Delete a cluster by id.
         """
         try:  # to delete the cluster.
-            val = manager.close_cluster(cluster_id)
+            val = await manager.close_cluster(cluster_id)
             if val is None:
                 raise web.HTTPError(404, f"Dask cluster {cluster_id} not found")
 
@@ -50,7 +50,7 @@ class DaskClusterHandler(APIHandler):
             self.finish(json.dumps(cluster_model))
 
     @web.authenticated
-    def put(self, cluster_id: str = "") -> None:
+    async def put(self, cluster_id: str = "") -> None:
         """
         Create a new cluster with a given id. If no id is given, a random
         one is selected.
@@ -61,7 +61,7 @@ class DaskClusterHandler(APIHandler):
             )
 
         try:
-            cluster_model = manager.start_cluster(cluster_id)
+            cluster_model = await manager.start_cluster(cluster_id)
             self.set_status(200)
             self.finish(json.dumps(cluster_model))
         except Exception as e:
@@ -75,11 +75,11 @@ class DaskClusterHandler(APIHandler):
         """
         new_model = json.loads(self.request.body)
         try:
-            if new_model["scaling"] == "adaptive":
+            if new_model.get("adapt") != None:
                 cluster_model = manager.adapt_cluster(
-                    cluster_id, new_model["minimum"], new_model["maximum"]
+                    cluster_id, new_model["adapt"]["minimum"], new_model["adapt"]["maximum"]
                 )
-            elif new_model["scaling"] == "static":
+            elif new_model.get("adapt") == None:
                 cluster_model = manager.scale_cluster(cluster_id, new_model["workers"])
             self.set_status(200)
             self.finish(json.dumps(cluster_model))

@@ -4,3 +4,15 @@ labextension:
     class: 'LocalCluster'
     args: []
     kwargs: {}
+  default:
+    workers: null
+    adapt: null
+      # minimum: 0
+      # maximum: 10
+  initial: []
+    # - name: "My Big Cluster"
+    #   workers: 100
+    # - name: "Adaptive Cluster"
+    #   adapt:
+    #     minimum: 0
+    #     maximum: 50
