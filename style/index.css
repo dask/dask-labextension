@@ -106,7 +106,26 @@
   left: 0;
   width: 100%;
   height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--jp-ui-font-color3);
+  font-size: var(--jp-ui-font-size3);
+  background-color: var(--jp-layout-color0);
   z-index: 10;
+}
+
+.dask-DaskDashboard-inactive:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url(dask.svg);
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: 0.1;
 }
 
 /**

@@ -26,6 +26,7 @@ export class DaskDashboard extends MainAreaWidget<IFrame> {
     super({ content: new IFrame() });
     this.content.url = '';
     this._inactivePanel = Private.createInactivePanel();
+    this.content.node.appendChild(this._inactivePanel);
     this.active = false;
   }
 
@@ -64,9 +65,9 @@ export class DaskDashboard extends MainAreaWidget<IFrame> {
     }
     this._active = value;
     if (this._active) {
-      this.content.node.appendChild(this._inactivePanel);
+      this._inactivePanel.style.display = 'none';
     } else {
-      this.content.node.removeChild(this._inactivePanel);
+      this._inactivePanel.style.display = '';
     }
   }
 
