@@ -24,6 +24,8 @@ import {
 
 import { Kernel, KernelMessage } from '@jupyterlab/services';
 
+import { Signal } from '@phosphor/signaling';
+
 import { IClusterModel, DaskClusterManager } from './clusters';
 
 import { DaskDashboard, IDashboardItem } from './dashboard';
@@ -166,23 +168,39 @@ function activate(
     state.save(id, { url: args.newValue });
   });
 
+  // A function to create a new dask client for a session.
   const createClientForSession = (session: IClientSession) => {
     const cluster = sidebar.clusterManager.activeCluster;
-    if (!cluster || !session.kernel) {
+    if (!cluster || !Private.shouldUseKernel(session.kernel)) {
       return;
     }
-    Private.createClientForKernel(cluster, session.kernel);
+    Private.createClientForKernel(cluster, session.kernel!);
   };
 
+  type SessionOwner = NotebookPanel | ConsolePanel;
   // An array of the trackers to check for active sessions.
-  const trackers: IInstanceTracker<NotebookPanel | ConsolePanel>[] = [
+  const trackers: IInstanceTracker<SessionOwner>[] = [
     notebookTracker,
     consoleTracker
   ];
 
-  // When the active cluster changes, inject a new client
-  // into all the active notebook and console sessions.
-  sidebar.clusterManager.activeClusterChanged.connect(() => {
+  // A function to recreate a dask client on reconnect.
+  const injectOnSessionStatusChanged = (session: IClientSession) => {
+    if (session.status === 'connected') {
+      createClientForSession(session);
+    }
+  };
+
+  // A function to inject a dask client when a new session owner is added.
+  const injectOnWidgetAdded = (
+    sender: IInstanceTracker<SessionOwner>,
+    widget: SessionOwner
+  ) => {
+    widget.session.statusChanged.connect(injectOnSessionStatusChanged);
+  };
+
+  // A function to inject a dask client when the active cluster changes.
+  const injectOnClusterChanged = () => {
     trackers.forEach(tracker => {
       tracker.forEach(widget => {
         const session = widget.session;
@@ -191,20 +209,42 @@ function activate(
         }
       });
     });
-  });
+  };
 
-  // When a new console or notebook is created, inject
-  // a new client into it.
-  trackers.forEach(tracker => {
-    tracker.widgetAdded.connect((sender, widget) => {
-      const session = widget.session;
-      session.statusChanged.connect(() => {
-        if (session.status === 'connected') {
-          createClientForSession(session);
-        }
+  // Whether the dask cluster clients should aggressively inject themselves
+  // into the current session.
+  let greedyClusterClient: boolean = false;
+
+  // Update the existing trackers and signals in light of a change to the
+  // settings system. In particular, this reacts to a change in the setting
+  // for the greedy cluster client.
+  const updateTrackers = () => {
+    // Clear any existing signals related to the greedy cluster client.
+    Signal.clearData(injectOnWidgetAdded);
+    Signal.clearData(injectOnSessionStatusChanged);
+    Signal.clearData(injectOnClusterChanged);
+
+    if (greedyClusterClient) {
+      // When a new console or notebook is created, inject
+      // a new client into it.
+      trackers.forEach(tracker => {
+        tracker.widgetAdded.connect(injectOnWidgetAdded);
       });
-    });
-  });
+
+      // When the status of an existing notebook changes, reinject the client.
+      trackers.forEach(tracker => {
+        tracker.forEach(widget => {
+          createClientForSession(widget.session);
+          widget.session.statusChanged.connect(injectOnSessionStatusChanged);
+        });
+      });
+
+      // When the active cluster changes, reinject the client.
+      sidebar.clusterManager.activeClusterChanged.connect(
+        injectOnClusterChanged
+      );
+    }
+  };
 
   // Fetch the initial state of the settings.
   Promise.all([settings.load(PLUGIN_ID), state.fetch(id), app.restored]).then(
@@ -214,11 +254,21 @@ function activate(
       if (url) {
         // If there is a URL in the statedb, let it have priority.
         sidebar.dashboardLauncher.input.url = url;
-        return;
+      } else {
+        // Otherwise set the default from the settings.
+        sidebar.dashboardLauncher.input.url = settings.get('defaultURL')
+          .composite as string;
       }
-      // Otherwise set the default from the settings.
-      sidebar.dashboardLauncher.input.url = settings.get('defaultURL')
-        .composite as string;
+
+      const onSettingsChanged = () => {
+        // Determine whether to use the greedy cluster client.
+        greedyClusterClient = settings.get('greedyClusterClient')
+          .composite as boolean;
+        updateTrackers();
+      };
+      onSettingsChanged();
+      // React to a change in the settings.
+      settings.changed.connect(onSettingsChanged);
     }
   );
 
