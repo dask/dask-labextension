@@ -6,6 +6,7 @@ import {
 
 import {
   IClientSession,
+  ICommandPalette,
   IInstanceTracker,
   InstanceTracker
 } from '@jupyterlab/apputils';
@@ -15,6 +16,8 @@ import { CodeEditor } from '@jupyterlab/codeeditor';
 import { ConsolePanel, IConsoleTracker } from '@jupyterlab/console';
 
 import { ISettingRegistry, IStateDB } from '@jupyterlab/coreutils';
+
+import { IMainMenu } from '@jupyterlab/mainmenu';
 
 import {
   INotebookTracker,
@@ -59,6 +62,11 @@ namespace CommandIDs {
    * Scale a cluster.
    */
   export const scaleCluster = 'dask:scale-cluster';
+
+  /**
+   * Toggle the greedy client cluster.
+   */
+  export const toggleGreedyClient = 'dask:toggle-greedy-client';
 }
 
 const PLUGIN_ID = 'dask-labextension:plugin';
@@ -70,8 +78,10 @@ const plugin: JupyterLabPlugin<void> = {
   activate,
   id: PLUGIN_ID,
   requires: [
+    ICommandPalette,
     IConsoleTracker,
     ILayoutRestorer,
+    IMainMenu,
     INotebookTracker,
     ISettingRegistry,
     IStateDB
@@ -89,10 +99,12 @@ export default plugin;
  */
 function activate(
   app: JupyterLab,
+  commandPalette: ICommandPalette,
   consoleTracker: IConsoleTracker,
   restorer: ILayoutRestorer,
+  mainMenu: IMainMenu,
   notebookTracker: INotebookTracker,
-  settings: ISettingRegistry,
+  settingRegistry: ISettingRegistry,
   state: IStateDB
 ): void {
   const id = 'dask-dashboard-launcher';
@@ -258,38 +270,40 @@ function activate(
   };
 
   // Fetch the initial state of the settings.
-  Promise.all([settings.load(PLUGIN_ID), state.fetch(id), app.restored]).then(
-    async res => {
-      const settings = res[0];
-      const state = res[1] as { url?: string; cluster?: string };
-      const url = state.url;
-      const cluster = state.cluster;
-      if (url) {
-        // If there is a URL in the statedb, let it have priority.
-        sidebar.dashboardLauncher.input.url = url;
-      } else {
-        // Otherwise set the default from the settings.
-        sidebar.dashboardLauncher.input.url = settings.get('defaultURL')
-          .composite as string;
-      }
-
-      const onSettingsChanged = () => {
-        // Determine whether to use the greedy cluster client.
-        greedyClusterClient = settings.get('greedyClusterClient')
-          .composite as boolean;
-        updateTrackers();
-      };
-      onSettingsChanged();
-      // React to a change in the settings.
-      settings.changed.connect(onSettingsChanged);
-
-      // If an active cluster is in the state, reset it.
-      if (cluster) {
-        await sidebar.clusterManager.refresh();
-        sidebar.clusterManager.setActiveCluster(cluster);
-      }
+  Promise.all([
+    settingRegistry.load(PLUGIN_ID),
+    state.fetch(id),
+    app.restored
+  ]).then(async res => {
+    const settings = res[0];
+    const state = res[1] as { url?: string; cluster?: string };
+    const url = state.url;
+    const cluster = state.cluster;
+    if (url) {
+      // If there is a URL in the statedb, let it have priority.
+      sidebar.dashboardLauncher.input.url = url;
+    } else {
+      // Otherwise set the default from the settings.
+      sidebar.dashboardLauncher.input.url = settings.get('defaultURL')
+        .composite as string;
     }
-  );
+
+    const onSettingsChanged = () => {
+      // Determine whether to use the greedy cluster client.
+      greedyClusterClient = settings.get('greedyClusterClient')
+        .composite as boolean;
+      updateTrackers();
+    };
+    onSettingsChanged();
+    // React to a change in the settings.
+    settings.changed.connect(onSettingsChanged);
+
+    // If an active cluster is in the state, reset it.
+    if (cluster) {
+      await sidebar.clusterManager.refresh();
+      sidebar.clusterManager.setActiveCluster(cluster);
+    }
+  });
 
   // Add the command for launching a new dashboard item.
   app.commands.addCommand(CommandIDs.launchPanel, {
@@ -369,6 +383,29 @@ function activate(
       }
       return sidebar.clusterManager.scale(cluster.id);
     }
+  });
+
+  // Add a command to toggle the greedy client code.
+  app.commands.addCommand(CommandIDs.toggleGreedyClient, {
+    label: 'Greedy Dask Client',
+    isToggled: () => greedyClusterClient,
+    execute: () => {
+      const value = !greedyClusterClient;
+      const key = 'greedyClusterClient';
+      return settingRegistry
+        .set(PLUGIN_ID, key, value)
+        .catch((reason: Error) => {
+          console.error(
+            `Failed to set ${PLUGIN_ID}:${key} - ${reason.message}`
+          );
+        });
+    }
+  });
+
+  // Add some commands to the menu and command palette.
+  mainMenu.settingsMenu.addGroup([{ command: CommandIDs.toggleGreedyClient }]);
+  [CommandIDs.launchCluster, CommandIDs.toggleGreedyClient].forEach(command => {
+    commandPalette.addItem({ category: 'Dask', command });
   });
 
   // Add a context menu items.
