@@ -9,8 +9,8 @@ from uuid import uuid4
 
 import dask
 from dask.distributed import Adaptive, utils
-from distributed.utils import All
 from tornado.ioloop import IOLoop
+from tornado.concurrent import Future
 
 # A type for a dask cluster model: a serializable
 # representation of information about the cluster.
@@ -54,9 +54,12 @@ class DaskClusterManager:
         self._cluster_names: Dict[str, str] = dict()
         self._n_clusters = 0
 
+        self.initialized = Future()
+
         async def start_clusters():
             for model in dask.config.get('labextension.initial'):
                 await self.start_cluster(configuration=model)
+            self.initialized.set_result(None)
 
         IOLoop.current().add_callback(start_clusters)
 

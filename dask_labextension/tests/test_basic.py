@@ -1,6 +1,5 @@
 import dask
 from distributed.utils_test import gen_test
-from tornado import gen
 
 from dask_labextension.manager import DaskClusterManager
 
@@ -20,9 +19,9 @@ async def test_core():
             assert model['adapt'] == {'minimum': 1, 'maximum': 3}
 
             # close cluster
-            assert len(manager._clusters) == 1
+            assert len(manager.list_clusters()) == 1
             await manager.close_cluster(model['id'])
-            assert not manager._clusters
+            assert not manager.list_clusters()
 
             await manager.close()
 
@@ -34,7 +33,7 @@ async def test_initial():
         'labextension.initial': [{'name': 'foo'}],
     }):
         async with DaskClusterManager() as manager:
-            while not manager._clusters:
-                await gen.sleep(0.01)
-            [(id, cluster)] = manager._clusters.items()
-            assert manager._cluster_names[id] == 'foo'
+            await manager.initialized
+            clusters = manager.list_clusters()
+            assert len(clusters) == 1
+            assert clusters[0]["name"] == 'foo'
