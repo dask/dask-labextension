@@ -197,6 +197,7 @@ function activate(
     execute: args => {
       // Construct the url for the dashboard.
       const dashboardUrl = sidebar.dashboardLauncher.input.url;
+      const active = sidebar.dashboardLauncher.input.isValid;
       const dashboardItem = args as IDashboardItem;
 
       // If we already have a dashboard open to this url, activate it
@@ -213,6 +214,7 @@ function activate(
       const dashboard = new DaskDashboard();
       dashboard.dashboardUrl = dashboardUrl;
       dashboard.item = dashboardItem;
+      dashboard.active = active;
       dashboard.id = `dask-dashboard-${Private.id++}`;
       dashboard.title.label = `Dask ${dashboardItem.label}`;
       dashboard.title.icon = 'dask-DaskLogo';

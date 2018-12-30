@@ -4,7 +4,7 @@ import { PageConfig, URLExt } from '@jupyterlab/coreutils';
 
 import { ServerConnection } from '@jupyterlab/services';
 
-import { JSONObject } from '@phosphor/coreutils';
+import { JSONExt, JSONObject } from '@phosphor/coreutils';
 
 import { Message } from '@phosphor/messaging';
 
@@ -24,10 +24,9 @@ export class DaskDashboard extends MainAreaWidget<IFrame> {
    */
   constructor() {
     super({ content: new IFrame() });
-    this.content.url = '';
     this._inactivePanel = Private.createInactivePanel();
     this.content.node.appendChild(this._inactivePanel);
-    this.active = false;
+    this.update();
   }
 
   /**
@@ -37,8 +36,11 @@ export class DaskDashboard extends MainAreaWidget<IFrame> {
     return this._item;
   }
   set item(value: IDashboardItem | null) {
+    if (JSONExt.deepEqual(value, this._item)) {
+      return;
+    }
     this._item = value;
-    this._updateUrl();
+    this.update();
   }
 
   /**
@@ -48,8 +50,11 @@ export class DaskDashboard extends MainAreaWidget<IFrame> {
     return this._dashboardUrl;
   }
   set dashboardUrl(value: string) {
+    if (value === this._dashboardUrl) {
+      return;
+    }
     this._dashboardUrl = Private.normalizeDashboardUrl(value);
-    this._updateUrl();
+    this.update();
   }
 
   /**
@@ -64,24 +69,28 @@ export class DaskDashboard extends MainAreaWidget<IFrame> {
       return;
     }
     this._active = value;
-    if (this._active) {
-      this._inactivePanel.style.display = 'none';
-    } else {
-      this._inactivePanel.style.display = '';
-    }
+    this.update();
   }
 
-  private _updateUrl(): void {
-    if (!this.item || !this.dashboardUrl) {
+  /**
+   * Handle an update request to the dashboard panel.
+   */
+  protected onUpdateRequest(): void {
+    // If there is nothing to show, empty the iframe URL and
+    // show the inactive panel.
+    if (!this.item || !this.dashboardUrl || !this.active) {
       this.content.url = '';
+      this._inactivePanel.style.display = '';
       return;
     }
-    this.content.url = URLExt.join(this.dashboardUrl, this.item!.route);
+    // Make sure the inactive panel is hidden
+    this._inactivePanel.style.display = 'none';
+    this.content.url = URLExt.join(this.dashboardUrl, this.item.route);
   }
 
   private _item: IDashboardItem | null = null;
-  private _dashboardUrl: string;
-  private _active: boolean;
+  private _dashboardUrl: string = '';
+  private _active: boolean = false;
   private _inactivePanel: HTMLElement;
 }
 
