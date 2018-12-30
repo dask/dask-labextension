@@ -562,8 +562,6 @@ namespace Private {
 
   export function createInactivePanel(): HTMLElement {
     const panel = document.createElement('div');
-    const info = 'Cannot find dashboard';
-    panel.textContent = info;
     panel.className = 'dask-DaskDashboard-inactive';
     return panel;
   }
