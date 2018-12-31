@@ -1,7 +1,9 @@
 import pytest
+from tornado.gen import sleep
 
 import dask
 from distributed.utils_test import gen_test
+from distributed.metrics import time
 
 from dask_labextension.manager import DaskClusterManager
 
@@ -88,27 +90,24 @@ async def test_scale():
         'labextension.initial': [],
     }):
         async with DaskClusterManager() as manager:
-            ### TODO: figure out how to write this test with an
-            ### asynchronous cluster.
-            pass
             # add cluster with number of workers configuration
-            # model = await manager.start_cluster(configuration={'workers': 3})
-            # sleep(0.2)  # let workers settle # TODO: remove need for this
-            # start = time()
-            # while model['workers'] != 3:
-            #    sleep(0.01)
-            #    model = manager.get_cluster(model['id'])
-            #    assert time() < start + 5, model['workers']
+            model = await manager.start_cluster(configuration={'workers': 3})
+            await sleep(0.2)  # let workers settle # TODO: remove need for this
+            start = time()
+            while model['workers'] != 3:
+                sleep(0.01)
+                model = manager.get_cluster(model['id'])
+                assert time() < start + 5, model['workers']
 
-            # sleep(0.2)  # let workers settle # TODO: remove need for this
+            sleep(0.2)  # let workers settle # TODO: remove need for this
 
             # rescale the cluster
-            # model = manager.scale_cluster(model['id'], 6)
-            # start = time()
-            # while model['workers'] != 6:
-            #    sleep(0.01)
-            #    model = manager.get_cluster(model['id'])
-            #    assert time() < start + 5, model['workers']
+            model = manager.scale_cluster(model['id'], 6)
+            start = time()
+            while model['workers'] != 6:
+                await sleep(0.01)
+                model = manager.get_cluster(model['id'])
+                assert time() < start + 5, model['workers']
 
 @gen_test()
 async def test_adapt():
