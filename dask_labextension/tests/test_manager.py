@@ -108,8 +108,23 @@ async def test_initial():
         'labextension.defaults.kwargs': {'processes': False},  # for speed
         'labextension.initial': [{'name': 'foo'}],
     }):
+        # Test asynchronous starting of clusters via a context
         async with DaskClusterManager() as manager:
-            await manager.initialized
             clusters = manager.list_clusters()
             assert len(clusters) == 1
             assert clusters[0]["name"] == 'foo'
+
+        # Test asynchronous starting of clusters outside of a context
+        manager = DaskClusterManager()
+        assert len(manager.list_clusters()) == 0
+        await manager
+        clusters = manager.list_clusters()
+        assert len(clusters) == 1
+        assert clusters[0]["name"] == 'foo'
+        await manager.close()
+
+        manager = await DaskClusterManager()
+        clusters = manager.list_clusters()
+        assert len(clusters) == 1
+        assert clusters[0]["name"] == 'foo'
+        await manager.close()

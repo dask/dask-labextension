@@ -59,7 +59,7 @@ class DaskClusterManager:
         async def start_clusters():
             for model in dask.config.get('labextension.initial'):
                 await self.start_cluster(configuration=model)
-            self.initialized.set_result(None)
+            self.initialized.set_result(self)
 
         IOLoop.current().add_callback(start_clusters)
 
@@ -198,16 +198,32 @@ class DaskClusterManager:
         self._adaptives[cluster_id] = adaptive
         return make_cluster_model(cluster_id, name, cluster, adaptive)
 
-    async def __aenter__(self):
-        return self
-
     async def close(self):
         """ Close all clusters and cleanup """
         for cluster_id in list(self._clusters):
             await self.close_cluster(cluster_id)
 
+    async def __aenter__(self):
+        """
+        Enter an asynchronous context.
+        This waits for any initial clusters specified via configuration to start.
+        """
+        await self.initialized
+        return self
+
     async def __aexit__(self, exc_type, exc, tb):
+        """
+        Exit an asynchronous context.
+        This closes any extant clusters.
+        """
         await self.close()
+
+    def __await__(self):
+        """
+        Awaiter for the manager to be initialized.
+        This waits for any initial clusters specified via configuration to start.
+        """
+        return self.initialized.__await__()
 
 
 def make_cluster_model(
