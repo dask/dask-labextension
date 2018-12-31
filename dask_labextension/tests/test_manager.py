@@ -97,7 +97,7 @@ async def test_scale():
             while model['workers'] != 3:
                 sleep(0.01)
                 model = manager.get_cluster(model['id'])
-                assert time() < start + 5, model['workers']
+                assert time() < start + 10, model['workers']
 
             sleep(0.2)  # let workers settle # TODO: remove need for this
 
@@ -107,7 +107,7 @@ async def test_scale():
             while model['workers'] != 6:
                 await sleep(0.01)
                 model = manager.get_cluster(model['id'])
-                assert time() < start + 5, model['workers']
+                assert time() < start + 10, model['workers']
 
 @gen_test()
 async def test_adapt():
