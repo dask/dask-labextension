@@ -88,19 +88,43 @@ async def test_scale():
         'labextension.initial': [],
     }):
         async with DaskClusterManager() as manager:
-            # TODO: We would like to be able to await
-            # scaling and adapting of a cluster. As it is,
-            # it is more of a fire-and-forget operation,
-            # so we can't reliably test this functionality.
+            ### TODO: figure out how to write this test with an
+            ### asynchronous cluster.
             pass
             # add cluster with number of workers configuration
             # model = await manager.start_cluster(configuration={'workers': 3})
-            # assert model['workers'] == 3
-            # assert not model.get('adapt')
-            # scale the cluster
+            # sleep(0.2)  # let workers settle # TODO: remove need for this
+            # start = time()
+            # while model['workers'] != 3:
+            #    sleep(0.01)
+            #    model = manager.get_cluster(model['id'])
+            #    assert time() < start + 5, model['workers']
+
+            # sleep(0.2)  # let workers settle # TODO: remove need for this
+
+            # rescale the cluster
             # model = manager.scale_cluster(model['id'], 6)
-            # assert model['workers'] == 6
-            # assert not model.get('adapt')
+            # start = time()
+            # while model['workers'] != 6:
+            #    sleep(0.01)
+            #    model = manager.get_cluster(model['id'])
+            #    assert time() < start + 5, model['workers']
+
+@gen_test()
+async def test_adapt():
+    with dask.config.set({
+        'labextension.defaults.kwargs': {'processes': False},  # for speed
+        'labextension.initial': [],
+    }):
+        async with DaskClusterManager() as manager:
+            # add a new cluster
+            model = await manager.start_cluster()
+            assert not model.get('adapt')
+            model = manager.adapt_cluster(model['id'], 0, 4)
+            adapt = model.get('adapt')
+            assert adapt
+            assert adapt['minimum'] == 0
+            assert adapt['maximum'] == 4
 
 @gen_test()
 async def test_initial():

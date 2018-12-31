@@ -170,7 +170,7 @@ class DaskClusterManager:
 
         # Check if it is actually different.
         model = make_cluster_model(cluster_id, name, cluster, adaptive)
-        if model.get("adapt") != None and model["workers"] == n:
+        if model.get("adapt") == None and model["workers"] == n:
             return model
 
         # Otherwise, rescale the model.
