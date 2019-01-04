@@ -92,14 +92,13 @@ async def test_scale():
         async with DaskClusterManager() as manager:
             # add cluster with number of workers configuration
             model = await manager.start_cluster(configuration={'workers': 3})
-            await sleep(0.2)  # let workers settle # TODO: remove need for this
             start = time()
             while model['workers'] != 3:
-                sleep(0.01)
+                await sleep(0.01)
                 model = manager.get_cluster(model['id'])
                 assert time() < start + 10, model['workers']
 
-            sleep(0.2)  # let workers settle # TODO: remove need for this
+            await sleep(0.2)  # let workers settle # TODO: remove need for this
 
             # rescale the cluster
             model = manager.scale_cluster(model['id'], 6)
