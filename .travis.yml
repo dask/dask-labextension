@@ -1,0 +1,15 @@
+language: python
+dist: trusty
+
+env:
+  matrix:
+    - PYTHON=3.6
+    - PYTHON=3.7
+
+install:
+  - bash ci/install.sh
+script:
+  - bash ci/script.sh
+
+notifications:
+  email: false
