@@ -16,14 +16,14 @@ This extension includes both a client-side JupyterLab extension and a server-sid
 Jupyter notebook extension. Install these using the command line with
 
 ```bash
+pip install dask_labextension
 jupyter labextension install dask-labextension
-jupyter serverextension install dask_labextension
 ```
 
 If you are running Notebook 5.2 or earlier, enable the server extension by running
 
 ```bash
-jupyter serverextension enable --sys-prefix dask_labextension
+jupyter serverextension enable --py --sys-prefix dask_labextension
 ```
 
 ## Configuration of Dask cluster management
