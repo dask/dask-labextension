@@ -9,9 +9,9 @@
       "title": "Default URL for the Dask Dashboard Webserver",
       "default": ""
     },
-    "greedyClusterClient": {
+    "autoStartClient": {
       "type": "boolean",
-      "title": "Greedy Cluster Client",
+      "title": "Auto-Start Client",
       "description": "If set to true, every notebook and console will automatically have a dask client for the active cluster injected into the kernel under the name 'client'",
       "default": false
     }

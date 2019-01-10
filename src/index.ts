@@ -64,9 +64,9 @@ namespace CommandIDs {
   export const scaleCluster = 'dask:scale-cluster';
 
   /**
-   * Toggle the greedy client cluster.
+   * Toggle the auto-starting of clients.
    */
-  export const toggleGreedyClient = 'dask:toggle-greedy-client';
+  export const toggleAutoStartClient = 'dask:toggle-auto-start-client';
 }
 
 const PLUGIN_ID = 'dask-labextension:plugin';
@@ -236,18 +236,18 @@ function activate(
 
   // Whether the dask cluster clients should aggressively inject themselves
   // into the current session.
-  let greedyClusterClient: boolean = false;
+  let autoStartClient: boolean = false;
 
   // Update the existing trackers and signals in light of a change to the
   // settings system. In particular, this reacts to a change in the setting
-  // for the greedy cluster client.
+  // for auto-starting cluster client.
   const updateTrackers = () => {
-    // Clear any existing signals related to the greedy cluster client.
+    // Clear any existing signals related to the auto-starting.
     Signal.clearData(injectOnWidgetAdded);
     Signal.clearData(injectOnSessionStatusChanged);
     Signal.clearData(injectOnClusterChanged);
 
-    if (greedyClusterClient) {
+    if (autoStartClient) {
       // When a new console or notebook is created, inject
       // a new client into it.
       trackers.forEach(tracker => {
@@ -289,9 +289,8 @@ function activate(
     }
 
     const onSettingsChanged = () => {
-      // Determine whether to use the greedy cluster client.
-      greedyClusterClient = settings.get('greedyClusterClient')
-        .composite as boolean;
+      // Determine whether to use the auto-starting client.
+      autoStartClient = settings.get('autoStartClient').composite as boolean;
       updateTrackers();
     };
     onSettingsChanged();
@@ -385,13 +384,13 @@ function activate(
     }
   });
 
-  // Add a command to toggle the greedy client code.
-  app.commands.addCommand(CommandIDs.toggleGreedyClient, {
-    label: 'Greedy Dask Client',
-    isToggled: () => greedyClusterClient,
+  // Add a command to toggle the auto-starting client code.
+  app.commands.addCommand(CommandIDs.toggleAutoStartClient, {
+    label: 'Auto-Start Dask',
+    isToggled: () => autoStartClient,
     execute: () => {
-      const value = !greedyClusterClient;
-      const key = 'greedyClusterClient';
+      const value = !autoStartClient;
+      const key = 'autoStartClient';
       return settingRegistry
         .set(PLUGIN_ID, key, value)
         .catch((reason: Error) => {
@@ -403,10 +402,14 @@ function activate(
   });
 
   // Add some commands to the menu and command palette.
-  mainMenu.settingsMenu.addGroup([{ command: CommandIDs.toggleGreedyClient }]);
-  [CommandIDs.launchCluster, CommandIDs.toggleGreedyClient].forEach(command => {
-    commandPalette.addItem({ category: 'Dask', command });
-  });
+  mainMenu.settingsMenu.addGroup([
+    { command: CommandIDs.toggleAutoStartClient }
+  ]);
+  [CommandIDs.launchCluster, CommandIDs.toggleAutoStartClient].forEach(
+    command => {
+      commandPalette.addItem({ category: 'Dask', command });
+    }
+  );
 
   // Add a context menu items.
   app.contextMenu.addItem({
