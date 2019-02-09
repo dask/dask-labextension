@@ -314,8 +314,10 @@ export class DaskClusterManager extends Widget {
    */
   private _evtMouseUp(event: MouseEvent): void {
     // Remove the event listeners we put on the document
-    document.removeEventListener('mousemove', this, true);
-    document.removeEventListener('mouseup', this, true);
+    if (event.button !== 0 || !this._drag) {
+      document.removeEventListener('mousemove', this, true);
+      document.removeEventListener('mouseup', this, true);
+    }
     event.preventDefault();
     event.stopPropagation();
   }
@@ -324,17 +326,16 @@ export class DaskClusterManager extends Widget {
    * Handle the `'mousemove'` event for the widget.
    */
   private _evtMouseMove(event: MouseEvent): void {
-    event.preventDefault();
-    event.stopPropagation();
-
-    if (!this._drag || !this._dragData) {
+    let data = this._dragData;
+    if (!data) {
       return;
     }
     // Check for a drag initialization.
-    let data = this._dragData;
     let dx = Math.abs(event.clientX - data.pressX);
     let dy = Math.abs(event.clientY - data.pressY);
     if (dx >= DRAG_THRESHOLD || dy >= DRAG_THRESHOLD) {
+      event.preventDefault();
+      event.stopPropagation();
       this._startDrag(data.index, event.clientX, event.clientY);
     }
   }
@@ -349,15 +350,6 @@ export class DaskClusterManager extends Widget {
     const dragImage = document.createElement('div');
     dragImage.textContent = model.name;
 
-    const textData = model.name;
-    const cellData: nbformat.ICodeCell = {
-      cell_type: 'code',
-      source: textData,
-      outputs: [],
-      execution_count: null,
-      metadata: {}
-    };
-
     // Set up the drag event.
     this._drag = new Drag({
       mimeData: new MimeData(),
@@ -366,11 +358,22 @@ export class DaskClusterManager extends Widget {
       proposedAction: 'copy',
       source: this
     });
-    this._drag.mimeData.setData(JUPYTER_CELL_MIME, cellData);
-    // Add mimeData for the fully reified cell widgets, for the
-    // case where the target is in the same notebook and we
-    // can just move the cells.
+
+    // Add mimeData for plain text so that normal editors can
+    // receive the data.
+    const textData = model.name;
     this._drag.mimeData.setData('text/plain', textData);
+    // Add cell data for notebook drops.
+    const cellData: nbformat.ICodeCell[] = [
+      {
+        cell_type: 'code',
+        source: textData,
+        outputs: [],
+        execution_count: null,
+        metadata: {}
+      }
+    ];
+    this._drag.mimeData.setData(JUPYTER_CELL_MIME, cellData);
 
     // Remove mousemove and mouseup listeners and start the drag.
     document.removeEventListener('mousemove', this, true);
