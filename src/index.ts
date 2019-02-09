@@ -1,7 +1,8 @@
 import {
+  ILabShell,
   ILayoutRestorer,
-  JupyterLab,
-  JupyterLabPlugin
+  JupyterFrontEnd,
+  JupyterFrontEndPlugin
 } from '@jupyterlab/application';
 
 import { InstanceTracker } from '@jupyterlab/apputils';
@@ -60,11 +61,12 @@ const PLUGIN_ID = 'dask-labextension:plugin';
 /**
  * The dask dashboard extension.
  */
-const plugin: JupyterLabPlugin<void> = {
+const plugin: JupyterFrontEndPlugin<void> = {
   activate,
   id: PLUGIN_ID,
   requires: [
     IConsoleTracker,
+    ILabShell,
     ILayoutRestorer,
     INotebookTracker,
     ISettingRegistry,
@@ -82,8 +84,9 @@ export default plugin;
  * Activate the dashboard launcher plugin.
  */
 function activate(
-  app: JupyterLab,
+  app: JupyterFrontEnd,
   consoleTracker: IConsoleTracker,
+  labShell: ILabShell,
   restorer: ILayoutRestorer,
   notebookTracker: INotebookTracker,
   settings: ISettingRegistry,
@@ -95,7 +98,7 @@ function activate(
   // based on the currently active notebook/console
   const linkFinder = async () => {
     const kernel = Private.getCurrentKernel(
-      app,
+      labShell,
       notebookTracker,
       consoleTracker
     );
@@ -150,7 +153,7 @@ function activate(
     name: widget => widget.item && widget.item.route
   });
 
-  app.shell.addToLeftArea(sidebar, { rank: 200 });
+  labShell.add(sidebar, 'left', { rank: 200 });
 
   const updateDashboards = () => {
     const input = sidebar.dashboardLauncher.input;
@@ -206,7 +209,7 @@ function activate(
         return !!(w && w.item && w.item.route === dashboardItem.route);
       });
       if (w) {
-        app.shell.activateById(w.id);
+        labShell.activateById(w.id);
         return;
       }
 
@@ -219,7 +222,7 @@ function activate(
       dashboard.title.label = `Dask ${dashboardItem.label}`;
       dashboard.title.icon = 'dask-DaskLogo';
 
-      app.shell.addToMainArea(dashboard);
+      labShell.add(dashboard, 'main');
       tracker.add(dashboard);
       return dashboard;
     }
@@ -347,13 +350,13 @@ client`;
    * checking both notebooks and consoles.
    */
   export function getCurrentKernel(
-    app: JupyterLab,
+    shell: ILabShell,
     notebookTracker: INotebookTracker,
     consoleTracker: IConsoleTracker
   ): Kernel.IKernelConnection | null | undefined {
     // Get a handle on the most relevant kernel,
     // whether it is attached to a notebook or a console.
-    let current = app.shell.currentWidget;
+    let current = shell.currentWidget;
     let kernel: Kernel.IKernelConnection | null | undefined;
     if (current && notebookTracker.has(current)) {
       kernel = (current as NotebookPanel).session.kernel;
@@ -376,7 +379,7 @@ client`;
    * active cell and then returns that.
    */
   export function getCurrentEditor(
-    app: JupyterLab,
+    app: JupyterFrontEnd,
     notebookTracker: INotebookTracker,
     consoleTracker: IConsoleTracker
   ): CodeEditor.IEditor | null | undefined {
@@ -408,11 +411,11 @@ client`;
    * Get a cluster model based on the application context menu click node.
    */
   export function clusterFromClick(
-    app: JupyterLab,
+    app: JupyterFrontEnd,
     manager: DaskClusterManager
   ): IClusterModel | undefined {
     const test = (node: HTMLElement) => !!node.dataset.clusterId;
-    const node = app.contextMenuFirst(test);
+    const node = app.contextMenuHitTest(test);
     if (!node) {
       return undefined;
     }
