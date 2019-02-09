@@ -51,6 +51,7 @@ export class DaskClusterManager extends Widget {
 
     this._serverSettings = ServerConnection.makeSettings();
     this._injectClientCodeForCluster = options.injectClientCodeForCluster;
+    this._getClientCodeForCluster = options.getClientCodeForCluster;
 
     // A function to set the active cluster.
     this._setActiveById = (id: string) => {
@@ -362,7 +363,7 @@ export class DaskClusterManager extends Widget {
 
     // Add mimeData for plain text so that normal editors can
     // receive the data.
-    const textData = model.name;
+    const textData = this._getClientCodeForCluster(model);
     this._drag.mimeData.setData('text/plain', textData);
     // Add cell data for notebook drops.
     const cellData: nbformat.ICodeCell[] = [
@@ -495,6 +496,7 @@ export class DaskClusterManager extends Widget {
   private _activeCluster: IClusterModel | undefined;
   private _setActiveById: (id: string) => void;
   private _injectClientCodeForCluster: (model: IClusterModel) => void;
+  private _getClientCodeForCluster: (model: IClusterModel) => string;
   private _serverSettings: ServerConnection.ISettings;
   private _activeClusterChanged = new Signal<
     this,
@@ -519,6 +521,11 @@ export namespace DaskClusterManager {
      * A callback to inject client connection cdoe.
      */
     injectClientCodeForCluster: (model: IClusterModel) => void;
+
+    /**
+     * A callback to get client code for a cluster.
+     */
+    getClientCodeForCluster: (model: IClusterModel) => string;
   }
 }
 

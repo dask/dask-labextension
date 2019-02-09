@@ -148,7 +148,8 @@ function activate(
       app.commands.execute(CommandIDs.launchPanel, item);
     },
     linkFinder,
-    clientCodeInjector
+    clientCodeInjector,
+    clientCodeGetter: Private.getClientCode
   });
   sidebar.id = id;
   sidebar.title.iconClass = 'dask-DaskLogo jp-SideBar-tabIcon';
@@ -524,11 +525,18 @@ client = Client()`;
   ): void {
     const cursor = editor.getCursorPosition();
     const offset = editor.getOffsetAt(cursor);
-    const code = `from dask.distributed import Client
+    const code = getClientCode(cluster);
+    editor.model.value.insert(offset, code);
+  }
+
+  /**
+   * Get code to connect to a given cluster.
+   */
+  export function getClientCode(cluster: IClusterModel): string {
+    return `from dask.distributed import Client
 
 client = Client("${cluster.scheduler_address}")
 client`;
-    editor.model.value.insert(offset, code);
   }
 
   /**
