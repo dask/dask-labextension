@@ -344,11 +344,12 @@ export class DaskClusterManager extends Widget {
    * Start a drag event.
    */
   private _startDrag(index: number, clientX: number, clientY: number): void {
-    const model = this._clusters[index];
-
     // Create the drag image.
-    const dragImage = document.createElement('div');
-    dragImage.textContent = model.name;
+    const model = this._clusters[index];
+    const listingItem = this._clusterListing.node.querySelector(
+      `li.dask-ClusterListingItem[data-cluster-id="${model.id}"]`
+    ) as HTMLElement;
+    const dragImage = Private.createDragImage(listingItem);
 
     // Set up the drag event.
     this._drag = new Drag({
@@ -756,4 +757,18 @@ export interface IClusterModel extends JSONObject {
    * with the minimum and maximum number of workers. Otherwise it is `null`.
    */
   adapt: null | { minimum: number; maximum: number };
+}
+
+/**
+ * A namespace for module-private functionality.
+ */
+namespace Private {
+  /**
+   * Create a drag image for an HTML node.
+   */
+  export function createDragImage(node: HTMLElement): HTMLElement {
+    const image = node.cloneNode(true) as HTMLElement;
+    image.classList.add('dask-ClusterListingItem-drag');
+    return image;
+  }
 }
