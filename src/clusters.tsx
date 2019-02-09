@@ -1,12 +1,16 @@
 import { Toolbar, ToolbarButton } from '@jupyterlab/apputils';
 
-import { IChangedArgs } from '@jupyterlab/coreutils';
+import { IChangedArgs, nbformat } from '@jupyterlab/coreutils';
 
 import { ServerConnection } from '@jupyterlab/services';
 
-import { JSONObject, JSONExt } from '@phosphor/coreutils';
+import { ArrayExt } from '@phosphor/algorithm';
 
-import { Drag, IDragEvent } from '@phosphor/dragdrop';
+import { JSONObject, JSONExt, MimeData } from '@phosphor/coreutils';
+
+import { ElementExt } from '@phosphor/domutils';
+
+import { Drag } from '@phosphor/dragdrop';
 
 import { Message } from '@phosphor/messaging';
 
@@ -19,7 +23,20 @@ import { showScalingDialog } from './scaling';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
+/**
+ * A refresh interval (in ms) for polling the backend cluster manager.
+ */
 const REFRESH_INTERVAL = 5000;
+
+/**
+ * The threshold in pixels to start a drag event.
+ */
+const DRAG_THRESHOLD = 5;
+
+/**
+ * The mimetype used for Jupyter cell data.
+ */
+const JUPYTER_CELL_MIME = 'application/vnd.jupyter.cells';
 
 /**
  * A widget for hosting Dask cluster management.
@@ -213,7 +230,7 @@ export class DaskClusterManager extends Widget {
    */
   protected onAfterAttach(msg: Message): void {
     super.onAfterAttach(msg);
-    let node = this.node;
+    let node = this._clusterListing.node;
     node.addEventListener('p-dragenter', this);
     node.addEventListener('p-dragleave', this);
     node.addEventListener('p-dragover', this);
@@ -224,7 +241,7 @@ export class DaskClusterManager extends Widget {
    * Handle `before-detach` messages for the widget.
    */
   protected onBeforeDetach(msg: Message): void {
-    let node = this.node;
+    let node = this._clusterListing.node;
     node.removeEventListener('p-dragenter', this);
     node.removeEventListener('p-dragleave', this);
     node.removeEventListener('p-dragover', this);
@@ -246,26 +263,125 @@ export class DaskClusterManager extends Widget {
   handleEvent(event: Event): void {
     switch (event.type) {
       case 'mousedown':
-        this._evtMousedown(event as MouseEvent);
+        this._evtMouseDown(event as MouseEvent);
         break;
       case 'mouseup':
-        this._evtMouseup(event as MouseEvent);
+        this._evtMouseUp(event as MouseEvent);
         break;
       case 'mousemove':
-        this._evtMousemove(event as MouseEvent);
-        break;
-      case 'p-dragenter':
-        this._evtDragEnter(event as IDragEvent);
-        break;
-      case 'p-dragleave':
-        this._evtDragLeave(event as IDragEvent);
-        break;
-      case 'p-dragover':
-        this._evtDragOver(event as IDragEvent);
+        this._evtMouseMove(event as MouseEvent);
         break;
       default:
         break;
     }
+  }
+
+  /**
+   * Handle `mousedown` events for the widget.
+   */
+  private _evtMouseDown(event: MouseEvent): void {
+    const { button, shiftKey } = event;
+
+    // We only handle main or secondary button actions.
+    if (!(button === 0 || button === 2)) {
+      return;
+    }
+    // Shift right-click gives the browser default behavior.
+    if (shiftKey && button === 2) {
+      return;
+    }
+
+    // Find the target cluster.
+    const clusterIndex = this._findCluster(event);
+    if (clusterIndex === -1) {
+      return;
+    }
+    // Prepare for a drag start
+    this._dragData = {
+      pressX: event.clientX,
+      pressY: event.clientY,
+      index: clusterIndex
+    };
+
+    // Enter possible drag mode
+    document.addEventListener('mouseup', this, true);
+    document.addEventListener('mousemove', this, true);
+    event.preventDefault();
+  }
+
+  /**
+   * Handle the `'mouseup'` event on the document.
+   */
+  private _evtMouseUp(event: MouseEvent): void {
+    // Remove the event listeners we put on the document
+    document.removeEventListener('mousemove', this, true);
+    document.removeEventListener('mouseup', this, true);
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  /**
+   * Handle the `'mousemove'` event for the widget.
+   */
+  private _evtMouseMove(event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!this._drag || !this._dragData) {
+      return;
+    }
+    // Check for a drag initialization.
+    let data = this._dragData;
+    let dx = Math.abs(event.clientX - data.pressX);
+    let dy = Math.abs(event.clientY - data.pressY);
+    if (dx >= DRAG_THRESHOLD || dy >= DRAG_THRESHOLD) {
+      this._startDrag(data.index, event.clientX, event.clientY);
+    }
+  }
+
+  /**
+   * Start a drag event.
+   */
+  private _startDrag(index: number, clientX: number, clientY: number): void {
+    const model = this._clusters[index];
+
+    // Create the drag image.
+    const dragImage = document.createElement('div');
+    dragImage.textContent = model.name;
+
+    const textData = model.name;
+    const cellData: nbformat.ICodeCell = {
+      cell_type: 'code',
+      source: textData,
+      outputs: [],
+      execution_count: null,
+      metadata: {}
+    };
+
+    // Set up the drag event.
+    this._drag = new Drag({
+      mimeData: new MimeData(),
+      dragImage,
+      supportedActions: 'copy',
+      proposedAction: 'copy',
+      source: this
+    });
+    this._drag.mimeData.setData(JUPYTER_CELL_MIME, cellData);
+    // Add mimeData for the fully reified cell widgets, for the
+    // case where the target is in the same notebook and we
+    // can just move the cells.
+    this._drag.mimeData.setData('text/plain', textData);
+
+    // Remove mousemove and mouseup listeners and start the drag.
+    document.removeEventListener('mousemove', this, true);
+    document.removeEventListener('mouseup', this, true);
+    this._drag.start(clientX, clientY).then(action => {
+      if (this.isDisposed) {
+        return;
+      }
+      this._drag = null;
+      this._dragData = null;
+    });
   }
 
   /**
@@ -355,6 +471,21 @@ export class DaskClusterManager extends Widget {
     return model;
   }
 
+  private _findCluster(event: MouseEvent): number {
+    const nodes = Array.from(
+      this.node.querySelectorAll('li.dask-ClusterListingItem')
+    );
+    return ArrayExt.findFirstIndex(nodes, node => {
+      return ElementExt.hitTest(node, event.clientX, event.clientY);
+    });
+  }
+
+  private _drag: Drag | null;
+  private _dragData: {
+    pressX: number;
+    pressY: number;
+    index: number;
+  } | null = null;
   private _clusterListing: Widget;
   private _clusters: IClusterModel[] = [];
   private _activeCluster: IClusterModel | undefined;
