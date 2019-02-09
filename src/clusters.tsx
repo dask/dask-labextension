@@ -6,6 +6,8 @@ import { ServerConnection } from '@jupyterlab/services';
 
 import { JSONObject, JSONExt } from '@phosphor/coreutils';
 
+import { Drag, IDragEvent } from '@phosphor/dragdrop';
+
 import { Message } from '@phosphor/messaging';
 
 import { ISignal, Signal } from '@phosphor/signaling';
@@ -204,6 +206,66 @@ export class DaskClusterManager extends Widget {
    */
   protected onAfterShow(msg: Message): void {
     this.update();
+  }
+
+  /**
+   * Handle `after-attach` messages for the widget.
+   */
+  protected onAfterAttach(msg: Message): void {
+    super.onAfterAttach(msg);
+    let node = this.node;
+    node.addEventListener('p-dragenter', this);
+    node.addEventListener('p-dragleave', this);
+    node.addEventListener('p-dragover', this);
+    node.addEventListener('mousedown', this);
+  }
+
+  /**
+   * Handle `before-detach` messages for the widget.
+   */
+  protected onBeforeDetach(msg: Message): void {
+    let node = this.node;
+    node.removeEventListener('p-dragenter', this);
+    node.removeEventListener('p-dragleave', this);
+    node.removeEventListener('p-dragover', this);
+    node.removeEventListener('mousedown', this);
+    document.removeEventListener('mouseup', this, true);
+    document.removeEventListener('mousemove', this, true);
+  }
+
+  /**
+   * Handle the DOM events for the directory listing.
+   *
+   * @param event - The DOM event sent to the widget.
+   *
+   * #### Notes
+   * This method implements the DOM `EventListener` interface and is
+   * called in response to events on the panel's DOM node. It should
+   * not be called directly by user code.
+   */
+  handleEvent(event: Event): void {
+    switch (event.type) {
+      case 'mousedown':
+        this._evtMousedown(event as MouseEvent);
+        break;
+      case 'mouseup':
+        this._evtMouseup(event as MouseEvent);
+        break;
+      case 'mousemove':
+        this._evtMousemove(event as MouseEvent);
+        break;
+      case 'p-dragenter':
+        this._evtDragEnter(event as IDragEvent);
+        break;
+      case 'p-dragleave':
+        this._evtDragLeave(event as IDragEvent);
+        break;
+      case 'p-dragover':
+        this._evtDragOver(event as IDragEvent);
+        break;
+      default:
+        break;
+    }
   }
 
   /**
