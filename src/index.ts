@@ -152,19 +152,27 @@ function activate(
 
   app.shell.addToLeftArea(sidebar, { rank: 200 });
 
-  sidebar.dashboardLauncher.input.urlChanged.connect((sender, args) => {
+  const updateDashboards = () => {
+    const input = sidebar.dashboardLauncher.input;
     // Update the urls of open dashboards.
     tracker.forEach(widget => {
-      if (!args.isValid) {
+      if (!input.isValid) {
         widget.dashboardUrl = '';
+        widget.active = false;
         return;
       }
-      widget.dashboardUrl = args.newValue;
+      widget.dashboardUrl = input.url;
+      widget.active = true;
     });
+  };
+
+  sidebar.dashboardLauncher.input.urlChanged.connect((sender, args) => {
+    updateDashboards();
     // Save the current url to the state DB so it can be
     // reloaded on refresh.
     state.save(id, { url: args.newValue });
   });
+  updateDashboards();
 
   // Fetch the initial state of the settings.
   Promise.all([settings.load(PLUGIN_ID), state.fetch(id), app.restored]).then(
@@ -189,6 +197,7 @@ function activate(
     execute: args => {
       // Construct the url for the dashboard.
       const dashboardUrl = sidebar.dashboardLauncher.input.url;
+      const active = sidebar.dashboardLauncher.input.isValid;
       const dashboardItem = args as IDashboardItem;
 
       // If we already have a dashboard open to this url, activate it
@@ -205,6 +214,7 @@ function activate(
       const dashboard = new DaskDashboard();
       dashboard.dashboardUrl = dashboardUrl;
       dashboard.item = dashboardItem;
+      dashboard.active = active;
       dashboard.id = `dask-dashboard-${Private.id++}`;
       dashboard.title.label = `Dask ${dashboardItem.label}`;
       dashboard.title.icon = 'dask-DaskLogo';
