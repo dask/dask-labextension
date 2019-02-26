@@ -1,10 +1,14 @@
 import { Toolbar, ToolbarButton } from '@jupyterlab/apputils';
 
+import { IChangedArgs } from '@jupyterlab/coreutils';
+
 import { ServerConnection } from '@jupyterlab/services';
 
 import { JSONObject, JSONExt } from '@phosphor/coreutils';
 
 import { Message } from '@phosphor/messaging';
+
+import { ISignal, Signal } from '@phosphor/signaling';
 
 import { Widget, PanelLayout } from '@phosphor/widgets';
 
@@ -36,7 +40,17 @@ export class DaskClusterManager extends Widget {
         return;
       }
       options.setDashboardUrl(`dask/dashboard/${cluster.id}`);
-      this._activeClusterId = id;
+
+      const old = this._activeCluster;
+      if (old && old.id === cluster.id) {
+        return;
+      }
+      this._activeCluster = cluster;
+      this._activeClusterChanged.emit({
+        name: 'cluster',
+        oldValue: old,
+        newValue: cluster
+      });
       this.update();
     };
 
@@ -91,10 +105,41 @@ export class DaskClusterManager extends Widget {
   }
 
   /**
-   * Get the currently active clusters known to the manager.
+   * The currently selected cluster, or undefined if there is none.
+   */
+  get activeCluster(): IClusterModel | undefined {
+    return this._activeCluster;
+  }
+
+  /**
+   * Set an active cluster by id.
+   */
+  setActiveCluster(id: string): void {
+    this._setActiveById(id);
+  }
+
+  /**
+   * A signal that is emitted when an active cluster changes.
+   */
+  get activeClusterChanged(): ISignal<
+    this,
+    IChangedArgs<IClusterModel | undefined>
+  > {
+    return this._activeClusterChanged;
+  }
+
+  /**
+   * Get the current clusters known to the manager.
    */
   get clusters(): IClusterModel[] {
     return this._clusters;
+  }
+
+  /**
+   * Refresh the current list of clusters.
+   */
+  async refresh(): Promise<void> {
+    await this._updateClusterList();
   }
 
   /**
@@ -140,7 +185,7 @@ export class DaskClusterManager extends Widget {
     ReactDOM.render(
       <ClusterListing
         clusters={this._clusters}
-        activeClusterId={this._activeClusterId}
+        activeClusterId={(this._activeCluster && this._activeCluster.id) || ''}
         scaleById={(id: string) => {
           return this._scaleById(id);
         }}
@@ -189,6 +234,17 @@ export class DaskClusterManager extends Widget {
     );
     const data = (await response.json()) as IClusterModel[];
     this._clusters = data;
+
+    // Check to see if the active cluster still exits.
+    // If it doesn't, or if there is no active cluster,
+    // select the first one.
+    const active = this._clusters.find(
+      c => c.id === (this._activeCluster && this._activeCluster.id)
+    );
+    if (!active) {
+      const id = (this._clusters[0] && this._clusters[0].id) || '';
+      this._setActiveById(id);
+    }
     this.update();
   }
 
@@ -239,10 +295,14 @@ export class DaskClusterManager extends Widget {
 
   private _clusterListing: Widget;
   private _clusters: IClusterModel[] = [];
-  private _activeClusterId: string = '';
+  private _activeCluster: IClusterModel | undefined;
   private _setActiveById: (id: string) => void;
   private _injectClientCodeForCluster: (model: IClusterModel) => void;
   private _serverSettings: ServerConnection.ISettings;
+  private _activeClusterChanged = new Signal<
+    this,
+    IChangedArgs<IClusterModel | undefined>
+  >(this);
 }
 
 /**

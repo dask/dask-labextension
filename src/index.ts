@@ -4,13 +4,20 @@ import {
   JupyterLabPlugin
 } from '@jupyterlab/application';
 
-import { InstanceTracker } from '@jupyterlab/apputils';
+import {
+  IClientSession,
+  ICommandPalette,
+  IInstanceTracker,
+  InstanceTracker
+} from '@jupyterlab/apputils';
 
 import { CodeEditor } from '@jupyterlab/codeeditor';
 
 import { ConsolePanel, IConsoleTracker } from '@jupyterlab/console';
 
 import { ISettingRegistry, IStateDB } from '@jupyterlab/coreutils';
+
+import { IMainMenu } from '@jupyterlab/mainmenu';
 
 import {
   INotebookTracker,
@@ -19,6 +26,8 @@ import {
 } from '@jupyterlab/notebook';
 
 import { Kernel, KernelMessage } from '@jupyterlab/services';
+
+import { Signal } from '@phosphor/signaling';
 
 import { IClusterModel, DaskClusterManager } from './clusters';
 
@@ -53,6 +62,11 @@ namespace CommandIDs {
    * Scale a cluster.
    */
   export const scaleCluster = 'dask:scale-cluster';
+
+  /**
+   * Toggle the auto-starting of clients.
+   */
+  export const toggleAutoStartClient = 'dask:toggle-auto-start-client';
 }
 
 const PLUGIN_ID = 'dask-labextension:plugin';
@@ -64,8 +78,10 @@ const plugin: JupyterLabPlugin<void> = {
   activate,
   id: PLUGIN_ID,
   requires: [
+    ICommandPalette,
     IConsoleTracker,
     ILayoutRestorer,
+    IMainMenu,
     INotebookTracker,
     ISettingRegistry,
     IStateDB
@@ -83,10 +99,12 @@ export default plugin;
  */
 function activate(
   app: JupyterLab,
+  commandPalette: ICommandPalette,
   consoleTracker: IConsoleTracker,
   restorer: ILayoutRestorer,
+  mainMenu: IMainMenu,
   notebookTracker: INotebookTracker,
-  settings: ISettingRegistry,
+  settingRegistry: ISettingRegistry,
   state: IStateDB
 ): void {
   const id = 'dask-dashboard-launcher';
@@ -101,15 +119,11 @@ function activate(
     );
     // Check to see if we found a kernel, and if its
     // language is python.
-    if (
-      !kernel ||
-      !kernel.info ||
-      kernel.info.language_info.name !== 'python'
-    ) {
+    if (!Private.shouldUseKernel(kernel)) {
       return '';
     }
     // If so, find the link if we can.
-    const link = await Private.checkKernel(kernel);
+    const link = await Private.checkKernel(kernel!);
     return link;
   };
 
@@ -170,25 +184,133 @@ function activate(
     updateDashboards();
     // Save the current url to the state DB so it can be
     // reloaded on refresh.
-    state.save(id, { url: args.newValue });
+    const active = sidebar.clusterManager.activeCluster;
+    state.save(id, {
+      url: args.newValue,
+      cluster: active ? active.id : ''
+    });
+  });
+  sidebar.clusterManager.activeClusterChanged.connect(() => {
+    const active = sidebar.clusterManager.activeCluster;
+    state.save(id, {
+      url: sidebar.dashboardLauncher.input.url,
+      cluster: active ? active.id : ''
+    });
   });
   updateDashboards();
 
+  // A function to create a new dask client for a session.
+  const createClientForSession = (session: IClientSession) => {
+    const cluster = sidebar.clusterManager.activeCluster;
+    if (!cluster || !Private.shouldUseKernel(session.kernel)) {
+      return;
+    }
+    Private.createClientForKernel(cluster, session.kernel!);
+  };
+
+  type SessionOwner = NotebookPanel | ConsolePanel;
+  // An array of the trackers to check for active sessions.
+  const trackers: IInstanceTracker<SessionOwner>[] = [
+    notebookTracker,
+    consoleTracker
+  ];
+
+  // A function to recreate a dask client on reconnect.
+  const injectOnSessionStatusChanged = (session: IClientSession) => {
+    if (session.status === 'connected') {
+      createClientForSession(session);
+    }
+  };
+
+  // A function to inject a dask client when a new session owner is added.
+  const injectOnWidgetAdded = (
+    sender: IInstanceTracker<SessionOwner>,
+    widget: SessionOwner
+  ) => {
+    widget.session.statusChanged.connect(injectOnSessionStatusChanged);
+  };
+
+  // A function to inject a dask client when the active cluster changes.
+  const injectOnClusterChanged = () => {
+    trackers.forEach(tracker => {
+      tracker.forEach(widget => {
+        const session = widget.session;
+        if (Private.shouldUseKernel(session.kernel)) {
+          createClientForSession(session);
+        }
+      });
+    });
+  };
+
+  // Whether the dask cluster clients should aggressively inject themselves
+  // into the current session.
+  let autoStartClient: boolean = false;
+
+  // Update the existing trackers and signals in light of a change to the
+  // settings system. In particular, this reacts to a change in the setting
+  // for auto-starting cluster client.
+  const updateTrackers = () => {
+    // Clear any existing signals related to the auto-starting.
+    Signal.clearData(injectOnWidgetAdded);
+    Signal.clearData(injectOnSessionStatusChanged);
+    Signal.clearData(injectOnClusterChanged);
+
+    if (autoStartClient) {
+      // When a new console or notebook is created, inject
+      // a new client into it.
+      trackers.forEach(tracker => {
+        tracker.widgetAdded.connect(injectOnWidgetAdded);
+      });
+
+      // When the status of an existing notebook changes, reinject the client.
+      trackers.forEach(tracker => {
+        tracker.forEach(widget => {
+          createClientForSession(widget.session);
+          widget.session.statusChanged.connect(injectOnSessionStatusChanged);
+        });
+      });
+
+      // When the active cluster changes, reinject the client.
+      sidebar.clusterManager.activeClusterChanged.connect(
+        injectOnClusterChanged
+      );
+    }
+  };
+
   // Fetch the initial state of the settings.
-  Promise.all([settings.load(PLUGIN_ID), state.fetch(id), app.restored]).then(
-    res => {
-      const settings = res[0];
-      const url = (res[1] as { url: string }).url as string;
-      if (url) {
-        // If there is a URL in the statedb, let it have priority.
-        sidebar.dashboardLauncher.input.url = url;
-        return;
-      }
+  Promise.all([
+    settingRegistry.load(PLUGIN_ID),
+    state.fetch(id),
+    app.restored
+  ]).then(async res => {
+    const settings = res[0];
+    const state = res[1] as { url?: string; cluster?: string };
+    const url = state.url;
+    const cluster = state.cluster;
+    if (url) {
+      // If there is a URL in the statedb, let it have priority.
+      sidebar.dashboardLauncher.input.url = url;
+    } else {
       // Otherwise set the default from the settings.
       sidebar.dashboardLauncher.input.url = settings.get('defaultURL')
         .composite as string;
     }
-  );
+
+    const onSettingsChanged = () => {
+      // Determine whether to use the auto-starting client.
+      autoStartClient = settings.get('autoStartClient').composite as boolean;
+      updateTrackers();
+    };
+    onSettingsChanged();
+    // React to a change in the settings.
+    settings.changed.connect(onSettingsChanged);
+
+    // If an active cluster is in the state, reset it.
+    if (cluster) {
+      await sidebar.clusterManager.refresh();
+      sidebar.clusterManager.setActiveCluster(cluster);
+    }
+  });
 
   // Add the command for launching a new dashboard item.
   app.commands.addCommand(CommandIDs.launchPanel, {
@@ -272,6 +394,33 @@ function activate(
     }
   });
 
+  // Add a command to toggle the auto-starting client code.
+  app.commands.addCommand(CommandIDs.toggleAutoStartClient, {
+    label: 'Auto-Start Dask',
+    isToggled: () => autoStartClient,
+    execute: () => {
+      const value = !autoStartClient;
+      const key = 'autoStartClient';
+      return settingRegistry
+        .set(PLUGIN_ID, key, value)
+        .catch((reason: Error) => {
+          console.error(
+            `Failed to set ${PLUGIN_ID}:${key} - ${reason.message}`
+          );
+        });
+    }
+  });
+
+  // Add some commands to the menu and command palette.
+  mainMenu.settingsMenu.addGroup([
+    { command: CommandIDs.toggleAutoStartClient }
+  ]);
+  [CommandIDs.launchCluster, CommandIDs.toggleAutoStartClient].forEach(
+    command => {
+      commandPalette.addItem({ category: 'Dask', command });
+    }
+  );
+
   // Add a context menu items.
   app.contextMenu.addItem({
     command: CommandIDs.injectClientCode,
@@ -302,6 +451,18 @@ namespace Private {
   export let id = 0;
 
   /**
+   * Whether a kernel should be used. Only evaluates to true
+   * if it is valid and in python.
+   */
+  export function shouldUseKernel(
+    kernel: Kernel.IKernelConnection | null | undefined
+  ): boolean {
+    return (
+      !!kernel && !!kernel.info && kernel.info.language_info.name === 'python'
+    );
+  }
+
+  /**
    * Check a kernel for whether it has a default client dashboard address.
    */
   export function checkKernel(
@@ -322,6 +483,31 @@ namespace Private {
         const url = (data['text/plain'] as string) || '';
         console.log(`Found dashboard link at ${url}`);
         resolve(url.replace(/'/g, '').split('status')[0]);
+      };
+    });
+  }
+
+  /**
+   * Connect a kernel to a cluster by creating a new Client.
+   */
+  export function createClientForKernel(
+    model: IClusterModel,
+    kernel: Kernel.IKernelConnection
+  ): Promise<string> {
+    const code = `import dask; from dask.distributed import Client
+dask.config.set({'scheduler-address': '${model.scheduler_address}'})
+client = Client()`;
+    const content: KernelMessage.IExecuteRequest = {
+      store_history: false,
+      code
+    };
+    return new Promise<string>((resolve, reject) => {
+      const future = kernel.requestExecute(content);
+      future.onIOPub = msg => {
+        if (msg.header.msg_type !== 'display_data') {
+          return;
+        }
+        resolve(void 0);
       };
     });
   }
