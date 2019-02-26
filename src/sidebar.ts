@@ -27,10 +27,12 @@ export class DaskSidebar extends Widget {
       this._dashboard.input.url = url;
     };
     const injectClientCodeForCluster = options.clientCodeInjector;
+    const getClientCodeForCluster = options.clientCodeGetter;
     // Add the cluster manager component.
     this._clusters = new DaskClusterManager({
       setDashboardUrl,
-      injectClientCodeForCluster
+      injectClientCodeForCluster,
+      getClientCodeForCluster
     });
     layout.addWidget(this._dashboard);
     layout.addWidget(this._clusters);
@@ -78,5 +80,10 @@ export namespace DaskSidebar {
      * A function that injects client-connection code for a given cluster.
      */
     clientCodeInjector: (model: IClusterModel) => void;
+
+    /**
+     * A function that gets client-connection code for a given cluster.
+     */
+    clientCodeGetter: (model: IClusterModel) => string;
   }
 }
