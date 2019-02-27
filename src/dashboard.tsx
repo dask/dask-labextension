@@ -23,7 +23,12 @@ export class DaskDashboard extends MainAreaWidget<IFrame> {
    * Construct a new dashboard widget.
    */
   constructor() {
-    super({ content: new IFrame() });
+    super({
+      // Disable allow some iframe extensions to let server requests
+      // and scripts to execute in the bokeh server context.
+      // This is unsafe, but we presumably trust the code in the bokeh server.
+      content: new IFrame({ sandbox: ['allow-scripts', 'allow-same-origin'] })
+    });
     this._inactivePanel = Private.createInactivePanel();
     this.content.node.appendChild(this._inactivePanel);
     this.update();
@@ -111,10 +116,7 @@ export class DaskDashboardLauncher extends Widget {
     this.addClass('dask-DaskDashboardLauncher');
     this._items = options.items || DaskDashboardLauncher.DEFAULT_ITEMS;
     this._launchItem = options.launchItem;
-    this._input.urlChanged.connect(
-      this.update,
-      this
-    );
+    this._input.urlChanged.connect(this.update, this);
   }
 
   /**
