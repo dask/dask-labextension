@@ -11,7 +11,7 @@ import inspect
 from tornado import web, httpclient, httputil, websocket, ioloop, version_info
 
 from notebook.base.handlers import IPythonHandler, utcnow
-from notebook.utils import url_path_join
+from notebook.utils import maybe_future, url_path_join
 
 from .manager import manager
 
@@ -106,9 +106,9 @@ class WebSocketHandlerMixin(websocket.WebSocketHandler):
     async def get(self, *args, **kwargs):
         if self.request.headers.get("Upgrade", "").lower() != "websocket":
             return await self.http_get(*args, **kwargs)
-
-        # super get is not async
-        super().get(*args, **kwargs)
+        else:
+            result = super().get(*args, **kwargs)
+            await maybe_future(result)
 
 
 class DaskDashboardHandler(WebSocketHandlerMixin, IPythonHandler):
