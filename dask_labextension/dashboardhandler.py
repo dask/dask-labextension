@@ -11,7 +11,11 @@ import inspect
 from tornado import web, httpclient, httputil, websocket, ioloop, version_info
 
 from notebook.base.handlers import IPythonHandler, utcnow
-from notebook.utils import maybe_future, url_path_join
+from notebook.utils import url_path_join
+try:
+    from notebook import maybe_future
+except ImportError:
+    from tornado.gen import maybe_future
 
 from .manager import manager
 
