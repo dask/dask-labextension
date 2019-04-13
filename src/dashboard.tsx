@@ -1,6 +1,6 @@
 import { IFrame, MainAreaWidget, ToolbarButton } from '@jupyterlab/apputils';
 
-import { PageConfig, URLExt } from '@jupyterlab/coreutils';
+import { PageConfig, Poll, URLExt } from '@jupyterlab/coreutils';
 
 import { ServerConnection } from '@jupyterlab/services';
 
@@ -263,7 +263,8 @@ export class URLInput extends Widget {
       return;
     }
     this._isDisposed = true;
-    window.clearInterval(this._timer);
+    this._poll.dispose();
+    super.dispose();
   }
 
   /**
@@ -319,13 +320,17 @@ export class URLInput extends Widget {
    * Periodically poll for valid url.
    */
   private _startUrlCheckTimer(): void {
-    this._timer = window.setInterval(() => {
-      const url = this._url;
-      // Don't bother checking if there is no url.
-      if (!url) {
-        return;
-      }
-      Private.testDaskDashboard(url, this._serverSettings).then(result => {
+    this._poll = new Poll({
+      factory: async () => {
+        const url = this._url;
+        // Don't bother checking if there is no url.
+        if (!url) {
+          return;
+        }
+        const result = await Private.testDaskDashboard(
+          url,
+          this._serverSettings
+        );
         // No change.
         if (result === this._isValid) {
           return;
@@ -343,15 +348,17 @@ export class URLInput extends Widget {
             isValid: result
           });
         }
-      });
-    }, 2000); // Every two seconds.
+      },
+      frequency: { interval: 4 * 1000, backoff: true, max: 60 * 1000 },
+      standby: 'when-hidden'
+    });
   }
 
   private _urlChanged = new Signal<this, URLInput.IChangedArgs>(this);
   private _url = '';
   private _isValid = false;
   private _input: HTMLInputElement;
-  private _timer: number;
+  private _poll: Poll;
   private _isDisposed: boolean;
   private _serverSettings: ServerConnection.ISettings;
 }
