@@ -461,9 +461,7 @@ namespace Private {
   export function shouldUseKernel(
     kernel: Kernel.IKernelConnection | null | undefined
   ): boolean {
-    return (
-      !!kernel && !!kernel.info && kernel.info.language_info.name === 'python'
-    );
+    return !!kernel && kernel.name.toLowerCase().indexOf('python') !== -1;
   }
 
   /**
