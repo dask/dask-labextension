@@ -1,6 +1,6 @@
 import { Toolbar, ToolbarButton } from '@jupyterlab/apputils';
 
-import { IChangedArgs, nbformat } from '@jupyterlab/coreutils';
+import { IChangedArgs, nbformat, Poll } from '@jupyterlab/coreutils';
 
 import { ServerConnection } from '@jupyterlab/services';
 
@@ -119,9 +119,13 @@ export class DaskClusterManager extends Widget {
     // Do an initial refresh of the cluster list.
     this._updateClusterList();
     // Also refresh periodically.
-    window.setInterval(() => {
-      this._updateClusterList();
-    }, REFRESH_INTERVAL);
+    this._poll = new Poll({
+      factory: async () => {
+        await this._updateClusterList();
+      },
+      frequency: { interval: REFRESH_INTERVAL, backoff: true, max: 60 * 1000 },
+      standby: 'when-hidden'
+    });
   }
 
   /**
@@ -191,6 +195,25 @@ export class DaskClusterManager extends Widget {
     }
     const newCluster = await this._scaleById(id);
     return newCluster;
+  }
+
+  /**
+   * Dispose of the cluster manager.
+   */
+  dispose(): void {
+    if (this._isDisposed) {
+      return;
+    }
+    this._isDisposed = true;
+    this._poll.dispose();
+    super.dispose();
+  }
+
+  /**
+   * Whether the dashboard has been disposed.
+   */
+  get isDisposed(): boolean {
+    return this._isDisposed;
   }
 
   /**
@@ -497,11 +520,13 @@ export class DaskClusterManager extends Widget {
   private _setActiveById: (id: string) => void;
   private _injectClientCodeForCluster: (model: IClusterModel) => void;
   private _getClientCodeForCluster: (model: IClusterModel) => string;
+  private _poll: Poll;
   private _serverSettings: ServerConnection.ISettings;
   private _activeClusterChanged = new Signal<
     this,
     IChangedArgs<IClusterModel | undefined>
   >(this);
+  private _isDisposed = false;
 }
 
 /**
