@@ -23,8 +23,12 @@ Cluster = Any
 async def make_cluster(configuration: dict) -> Cluster:
     module = importlib.import_module(dask.config.get('labextension.factory.module'))
     Cluster = getattr(module, dask.config.get('labextension.factory.class'))
+
+    kwargs = dask.config.get('labextension.factory.kwargs')
+    kwargs = { key.replace('-', '_'): entry for key, entry in kwargs.items() }
+
     cluster = await Cluster(*dask.config.get('labextension.factory.args'),
-                            **dask.config.get('labextension.factory.kwargs'),
+                            **kwargs,
                             asynchronous=True)
 
     configuration = dask.config.merge(
