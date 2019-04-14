@@ -291,7 +291,7 @@ function activate(
     const state = res[1] as { url?: string; cluster?: string };
     const url = state.url;
     const cluster = state.cluster;
-    if (url) {
+    if (url && !sidebar.dashboardLauncher.input.url) {
       // If there is a URL in the statedb, let it have priority.
       sidebar.dashboardLauncher.input.url = url;
     } else {
