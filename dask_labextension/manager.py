@@ -21,26 +21,25 @@ Cluster = Any
 
 
 async def make_cluster(configuration: dict) -> Cluster:
-    module = importlib.import_module(dask.config.get('labextension.factory.module'))
-    Cluster = getattr(module, dask.config.get('labextension.factory.class'))
+    module = importlib.import_module(dask.config.get("labextension.factory.module"))
+    Cluster = getattr(module, dask.config.get("labextension.factory.class"))
 
-    kwargs = dask.config.get('labextension.factory.kwargs')
-    kwargs = { key.replace('-', '_'): entry for key, entry in kwargs.items() }
+    kwargs = dask.config.get("labextension.factory.kwargs")
+    kwargs = {key.replace("-", "_"): entry for key, entry in kwargs.items()}
 
-    cluster = await Cluster(*dask.config.get('labextension.factory.args'),
-                            **kwargs,
-                            asynchronous=True)
+    cluster = await Cluster(
+        *dask.config.get("labextension.factory.args"), **kwargs, asynchronous=True
+    )
 
     configuration = dask.config.merge(
-        dask.config.get('labextension.default'),
-        configuration
+        dask.config.get("labextension.default"), configuration
     )
 
     adaptive = None
-    if configuration.get('adapt'):
-        adaptive = cluster.adapt(**configuration.get('adapt'))
-    elif configuration.get('workers') is not None:
-        cluster.scale(configuration.get('workers'))
+    if configuration.get("adapt"):
+        adaptive = cluster.adapt(**configuration.get("adapt"))
+    elif configuration.get("workers") is not None:
+        cluster.scale(configuration.get("workers"))
 
     return cluster, adaptive
 
@@ -61,13 +60,15 @@ class DaskClusterManager:
         self.initialized = Future()
 
         async def start_clusters():
-            for model in dask.config.get('labextension.initial'):
+            for model in dask.config.get("labextension.initial"):
                 await self.start_cluster(configuration=model)
             self.initialized.set_result(self)
 
         IOLoop.current().add_callback(start_clusters)
 
-    async def start_cluster(self, cluster_id: str = "", configuration: dict = {}) -> ClusterModel:
+    async def start_cluster(
+        self, cluster_id: str = "", configuration: dict = {}
+    ) -> ClusterModel:
         """
         Start a new Dask cluster.
 
@@ -87,11 +88,11 @@ class DaskClusterManager:
         self._n_clusters += 1
 
         # Check for a name in the config
-        if not configuration.get('name'):
+        if not configuration.get("name"):
             cluster_type = type(cluster).__name__
             cluster_name = f"{cluster_type} {self._n_clusters}"
         else:
-            cluster_name = configuration['name']
+            cluster_name = configuration["name"]
 
         # Check if the cluster was started adaptively
         if adaptive:
@@ -139,7 +140,7 @@ class DaskClusterManager:
             or None if it was not found.
         """
         cluster = self._clusters.get(cluster_id)
-        name = self._cluster_names.get(cluster_id, '')
+        name = self._cluster_names.get(cluster_id, "")
         adaptive = self._adaptives.get(cluster_id)
         if not cluster:
             return None
@@ -194,7 +195,13 @@ class DaskClusterManager:
 
         # Check if it is actually different.
         model = make_cluster_model(cluster_id, name, cluster, adaptive)
-        if model.get("adapt") != None and model["adapt"]["minimum"] == minimum and model["adapt"]["maximum"] == maximum:
+        if model.get("adapt") != None and model["adapt"][
+            "minimum"
+        ] == minimum and model[
+            "adapt"
+        ][
+            "maximum"
+        ] == maximum:
             return model
 
         # Otherwise, rescale the model.
@@ -269,10 +276,7 @@ def make_cluster_model(
         cores=sum(ws.ncores for ws in cluster.scheduler.workers.values()),
     )
     if adaptive:
-        model['adapt'] = {
-            'minimum': adaptive.minimum,
-            'maximum': adaptive.maximum,
-        }
+        model["adapt"] = {"minimum": adaptive.minimum, "maximum": adaptive.maximum}
 
     return model
 

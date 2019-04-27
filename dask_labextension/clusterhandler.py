@@ -77,7 +77,9 @@ class DaskClusterHandler(APIHandler):
         try:
             if new_model.get("adapt") != None:
                 cluster_model = manager.adapt_cluster(
-                    cluster_id, new_model["adapt"]["minimum"], new_model["adapt"]["maximum"]
+                    cluster_id,
+                    new_model["adapt"]["minimum"],
+                    new_model["adapt"]["maximum"],
                 )
             elif new_model.get("adapt") == None:
                 cluster_model = manager.scale_cluster(cluster_id, new_model["workers"])

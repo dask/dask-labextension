@@ -27,6 +27,7 @@ class DaskDashboardHandler(LocalProxyHandler):
     for the bokeh server from the Dask cluster manager. This
     port is then used to call the proxy method on the base class.
     """
+
     async def http_get(self, cluster_id, proxied_path):
         return await self.proxy(cluster_id, proxied_path)
 
@@ -36,6 +37,7 @@ class DaskDashboardHandler(LocalProxyHandler):
 
     # We have to duplicate all these for now, I've no idea why!
     # Figure out a way to not do that?
+
     def post(self, cluster_id, proxied_path):
         return self.proxy(cluster_id, proxied_path)
 
@@ -78,7 +80,7 @@ def _normalize_dashboard_link(link, request):
     """
     Given a dashboard link, make sure it conforms to what we expect.
     """
-    if not link.startswith('http'):
+    if not link.startswith("http"):
         # If a local url is given, assume it is using the same host
         # as the application, and prepend that.
         link = url_path_join(f"{request.protocol}://{request.host}", link)
