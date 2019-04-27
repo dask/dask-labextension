@@ -20,7 +20,8 @@ class DaskDashboardHandler(LocalProxyHandler):
         return await self.proxy(cluster_id, proxied_path)
 
     async def open(self, cluster_id, proxied_path):
-        return await super().open(cluster_id, proxied_path)
+        port = self._get_port(cluster_id)
+        return await super().open(port, proxied_path)
 
     # We have to duplicate all these for now, I've no idea why!
     # Figure out a way to not do that?
@@ -43,7 +44,11 @@ class DaskDashboardHandler(LocalProxyHandler):
         return self.proxy(cluster_id, proxied_path)
 
     def proxy(self, cluster_id, proxied_path):
-               # Get the cluster by ID. If it is not found,
+        port = self._get_port(cluster_id)
+        return super().proxy(port, proxied_path)
+
+    def _get_port(self, cluster_id):
+        # Get the cluster by ID. If it is not found,
         # raise an error.
         cluster_model = manager.get_cluster(cluster_id)
         if not cluster_model:
@@ -52,9 +57,7 @@ class DaskDashboardHandler(LocalProxyHandler):
         # Construct the proper websocket proxy link from the cluster dashboard
         dashboard_link = cluster_model["dashboard_link"]
         dashboard_link = _normalize_dashboard_link(dashboard_link, self.request)
-        port = parse.urlparse(dashboard_link).port or 443
-        self.log.warn(f'PORT: {port} {proxied_path}')
-        return super().proxy(port, proxied_path)
+        return parse.urlparse(dashboard_link).port or 443
 
 
 def _normalize_dashboard_link(link, request):

@@ -26,7 +26,7 @@ def load_jupyter_server_extension(nb_server_app):
     get_cluster_path = url_path_join(base_url, "dask/clusters/" + cluster_id_regex)
     list_clusters_path = url_path_join(base_url, "dask/clusters/" + "?")
     get_dashboard_path = url_path_join(
-        base_url, f"dask/dashboard/{cluster_id_regex}/(?P<proxied_path>.+)"
+        base_url, f"dask/dashboard/{cluster_id_regex}(?P<proxied_path>.+)"
     )
     list_dashboards_path = url_path_join(
         base_url, f"dask/dashboard/{cluster_id_regex}/" + "?"
