@@ -2,8 +2,6 @@
 A Dashboard handler for the Dask labextension.
 This proxies the bokeh server http and ws requests through the notebook
 server, preventing CORS issues.
-
-Modified from the nbserverproxy project.
 """
 from urllib import parse
 
@@ -16,6 +14,19 @@ from .manager import manager
 
 
 class DaskDashboardHandler(LocalProxyHandler):
+    """
+    A handler that proxies the dask dashboard to the notebook server.
+    Currently the dashboard is assumed to be running on `localhost`.
+
+    The functions `http_get`, `open`, `post`, `put`, `delete`,
+    `head`, `patch`, `options`, and `proxy` are all overriding
+    the base class with our own request handler parameters
+    of `cluster_id` and `proxied_path`.
+
+    The `proxy` function uses the cluster ID to get the port
+    for the bokeh server from the Dask cluster manager. This
+    port is then used to call the proxy method on the base class.
+    """
     async def http_get(self, cluster_id, proxied_path):
         return await self.proxy(cluster_id, proxied_path)
 
@@ -48,6 +59,9 @@ class DaskDashboardHandler(LocalProxyHandler):
         return super().proxy(port, proxied_path)
 
     def _get_port(self, cluster_id):
+        """
+        Given a cluster ID, get the port of its bokeh server.
+        """
         # Get the cluster by ID. If it is not found,
         # raise an error.
         cluster_model = manager.get_cluster(cluster_id)
