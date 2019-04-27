@@ -6,7 +6,6 @@ server, preventing CORS issues.
 Modified from the nbserverproxy project.
 """
 
-import inspect
 
 from tornado import web, httpclient, httputil, websocket, ioloop, version_info
 
@@ -14,6 +13,7 @@ from notebook.base.handlers import IPythonHandler, utcnow
 from notebook.utils import url_path_join
 from jupyter_server_proxy.handlers import LocalProxyHandler
 from functools import partial
+from urllib import parse
 try:
     from notebook import maybe_future
 except ImportError:
@@ -22,43 +22,47 @@ except ImportError:
 from .manager import manager
 
 
-def make_dashboard_handler(base_url, cluster_id, port):
-    return (
-        url_path_join(base_url, f'/dask/dashboard/{cluster_id}(.*)'),
-        partial(DaskDashboardHandler, port=port),
-        {'absolute_url': False}
-    )
-
 class DaskDashboardHandler(LocalProxyHandler):
-    def __init__(self, port, *args, **kwargs):
-        self.port = port
-        super().__init__(*args, **kwargs)
+    async def http_get(self, cluster_id, proxied_path):
+        return await self.proxy(cluster_id, proxied_path)
 
-    async def http_get(self, path):
-        return await self.proxy(path)
-
-    async def open(self, path):
-        return await super().open(path)
+    async def open(self, cluster_id, proxied_path):
+        return await super().open(cluster_id, proxied_path)
 
     # We have to duplicate all these for now, I've no idea why!
     # Figure out a way to not do that?
-    def post(self, path):
-        return self.proxy(path)
+    def post(self, cluster_id, proxied_path):
+        return self.proxy(cluster_id, proxied_path)
 
-    def put(self, path):
-        return self.proxy(path)
+    def put(self, cluster_id, proxied_path):
+        return self.proxy(cluster_id, proxied_path)
 
-    def delete(self, path):
-        return self.proxy(path)
+    def delete(self, cluster_id, proxied_path):
+        return self.proxy(cluster_id, proxied_path)
 
-    def head(self, path):
-        return self.proxy(path)
+    def head(self, cluster_id, proxied_path):
+        return self.proxy(cluster_id, proxied_path)
 
-    def patch(self, path):
-        return self.proxy(path)
+    def patch(self, cluster_id, proxied_path):
+        return self.proxy(cluster_id, proxied_path)
 
-    def options(self, path):
-        return self.proxy(path)
+    def options(self, cluster_id, proxied_path):
+        return self.proxy(cluster_id, proxied_path)
+
+    def proxy(self, cluster_id, proxied_path):
+               # Get the cluster by ID. If it is not found,
+        # raise an error.
+        cluster_model = manager.get_cluster(cluster_id)
+        if not cluster_model:
+            raise web.HTTPError(404, f"Dask cluster {cluster_id} not found")
+
+        # Construct the proper websocket proxy link from the cluster dashboard
+        dashboard_link = cluster_model["dashboard_link"]
+        dashboard_link = _normalize_dashboard_link(dashboard_link, self.request)
+        port = parse.urlparse(dashboard_link).port or 443
+        self.log.warn(f'PORT: {port}')
+        return super().proxy(port, proxied_path)
+
 
 def _normalize_dashboard_link(link, request):
     """
