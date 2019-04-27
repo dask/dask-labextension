@@ -44,6 +44,7 @@ setup_dict = dict(
         'bokeh',
         'distributed>=1.24.1',
         'notebook>=4.3.1',
+        'jupyter-server-proxy>=1.0.1',
     ]
 )
 
