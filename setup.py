@@ -3,7 +3,7 @@ Setup module for the dask_labextension
 """
 import setuptools
 from setupbase import (
-    create_cmdclass, ensure_python, find_packages
+    create_cmdclass, ensure_python, find_packages, get_version
     )
 
 data_files_spec = [
@@ -18,8 +18,11 @@ package_data_spec = {
 
 cmdclass = create_cmdclass(package_data_spec=package_data_spec, data_files_spec=data_files_spec)
 
+VERSION = get_version('dask_labextension/_version.py')
+
 setup_dict = dict(
     name='dask_labextension',
+    version=VERSION,
     description='A Jupyter Notebook server extension manages Dask clusters.',
     long_description='A Jupyter Notebook server extension manages Dask clusters. Meant to be used in conjunction with the dask-labextension JupyterLab extension.',
     packages=find_packages(),
@@ -57,9 +60,6 @@ except ValueError as e:
                           setup_dict["python_requires"])
                      )
 
-from dask_labextension import __version__
-
 setuptools.setup(
-    version=__version__,
     **setup_dict
 )

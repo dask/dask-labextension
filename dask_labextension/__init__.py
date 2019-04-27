@@ -5,9 +5,7 @@ from notebook.utils import url_path_join
 from . import config
 from .clusterhandler import DaskClusterHandler
 from .dashboardhandler import DaskDashboardHandler
-
-__version__ = "0.3.3"
-
+from ._version import __version__
 
 def _jupyter_server_extension_paths():
     return [{"module": "dask_labextension"}]
