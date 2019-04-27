@@ -5,19 +5,12 @@ server, preventing CORS issues.
 
 Modified from the nbserverproxy project.
 """
+from urllib import parse
 
+from tornado import web
 
-from tornado import web, httpclient, httputil, websocket, ioloop, version_info
-
-from notebook.base.handlers import IPythonHandler, utcnow
 from notebook.utils import url_path_join
 from jupyter_server_proxy.handlers import LocalProxyHandler
-from functools import partial
-from urllib import parse
-try:
-    from notebook import maybe_future
-except ImportError:
-    from tornado.gen import maybe_future
 
 from .manager import manager
 
@@ -60,7 +53,7 @@ class DaskDashboardHandler(LocalProxyHandler):
         dashboard_link = cluster_model["dashboard_link"]
         dashboard_link = _normalize_dashboard_link(dashboard_link, self.request)
         port = parse.urlparse(dashboard_link).port or 443
-        self.log.warn(f'PORT: {port}')
+        self.log.warn(f'PORT: {port} {proxied_path}')
         return super().proxy(port, proxied_path)
 
 
