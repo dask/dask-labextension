@@ -8,12 +8,12 @@ from urllib import parse
 from tornado import web
 
 from notebook.utils import url_path_join
-from jupyter_server_proxy.handlers import LocalProxyHandler
+from jupyter_server_proxy.handlers import ProxyHandler
 
 from .manager import manager
 
 
-class DaskDashboardHandler(LocalProxyHandler):
+class DaskDashboardHandler(ProxyHandler):
     """
     A handler that proxies the dask dashboard to the notebook server.
     Currently the dashboard is assumed to be running on `localhost`.
@@ -32,8 +32,8 @@ class DaskDashboardHandler(LocalProxyHandler):
         return await self.proxy(cluster_id, proxied_path)
 
     async def open(self, cluster_id, proxied_path):
-        port = self._get_port(cluster_id)
-        return await super().open(port, proxied_path)
+        host, port = self._get_parsed(cluster_id)
+        return await super().proxy_open(host, port, proxied_path)
 
     # We have to duplicate all these for now, I've no idea why!
     # Figure out a way to not do that?
@@ -57,12 +57,12 @@ class DaskDashboardHandler(LocalProxyHandler):
         return self.proxy(cluster_id, proxied_path)
 
     def proxy(self, cluster_id, proxied_path):
-        port = self._get_port(cluster_id)
-        return super().proxy(port, proxied_path)
+        host, port = self._get_parsed(cluster_id)
+        return super().proxy(host, port, proxied_path)
 
-    def _get_port(self, cluster_id):
+    def _get_parsed(self, cluster_id):
         """
-        Given a cluster ID, get the port of its bokeh server.
+        Given a cluster ID, get the hostname and port of its bokeh server.
         """
         # Get the cluster by ID. If it is not found,
         # raise an error.
@@ -73,7 +73,14 @@ class DaskDashboardHandler(LocalProxyHandler):
         # Construct the proper websocket proxy link from the cluster dashboard
         dashboard_link = cluster_model["dashboard_link"]
         dashboard_link = _normalize_dashboard_link(dashboard_link, self.request)
-        return parse.urlparse(dashboard_link).port or 443
+        # Parse the url and return
+        parsed = parse.urlparse(dashboard_link)
+        port = parsed.port
+        if not port:
+            port = 443 if parsed.scheme == 'https' else 80
+        if not parsed.hostname:
+            raise web.HTTPError(500, "Dask dashboard URI malformed")
+        return parsed.hostname, port
 
 
 def _normalize_dashboard_link(link, request):
