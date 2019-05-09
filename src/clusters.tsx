@@ -438,6 +438,12 @@ export class DaskClusterManager extends Widget {
       {},
       this._serverSettings
     );
+    if (response.status !== 200) {
+      const msg =
+        'Failed to list clusters: might the server extension not be installed/enabled?';
+      console.error(msg);
+      throw new Error(msg);
+    }
     const data = (await response.json()) as IClusterModel[];
     this._clusters = data;
 
