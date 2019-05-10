@@ -32,7 +32,74 @@ jupyter serverextension enable --py --sys-prefix dask_labextension
 
 This extension has the ability to launch and manage several kinds of Dask clusters,
 including local clusters and kubernetes clusters.
-Options for how to launch these clusters are set via the dask configuration system.
+Options for how to launch these clusters are set via the
+[dask configuration system](http://docs.dask.org/en/latest/configuration.html#configuration),
+typically a `.yml` file on disk.
+
+By default the extension launches a `LocalCluster`, for which the configuration is:
+
+```yaml
+labextension:
+  factory:
+    module: 'dask.distributed'
+    class: 'LocalCluster'
+    args: []
+    kwargs: {}
+  default:
+    workers: null
+    adapt:
+      null
+      # minimum: 0
+      # maximum: 10
+  initial:
+    []
+    # - name: "My Big Cluster"
+    #   workers: 100
+    # - name: "Adaptive Cluster"
+    #   adapt:
+    #     minimum: 0
+    #     maximum: 50
+```
+
+In this configuration, `factory` gives the module, class name, and arguments needed to create the cluster.
+The `default` key describes the initial number of workers for the cluster, as well as whether it is adaptive.
+The `initial` key gives a list of initial clusters to start upon launch of the notebook server.
+
+In addition to `LocalCluster`, this extension has been used to launch several other Dask cluster
+objects, a few examples of which are:
+
+- A SLURM cluster, using
+
+```yaml
+labextension:
+    factory:
+      module: 'dask_jobqueue'
+       class: 'SLURMCluster'
+       args: []
+       kwargs: {}
+```
+
+- A PBS cluster, using
+
+```yaml
+labextension:
+  factory:
+    module: 'dask_jobqueue'
+    class: 'PBSCluster'
+    args: []
+    kwargs: {}
+```
+
+- A [Kubernetes cluster](https://github.com/pangeo-data/pangeo-cloud-federation/blob/8f7f4bf9963ef1ed180dd20c952ff1aa8df54ca2/deployments/ocean/image/binder/dask_config.yaml#L37-L42), using
+
+```yaml
+labextension:
+  factory:
+    module: dask_kubernetes
+    class: KubeCluster
+    args: []
+    kwargs: {}
+```
 
 ### Development install
 
