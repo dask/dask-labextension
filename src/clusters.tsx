@@ -1,4 +1,4 @@
-import { Toolbar, ToolbarButton } from '@jupyterlab/apputils';
+import { showErrorMessage, Toolbar, ToolbarButton } from '@jupyterlab/apputils';
 
 import { IChangedArgs, nbformat, Poll } from '@jupyterlab/coreutils';
 
@@ -422,7 +422,9 @@ export class DaskClusterManager extends Widget {
       this._serverSettings
     );
     if (response.status !== 200) {
-      throw new Error('Failed to start Dask cluster');
+      const err = await response.json();
+      void showErrorMessage('Cluster Start Error', err);
+      throw err;
     }
     const model = (await response.json()) as IClusterModel;
     await this._updateClusterList();
@@ -438,6 +440,16 @@ export class DaskClusterManager extends Widget {
       {},
       this._serverSettings
     );
+    if (response.status !== 200) {
+      const msg =
+        'Failed to list clusters: might the server extension not be installed/enabled?';
+      const err = new Error(msg);
+      if (!this._serverErrorShown) {
+        showErrorMessage('Dask Server Error', err);
+        this._serverErrorShown = true;
+      }
+      throw err;
+    }
     const data = (await response.json()) as IClusterModel[];
     this._clusters = data;
 
@@ -464,7 +476,9 @@ export class DaskClusterManager extends Widget {
       this._serverSettings
     );
     if (response.status !== 204) {
-      throw new Error(`Failed to close Dask cluster ${id}`);
+      const err = await response.json();
+      void showErrorMessage('Failed to close cluster', err);
+      throw err;
     }
     await this._updateClusterList();
   }
@@ -492,7 +506,9 @@ export class DaskClusterManager extends Widget {
       this._serverSettings
     );
     if (response.status !== 200) {
-      throw new Error(`Failed to scale cluster ${id}`);
+      const err = await response.json();
+      void showErrorMessage('Failed to scale cluster', err);
+      throw err;
     }
     const model = (await response.json()) as IClusterModel;
     await this._updateClusterList();
@@ -527,6 +543,7 @@ export class DaskClusterManager extends Widget {
     IChangedArgs<IClusterModel | undefined>
   >(this);
   private _isDisposed = false;
+  private _serverErrorShown = false;
 }
 
 /**
