@@ -288,9 +288,9 @@ function activate(
     app.restored
   ]).then(async res => {
     const settings = res[0];
-    const state = res[1] as { url?: string; cluster?: string };
-    const url = state.url;
-    const cluster = state.cluster;
+    const state = res[1] as { url?: string; cluster?: string } | undefined;
+    const url = state ? state.url : '';
+    const cluster = state ? state.cluster : '';
     if (url && !sidebar.dashboardLauncher.input.url) {
       // If there is a URL in the statedb, let it have priority.
       sidebar.dashboardLauncher.input.url = url;
