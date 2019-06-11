@@ -471,7 +471,7 @@ namespace Private {
     kernel: Kernel.IKernelConnection
   ): Promise<string> {
     const code = `try:\n  from dask.distributed import default_client as _internal_jlab_default_client\n  display(_internal_jlab_default_client().cluster.dashboard_link)\nexcept:\n  pass`;
-    const content: KernelMessage.IExecuteRequest = {
+    const content: KernelMessage.IExecuteRequestMsg['content'] = {
       store_history: false,
       code
     };
@@ -499,7 +499,7 @@ namespace Private {
     const code = `import dask; from dask.distributed import Client
 dask.config.set({'scheduler-address': '${model.scheduler_address}'})
 client = Client()`;
-    const content: KernelMessage.IExecuteRequest = {
+    const content: KernelMessage.IExecuteRequestMsg['content'] = {
       store_history: false,
       code
     };
