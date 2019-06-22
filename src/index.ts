@@ -8,8 +8,8 @@ import {
 import {
   IClientSession,
   ICommandPalette,
-  IInstanceTracker,
-  InstanceTracker
+  IWidgetTracker,
+  WidgetTracker
 } from '@jupyterlab/apputils';
 
 import { CodeEditor } from '@jupyterlab/codeeditor';
@@ -156,7 +156,7 @@ function activate(
   sidebar.title.caption = 'Dask';
 
   // An instance tracker which is used for state restoration.
-  const tracker = new InstanceTracker<DaskDashboard>({
+  const tracker = new WidgetTracker<DaskDashboard>({
     namespace: 'dask-dashboard-launcher'
   });
 
@@ -164,8 +164,8 @@ function activate(
   restorer.add(sidebar, id);
   restorer.restore(tracker, {
     command: CommandIDs.launchPanel,
-    args: widget => widget.item,
-    name: widget => widget.item && widget.item.route
+    args: widget => widget.item || {},
+    name: widget => (widget.item && widget.item.route) || ''
   });
 
   labShell.add(sidebar, 'left', { rank: 200 });
@@ -214,7 +214,7 @@ function activate(
 
   type SessionOwner = NotebookPanel | ConsolePanel;
   // An array of the trackers to check for active sessions.
-  const trackers: IInstanceTracker<SessionOwner>[] = [
+  const trackers: IWidgetTracker<SessionOwner>[] = [
     notebookTracker,
     consoleTracker
   ];
@@ -228,7 +228,7 @@ function activate(
 
   // A function to inject a dask client when a new session owner is added.
   const injectOnWidgetAdded = (
-    sender: IInstanceTracker<SessionOwner>,
+    sender: IWidgetTracker<SessionOwner>,
     widget: SessionOwner
   ) => {
     widget.session.statusChanged.connect(injectOnSessionStatusChanged);
