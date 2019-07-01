@@ -43,6 +43,7 @@
   color: #000000;
   background-color: #ecb172;
   border: 1px solid #ecb172;
+  text-transform: uppercase;
 }
 
 .dask-DashboardListing-item button:disabled.jp-mod-styled.jp-mod-accept {
@@ -286,11 +287,11 @@ button.dask-ClusterListingItem-scale {
   background-image: var(--jp-icon-search);
 }
 
-[data-theme-light='true'] .dask-CodeIcon {
+[data-jp-theme-light='true'] .dask-CodeIcon {
   background-image: url(code-light.svg);
 }
 
-[data-theme-light='false'] .dask-CodeIcon {
+[data-jp-theme-light='false'] .dask-CodeIcon {
   background-image: url(code-dark.svg);
 }
 

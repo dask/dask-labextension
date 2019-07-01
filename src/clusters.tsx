@@ -1,6 +1,6 @@
 import { showErrorMessage, Toolbar, ToolbarButton } from '@jupyterlab/apputils';
 
-import { IChangedArgs, nbformat, Poll } from '@jupyterlab/coreutils';
+import { IChangedArgs, nbformat, Poll, URLExt } from '@jupyterlab/coreutils';
 
 import { ServerConnection } from '@jupyterlab/services';
 
@@ -59,7 +59,18 @@ export class DaskClusterManager extends Widget {
       if (!cluster) {
         return;
       }
-      options.setDashboardUrl(`dask/dashboard/${cluster.id}`);
+      const proxyUrl = URLExt.join(this._serverSettings.baseUrl, 'proxy');
+      const proxyPrefix = new URL(proxyUrl).pathname;
+      if (cluster.dashboard_link.indexOf(proxyPrefix) !== -1) {
+        // If the dashboard link is already proxied using
+        // jupyter_server_proxy, don't proxy again. This
+        // can happen if the user has overridden the dashboard
+        // URL to the jupyter_server_proxy URL manually.
+        options.setDashboardUrl(cluster.dashboard_link);
+      } else {
+        // Otherwise, use the internal proxy URL.
+        options.setDashboardUrl(`dask/dashboard/${cluster.id}`);
+      }
 
       const old = this._activeCluster;
       if (old && old.id === cluster.id) {
