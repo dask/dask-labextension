@@ -1,6 +1,6 @@
 {
   "name": "dask-labextension",
-  "version": "1.0.0-rc.0",
+  "version": "1.0.0",
   "private": false,
   "description": "A JupyterLab extension for dask.",
   "keywords": [
@@ -40,14 +40,14 @@
     ]
   },
   "dependencies": {
-    "@jupyterlab/application": "^1.0.0-rc.0",
-    "@jupyterlab/apputils": "^1.0.0-rc.0",
-    "@jupyterlab/codeeditor": "^1.0.0-rc.0",
-    "@jupyterlab/console": "^1.0.0-rc.0",
-    "@jupyterlab/coreutils": "^3.0.0-rc.0",
-    "@jupyterlab/mainmenu": "^1.0.0-rc.0",
-    "@jupyterlab/notebook": "^1.0.0-rc.0",
-    "@jupyterlab/services": "^4.0.0-rc.0",
+    "@jupyterlab/application": "^1.0.0",
+    "@jupyterlab/apputils": "^1.0.0",
+    "@jupyterlab/codeeditor": "^1.0.0",
+    "@jupyterlab/console": "^1.0.0",
+    "@jupyterlab/coreutils": "^3.0.0",
+    "@jupyterlab/mainmenu": "^1.0.0",
+    "@jupyterlab/notebook": "^1.0.0",
+    "@jupyterlab/services": "^4.0.0",
     "@phosphor/algorithm": "^1.1.3",
     "@phosphor/coreutils": "^1.3.1",
     "@phosphor/domutils": "^1.1.3",
