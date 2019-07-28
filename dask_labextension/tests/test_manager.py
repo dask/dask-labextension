@@ -38,8 +38,6 @@ async def test_start():
             )
             assert model['adapt'] == {'minimum': 1, 'maximum': 3}
 
-            await manager.close()
-
 @gen_test()
 async def test_close():
     with dask.config.set(config):

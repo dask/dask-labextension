@@ -59,14 +59,35 @@ class DaskClusterManager:
         self._cluster_names: Dict[str, str] = dict()
         self._n_clusters = 0
 
-        self.initialized = Future()
+    def __await__(self):
+        """
+        Wait for initial clusters specified via configuration to start.
 
-        async def start_clusters():
-            for model in dask.config.get("labextension.initial"):
-                await self.start_cluster(configuration=model)
-            self.initialized.set_result(self)
+        Idempotent
+        """
+        if not hasattr(self, "_initialized"):
+            async def start_clusters():
+                for model in dask.config.get("labextension.initial"):
+                    await self.start_cluster(configuration=model)
+                return self
 
-        IOLoop.current().add_callback(start_clusters)
+            self._initialized = asyncio.ensure_future(start_clusters())
+        return self._initialized.__await__()
+
+    async def __aenter__(self):
+        """
+        Enter an asynchronous context.
+        This waits for any initial clusters specified via configuration to start.
+        """
+        await self
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        """
+        Exit an asynchronous context.
+        This closes any extant clusters.
+        """
+        await self.close()
 
     async def start_cluster(
         self, cluster_id: str = "", configuration: dict = {}
@@ -215,28 +236,6 @@ class DaskClusterManager:
         """ Close all clusters and cleanup """
         for cluster_id in list(self._clusters):
             await self.close_cluster(cluster_id)
-
-    async def __aenter__(self):
-        """
-        Enter an asynchronous context.
-        This waits for any initial clusters specified via configuration to start.
-        """
-        await self.initialized
-        return self
-
-    async def __aexit__(self, exc_type, exc, tb):
-        """
-        Exit an asynchronous context.
-        This closes any extant clusters.
-        """
-        await self.close()
-
-    def __await__(self):
-        """
-        Awaiter for the manager to be initialized.
-        This waits for any initial clusters specified via configuration to start.
-        """
-        return self.initialized.__await__()
 
 
 async def make_cluster_model(
