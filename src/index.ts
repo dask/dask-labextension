@@ -332,6 +332,9 @@ function activate(
         return !!(w && w.item && w.item.route === dashboardItem.route);
       });
       if (w) {
+        if (!w.isAttached) {
+          labShell.add(w, 'main');
+        }
         labShell.activateById(w.id);
         return;
       }
