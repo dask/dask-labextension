@@ -269,11 +269,11 @@ def make_cluster_model(
         name=cluster_name,
         scheduler_address=cluster.scheduler_address,
         dashboard_link=cluster.dashboard_link or "",
-        workers=len(cluster.scheduler.workers),
+        workers=len(cluster.scheduler_info["workers"]),
         memory=utils.format_bytes(
-            sum(ws.memory_limit for ws in cluster.scheduler.workers.values())
+            sum(d["memory_limit"] for d in cluster.scheduler_info["workers"].values())
         ),
-        cores=sum(ws.ncores for ws in cluster.scheduler.workers.values()),
+        cores=sum(d["nthreads"] for d in cluster.scheduler_info["workers"].values()),
     )
     if adaptive:
         model["adapt"] = {"minimum": adaptive.minimum, "maximum": adaptive.maximum}
