@@ -3,12 +3,14 @@
 # Copyright (c) Jupyter Development Team.
 # Distributed under the terms of the Modified BSD License.
 
+import asyncio
 import importlib
 from typing import Any, Dict, List, Union
 from uuid import uuid4
 
 import dask
 from dask.distributed import Adaptive, utils
+from distributed.utils import format_dashboard_link
 from tornado.ioloop import IOLoop
 from tornado.concurrent import Future
 
@@ -100,7 +102,7 @@ class DaskClusterManager:
 
         self._clusters[cluster_id] = cluster
         self._cluster_names[cluster_id] = cluster_name
-        return make_cluster_model(cluster_id, cluster_name, cluster, adaptive=adaptive)
+        return await make_cluster_model(cluster_id, cluster_name, cluster, adaptive=adaptive)
 
     async def close_cluster(self, cluster_id: str) -> Union[ClusterModel, None]:
         """
@@ -121,12 +123,12 @@ class DaskClusterManager:
             self._clusters.pop(cluster_id)
             name = self._cluster_names.pop(cluster_id)
             adaptive = self._adaptives.pop(cluster_id, None)
-            return make_cluster_model(cluster_id, name, cluster, adaptive)
+            return await make_cluster_model(cluster_id, name, cluster, adaptive)
 
         else:
             return None
 
-    def get_cluster(self, cluster_id) -> Union[ClusterModel, None]:
+    async def get_cluster(self, cluster_id) -> Union[ClusterModel, None]:
         """
         Get a Dask cluster model.
 
@@ -145,16 +147,16 @@ class DaskClusterManager:
         if not cluster:
             return None
 
-        return make_cluster_model(cluster_id, name, cluster, adaptive)
+        return await make_cluster_model(cluster_id, name, cluster, adaptive)
 
-    def list_clusters(self) -> List[ClusterModel]:
+    async def list_clusters(self) -> List[ClusterModel]:
         """
         List the Dask cluster models known to the manager.
 
         Returns
         cluster_models : A list of the dask cluster models known to the manager.
         """
-        return [
+        return await asyncio.gather(*[
             make_cluster_model(
                 cluster_id,
                 self._cluster_names[cluster_id],
@@ -162,9 +164,9 @@ class DaskClusterManager:
                 self._adaptives.get(cluster_id, None),
             )
             for cluster_id in self._clusters
-        ]
+        ])
 
-    def scale_cluster(self, cluster_id: str, n: int) -> Union[ClusterModel, None]:
+    async def scale_cluster(self, cluster_id: str, n: int) -> Union[ClusterModel, None]:
         cluster = self._clusters.get(cluster_id)
         name = self._cluster_names[cluster_id]
         adaptive = self._adaptives.pop(cluster_id, None)
@@ -174,15 +176,15 @@ class DaskClusterManager:
             return None
 
         # Check if it is actually different.
-        model = make_cluster_model(cluster_id, name, cluster, adaptive)
+        model = await make_cluster_model(cluster_id, name, cluster, adaptive)
         if model.get("adapt") == None and model["workers"] == n:
             return model
 
         # Otherwise, rescale the model.
         cluster.scale(n)
-        return make_cluster_model(cluster_id, name, cluster, adaptive=None)
+        return await make_cluster_model(cluster_id, name, cluster, adaptive=None)
 
-    def adapt_cluster(
+    async def adapt_cluster(
         self, cluster_id: str, minimum: int, maximum: int
     ) -> Union[ClusterModel, None]:
         cluster = self._clusters.get(cluster_id)
@@ -194,7 +196,7 @@ class DaskClusterManager:
             return None
 
         # Check if it is actually different.
-        model = make_cluster_model(cluster_id, name, cluster, adaptive)
+        model = await make_cluster_model(cluster_id, name, cluster, adaptive)
         if model.get("adapt") != None and model["adapt"][
             "minimum"
         ] == minimum and model[
@@ -207,7 +209,7 @@ class DaskClusterManager:
         # Otherwise, rescale the model.
         adaptive = cluster.adapt(minimum=minimum, maximum=maximum)
         self._adaptives[cluster_id] = adaptive
-        return make_cluster_model(cluster_id, name, cluster, adaptive)
+        return await make_cluster_model(cluster_id, name, cluster, adaptive)
 
     async def close(self):
         """ Close all clusters and cleanup """
@@ -237,7 +239,7 @@ class DaskClusterManager:
         return self.initialized.__await__()
 
 
-def make_cluster_model(
+async def make_cluster_model(
     cluster_id: str,
     cluster_name: str,
     cluster: Cluster,
@@ -264,16 +266,28 @@ def make_cluster_model(
     """
     # This would be a great target for a dataclass
     # once python 3.7 is in wider use.
+    try:
+        info = await cluster.scheduler_comm.identity()
+    except OSError:
+        info = {"workers": {}, "services": {}}
+
+    if "dashboard" in info["services"]:
+        dashboard = format_dashboard_link(
+            host=info["address"].split("://")[1].split(":")[0],
+            port=info["services"]["dashboard"]
+        )
+    else:
+        dashboard = ""
     model = dict(
         id=cluster_id,
         name=cluster_name,
         scheduler_address=cluster.scheduler_address,
-        dashboard_link=cluster.dashboard_link or "",
-        workers=len(cluster.scheduler.workers),
+        dashboard_link=dashboard,
+        workers=len(info["workers"]),
         memory=utils.format_bytes(
-            sum(ws.memory_limit for ws in cluster.scheduler.workers.values())
+            sum(w.get("memory_limit", 0) or 0 for w in info["workers"].values())
         ),
-        cores=sum(ws.ncores for ws in cluster.scheduler.workers.values()),
+        cores=sum(w["nthreads"] for w in info["workers"].values()),
     )
     if adaptive:
         model["adapt"] = {"minimum": adaptive.minimum, "maximum": adaptive.maximum}

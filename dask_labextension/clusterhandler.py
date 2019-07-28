@@ -33,16 +33,16 @@ class DaskClusterHandler(APIHandler):
             raise web.HTTPError(500, str(e))
 
     @web.authenticated
-    def get(self, cluster_id: str = "") -> None:
+    async def get(self, cluster_id: str = "") -> None:
         """
         Get a cluster by id. If no id is given, lists known clusters.
         """
         if cluster_id == "":
-            cluster_list = manager.list_clusters()
+            cluster_list = await manager.list_clusters()
             self.set_status(200)
             self.finish(json.dumps(cluster_list))
         else:
-            cluster_model = manager.get_cluster(cluster_id)
+            cluster_model = await manager.get_cluster(cluster_id)
             if cluster_model is None:
                 raise web.HTTPError(404, f"Dask cluster {cluster_id} not found")
 
@@ -55,7 +55,7 @@ class DaskClusterHandler(APIHandler):
         Create a new cluster with a given id. If no id is given, a random
         one is selected.
         """
-        if manager.get_cluster(cluster_id):
+        if await manager.get_cluster(cluster_id):
             raise web.HTTPError(
                 403, f"A Dask cluster with ID {cluster_id} already exists!"
             )
@@ -68,7 +68,7 @@ class DaskClusterHandler(APIHandler):
             raise web.HTTPError(500, str(e))
 
     @web.authenticated
-    def patch(self, cluster_id):
+    async def patch(self, cluster_id):
         """
         Scale an existing cluster."
         Not yet implemented.
@@ -76,13 +76,13 @@ class DaskClusterHandler(APIHandler):
         new_model = json.loads(self.request.body)
         try:
             if new_model.get("adapt") != None:
-                cluster_model = manager.adapt_cluster(
+                cluster_model = await manager.adapt_cluster(
                     cluster_id,
                     new_model["adapt"]["minimum"],
                     new_model["adapt"]["maximum"],
                 )
             elif new_model.get("adapt") == None:
-                cluster_model = manager.scale_cluster(cluster_id, new_model["workers"])
+                cluster_model = await manager.scale_cluster(cluster_id, new_model["workers"])
             self.set_status(200)
             self.finish(json.dumps(cluster_model))
         except Exception as e:
