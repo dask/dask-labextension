@@ -32,41 +32,41 @@ class DaskDashboardHandler(ProxyHandler):
         return await self.proxy(cluster_id, proxied_path)
 
     async def open(self, cluster_id, proxied_path):
-        host, port = self._get_parsed(cluster_id)
+        host, port = await self._get_parsed(cluster_id)
         return await super().proxy_open(host, port, proxied_path)
 
     # We have to duplicate all these for now, I've no idea why!
     # Figure out a way to not do that?
 
-    def post(self, cluster_id, proxied_path):
-        return self.proxy(cluster_id, proxied_path)
+    async def post(self, cluster_id, proxied_path):
+        return await self.proxy(cluster_id, proxied_path)
 
-    def put(self, cluster_id, proxied_path):
-        return self.proxy(cluster_id, proxied_path)
+    async def put(self, cluster_id, proxied_path):
+        return await self.proxy(cluster_id, proxied_path)
 
-    def delete(self, cluster_id, proxied_path):
-        return self.proxy(cluster_id, proxied_path)
+    async def delete(self, cluster_id, proxied_path):
+        return await self.proxy(cluster_id, proxied_path)
 
-    def head(self, cluster_id, proxied_path):
-        return self.proxy(cluster_id, proxied_path)
+    async def head(self, cluster_id, proxied_path):
+        return await self.proxy(cluster_id, proxied_path)
 
-    def patch(self, cluster_id, proxied_path):
-        return self.proxy(cluster_id, proxied_path)
+    async def patch(self, cluster_id, proxied_path):
+        return await self.proxy(cluster_id, proxied_path)
 
-    def options(self, cluster_id, proxied_path):
-        return self.proxy(cluster_id, proxied_path)
+    async def options(self, cluster_id, proxied_path):
+        return await self.proxy(cluster_id, proxied_path)
 
-    def proxy(self, cluster_id, proxied_path):
-        host, port = self._get_parsed(cluster_id)
+    async def proxy(self, cluster_id, proxied_path):
+        host, port = await self._get_parsed(cluster_id)
         return super().proxy(host, port, proxied_path)
 
-    def _get_parsed(self, cluster_id):
+    async def _get_parsed(self, cluster_id):
         """
         Given a cluster ID, get the hostname and port of its bokeh server.
         """
         # Get the cluster by ID. If it is not found,
         # raise an error.
-        cluster_model = manager.get_cluster(cluster_id)
+        cluster_model = await manager.get_cluster(cluster_id)
         if not cluster_model:
             raise web.HTTPError(404, f"Dask cluster {cluster_id} not found")
 
