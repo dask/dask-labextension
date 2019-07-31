@@ -8,12 +8,23 @@ from distributed.metrics import time
 from dask_labextension.manager import DaskClusterManager
 
 
+config = {
+    'labextension': {
+        "initial": [],
+        "default": {},
+        'factory': {
+            "module": "dask.distributed",
+            "class": "LocalCluster",
+            "kwargs": {"processes": False},
+            "args": []
+        }
+    }
+}
+
+
 @gen_test()
 async def test_start():
-    with dask.config.set({
-        'labextension.defaults.kwargs': {'processes': False},  # for speed
-        'labextension.initial': [],
-    }):
+    with dask.config.set(config):
         async with DaskClusterManager() as manager:
             # add cluster
             model = await manager.start_cluster()
@@ -33,10 +44,7 @@ async def test_start():
 
 @gen_test()
 async def test_close():
-    with dask.config.set({
-        'labextension.defaults.kwargs': {'processes': False},  # for speed
-        'labextension.initial': [],
-    }):
+    with dask.config.set(config):
         async with DaskClusterManager() as manager:
             # start a cluster
             model = await manager.start_cluster()
@@ -50,10 +58,7 @@ async def test_close():
 
 @gen_test()
 async def test_get():
-    with dask.config.set({
-        'labextension.defaults.kwargs': {'processes': False},  # for speed
-        'labextension.initial': [],
-    }):
+    with dask.config.set(config):
         async with DaskClusterManager() as manager:
             # start a cluster
             model = await manager.start_cluster()
@@ -67,10 +72,7 @@ async def test_get():
 @pytest.mark.filterwarnings('ignore')
 @gen_test()
 async def test_list():
-    with dask.config.set({
-        'labextension.defaults.kwargs': {'processes': False},  # for speed
-        'labextension.initial': [],
-    }):
+    with dask.config.set(config):
         async with DaskClusterManager() as manager:
             # start with an empty list
             assert not manager.list_clusters()
@@ -85,10 +87,7 @@ async def test_list():
 
 @gen_test()
 async def test_scale():
-    with dask.config.set({
-        'labextension.defaults.kwargs': {'processes': False},  # for speed
-        'labextension.initial': [],
-    }):
+    with dask.config.set(config):
         async with DaskClusterManager() as manager:
             # add cluster with number of workers configuration
             model = await manager.start_cluster(configuration={'workers': 3})
@@ -110,10 +109,7 @@ async def test_scale():
 
 @gen_test()
 async def test_adapt():
-    with dask.config.set({
-        'labextension.defaults.kwargs': {'processes': False},  # for speed
-        'labextension.initial': [],
-    }):
+    with dask.config.set(config):
         async with DaskClusterManager() as manager:
             # add a new cluster
             model = await manager.start_cluster()
@@ -127,9 +123,17 @@ async def test_adapt():
 @gen_test()
 async def test_initial():
     with dask.config.set({
-        'labextension.defaults.kwargs': {'processes': False},  # for speed
-        'labextension.initial': [{'name': 'foo'}],
-    }):
+        'labextension': {
+        "initial": [{"name": "foo"}],
+        "default": {},
+        'factory': {
+            "module": "dask.distributed",
+            "class": "LocalCluster",
+            "kwargs": {"processes": False},
+            "args": []
+        }
+    }
+        }):
         # Test asynchronous starting of clusters via a context
         async with DaskClusterManager() as manager:
             clusters = manager.list_clusters()
