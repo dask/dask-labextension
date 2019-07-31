@@ -264,16 +264,21 @@ def make_cluster_model(
     """
     # This would be a great target for a dataclass
     # once python 3.7 is in wider use.
+    try:
+        info = cluster.scheduler_info
+    except AttributeError:
+        info = cluster.scheduler.identity()
+    assert isinstance(info, dict)
     model = dict(
         id=cluster_id,
         name=cluster_name,
         scheduler_address=cluster.scheduler_address,
         dashboard_link=cluster.dashboard_link or "",
-        workers=len(cluster.scheduler_info["workers"]),
+        workers=len(info["workers"]),
         memory=utils.format_bytes(
-            sum(d["memory_limit"] for d in cluster.scheduler_info["workers"].values())
+            sum(d["memory_limit"] for d in info["workers"].values())
         ),
-        cores=sum(d["nthreads"] for d in cluster.scheduler_info["workers"].values()),
+        cores=sum(d["nthreads"] for d in info["workers"].values()),
     )
     if adaptive:
         model["adapt"] = {"minimum": adaptive.minimum, "maximum": adaptive.maximum}
