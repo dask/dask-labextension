@@ -268,6 +268,10 @@ def make_cluster_model(
         info = cluster.scheduler_info
     except AttributeError:
         info = cluster.scheduler.identity()
+    try:
+        cores = sum(d["nthreads"] for d in info["workers"].values())
+    except KeyError:  # dask.__version__ < 2.0
+        cores = sum(d["ncores"] for d in info["workers"].values())
     assert isinstance(info, dict)
     model = dict(
         id=cluster_id,
@@ -278,7 +282,7 @@ def make_cluster_model(
         memory=utils.format_bytes(
             sum(d["memory_limit"] for d in info["workers"].values())
         ),
-        cores=sum(d["nthreads"] for d in info["workers"].values()),
+        cores=cores,
     )
     if adaptive:
         model["adapt"] = {"minimum": adaptive.minimum, "maximum": adaptive.maximum}
