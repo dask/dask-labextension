@@ -133,7 +133,6 @@ export class DaskDashboardLauncher extends Widget {
         newItems.push(item);
       }
       this._items = newItems;
-    } else {
     }
     this.update();
   }
