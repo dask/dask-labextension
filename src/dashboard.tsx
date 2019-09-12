@@ -537,7 +537,7 @@ namespace Private {
   }
 
   /**
-   * Test whether a given URL hosts a dask dashboard.
+   * Return the json result of /individual-plots.json
    */
   export function getItems(
     url: string,
