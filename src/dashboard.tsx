@@ -116,7 +116,12 @@ export class DaskDashboardLauncher extends Widget {
     this.addClass('dask-DaskDashboardLauncher');
     this._items = options.items || DaskDashboardLauncher.DEFAULT_ITEMS;
     this._launchItem = options.launchItem;
-    this._input.urlChanged.connect(this.update, this);
+    this._input.urlChanged.connect(this.toot, this);
+    this._startUrlTimer();
+  }
+
+  protected toot(the_arg: any) {
+    this.update();
   }
 
   /**
@@ -159,10 +164,44 @@ export class DaskDashboardLauncher extends Widget {
     this.update();
   }
 
+  /**
+   * Dispose of the resources held by the dashboard.
+   */
+  dispose(): void {
+    this._poll.dispose();
+    super.dispose();
+  }
+
+  /**
+   * Poll for valid urls
+   */
+  private _startUrlTimer(): void {
+    this._poll = new Poll({
+      factory: async () => {
+        const url = this._input._url;
+        const result = await Private.getItems(url, this._input._serverSettings);
+        if (result) {
+          let newItems: IDashboardItem[] = [];
+          for (let key in result) {
+            let label = key.replace('Individual ', '');
+            let route = String(result[key]);
+            let item = { route: route, label: label, key: label };
+            newItems.push(item);
+          }
+          this._items = newItems;
+          this.update();
+        }
+      },
+      frequency: { interval: 4 * 1000, backoff: true, max: 60 * 1000 },
+      standby: 'when-hidden'
+    });
+  }
+
   private _dashboard: Widget;
   private _input: URLInput;
   private _launchItem: (item: IDashboardItem) => void;
   private _items: IDashboardItem[];
+  private _poll: Poll;
 }
 
 /**
@@ -355,12 +394,12 @@ export class URLInput extends Widget {
   }
 
   private _urlChanged = new Signal<this, URLInput.IChangedArgs>(this);
-  private _url = '';
+  public _url = '';
   private _isValid = false;
   private _input: HTMLInputElement;
   private _poll: Poll;
   private _isDisposed: boolean;
-  private _serverSettings: ServerConnection.ISettings;
+  public _serverSettings: ServerConnection.ISettings;
 }
 
 /**
@@ -516,6 +555,30 @@ namespace Private {
       url = url.slice(0, -'status/'.length);
     }
     return url;
+  }
+
+  /**
+   * Test whether a given URL hosts a dask dashboard.
+   */
+  export function getItems(
+    url: string,
+    settings: ServerConnection.ISettings
+  ): Promise<IDashboardItem[] | void> {
+    url = normalizeDashboardUrl(url, settings.baseUrl);
+
+    return ServerConnection.makeRequest(
+      URLExt.join(url, 'individual-plots.json'),
+      {},
+      settings
+    ).then(response => {
+      if (response.status === 200) {
+        return response.json().then(data => {
+          return data;
+        });
+      } else {
+        return undefined;
+      }
+    });
   }
 
   /**
