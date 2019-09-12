@@ -116,11 +116,25 @@ export class DaskDashboardLauncher extends Widget {
     this.addClass('dask-DaskDashboardLauncher');
     this._items = options.items || DaskDashboardLauncher.DEFAULT_ITEMS;
     this._launchItem = options.launchItem;
-    this._input.urlChanged.connect(this.toot, this);
-    this._startUrlTimer();
+    this._input.urlChanged.connect(this.updateLinks, this);
   }
 
-  protected toot(the_arg: any) {
+  protected async updateLinks() {
+    const result = await Private.getItems(
+      this._input.url,
+      this._input._serverSettings
+    );
+    if (result) {
+      let newItems: IDashboardItem[] = [];
+      for (let key in result) {
+        let label = key.replace('Individual ', '');
+        let route = String(result[key]);
+        let item = { route: route, label: label, key: label };
+        newItems.push(item);
+      }
+      this._items = newItems;
+    } else {
+    }
     this.update();
   }
 
@@ -164,44 +178,10 @@ export class DaskDashboardLauncher extends Widget {
     this.update();
   }
 
-  /**
-   * Dispose of the resources held by the dashboard.
-   */
-  dispose(): void {
-    this._poll.dispose();
-    super.dispose();
-  }
-
-  /**
-   * Poll for valid urls
-   */
-  private _startUrlTimer(): void {
-    this._poll = new Poll({
-      factory: async () => {
-        const url = this._input._url;
-        const result = await Private.getItems(url, this._input._serverSettings);
-        if (result) {
-          let newItems: IDashboardItem[] = [];
-          for (let key in result) {
-            let label = key.replace('Individual ', '');
-            let route = String(result[key]);
-            let item = { route: route, label: label, key: label };
-            newItems.push(item);
-          }
-          this._items = newItems;
-          this.update();
-        }
-      },
-      frequency: { interval: 4 * 1000, backoff: true, max: 60 * 1000 },
-      standby: 'when-hidden'
-    });
-  }
-
   private _dashboard: Widget;
   private _input: URLInput;
   private _launchItem: (item: IDashboardItem) => void;
   private _items: IDashboardItem[];
-  private _poll: Poll;
 }
 
 /**
@@ -393,13 +373,13 @@ export class URLInput extends Widget {
     });
   }
 
-  private _urlChanged = new Signal<this, URLInput.IChangedArgs>(this);
   public _url = '';
+  public _serverSettings: ServerConnection.ISettings;
+  private _urlChanged = new Signal<this, URLInput.IChangedArgs>(this);
   private _isValid = false;
   private _input: HTMLInputElement;
   private _poll: Poll;
   private _isDisposed: boolean;
-  public _serverSettings: ServerConnection.ISettings;
 }
 
 /**
