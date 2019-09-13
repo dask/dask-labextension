@@ -206,6 +206,8 @@ export class URLInput extends Widget {
     wrapper.node.appendChild(this._input);
     layout.addWidget(wrapper);
 
+    this._serverSettings = serverSettings;
+
     if (linkFinder) {
       const findButton = new ToolbarButton({
         iconClassName: 'dask-SearchIcon jp-Icon jp-Icon-16',
@@ -219,7 +221,6 @@ export class URLInput extends Widget {
       });
       layout.addWidget(findButton);
     }
-    this._serverSettings = serverSettings;
 
     this._startUrlCheckTimer();
   }
