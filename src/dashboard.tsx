@@ -123,7 +123,7 @@ export class DaskDashboardLauncher extends Widget {
   private async updateLinks(): Promise<void> {
     const result = await Private.getItems(
       this._input.url,
-      ServerConnection.makeSettings()
+      this._serverSettings
     );
     if (result) {
       let newItems: IDashboardItem[] = [];
