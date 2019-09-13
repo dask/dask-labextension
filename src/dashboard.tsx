@@ -119,10 +119,10 @@ export class DaskDashboardLauncher extends Widget {
     this._input.urlChanged.connect(this.updateLinks, this);
   }
 
-  protected async updateLinks() {
+  private async updateLinks(): Promise<void> {
     const result = await Private.getItems(
       this._input.url,
-      this._input._serverSettings
+      ServerConnection.makeSettings()
     );
     if (result) {
       let newItems: IDashboardItem[] = [];
@@ -372,13 +372,13 @@ export class URLInput extends Widget {
     });
   }
 
-  public _url = '';
-  public _serverSettings: ServerConnection.ISettings;
   private _urlChanged = new Signal<this, URLInput.IChangedArgs>(this);
+  private _url = '';
   private _isValid = false;
   private _input: HTMLInputElement;
   private _poll: Poll;
   private _isDisposed: boolean;
+  private _serverSettings: ServerConnection.ISettings;
 }
 
 /**
