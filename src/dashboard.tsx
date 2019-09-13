@@ -110,13 +110,32 @@ export class DaskDashboardLauncher extends Widget {
     super();
     let layout = (this.layout = new PanelLayout());
     this._dashboard = new Widget();
-    this._input = new URLInput(options.linkFinder);
+    this._serverSettings = ServerConnection.makeSettings();
+    this._input = new URLInput(this._serverSettings, options.linkFinder);
     layout.addWidget(this._input);
     layout.addWidget(this._dashboard);
     this.addClass('dask-DaskDashboardLauncher');
     this._items = options.items || DaskDashboardLauncher.DEFAULT_ITEMS;
     this._launchItem = options.launchItem;
-    this._input.urlChanged.connect(this.update, this);
+    this._input.urlChanged.connect(this.updateLinks, this);
+  }
+
+  private async updateLinks(): Promise<void> {
+    const result = await Private.getItems(
+      this._input.url,
+      this._serverSettings
+    );
+    if (result) {
+      let newItems: IDashboardItem[] = [];
+      for (let key in result) {
+        let label = key.replace('Individual ', '');
+        let route = String(result[key]);
+        let item = { route: route, label: label, key: label };
+        newItems.push(item);
+      }
+      this._items = newItems;
+    }
+    this.update();
   }
 
   /**
@@ -163,6 +182,7 @@ export class DaskDashboardLauncher extends Widget {
   private _input: URLInput;
   private _launchItem: (item: IDashboardItem) => void;
   private _items: IDashboardItem[];
+  private _serverSettings: ServerConnection.ISettings;
 }
 
 /**
@@ -172,7 +192,10 @@ export class URLInput extends Widget {
   /**
    * Construct a new input element.
    */
-  constructor(linkFinder?: () => Promise<string>) {
+  constructor(
+    serverSettings: ServerConnection.ISettings,
+    linkFinder?: () => Promise<string>
+  ) {
     super();
     this.addClass('dask-URLInput');
     const layout = (this.layout = new PanelLayout());
@@ -183,7 +206,7 @@ export class URLInput extends Widget {
     wrapper.node.appendChild(this._input);
     layout.addWidget(wrapper);
 
-    this._serverSettings = ServerConnection.makeSettings();
+    this._serverSettings = serverSettings;
 
     if (linkFinder) {
       const findButton = new ToolbarButton({
@@ -516,6 +539,30 @@ namespace Private {
       url = url.slice(0, -'status/'.length);
     }
     return url;
+  }
+
+  /**
+   * Return the json result of /individual-plots.json
+   */
+  export function getItems(
+    url: string,
+    settings: ServerConnection.ISettings
+  ): Promise<IDashboardItem[] | void> {
+    url = normalizeDashboardUrl(url, settings.baseUrl);
+
+    return ServerConnection.makeRequest(
+      URLExt.join(url, 'individual-plots.json'),
+      {},
+      settings
+    ).then(response => {
+      if (response.status === 200) {
+        return response.json().then(data => {
+          return data;
+        });
+      } else {
+        return undefined;
+      }
+    });
   }
 
   /**
