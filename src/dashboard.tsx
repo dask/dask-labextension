@@ -110,13 +110,13 @@ export class DaskDashboardLauncher extends Widget {
     super();
     let layout = (this.layout = new PanelLayout());
     this._dashboard = new Widget();
-    this._launchItem = options.launchItem;
     this._serverSettings = ServerConnection.makeSettings();
     this._input = new URLInput(this._serverSettings, options.linkFinder);
     layout.addWidget(this._input);
     layout.addWidget(this._dashboard);
     this.addClass('dask-DaskDashboardLauncher');
     this._items = options.items || DaskDashboardLauncher.DEFAULT_ITEMS;
+    this._launchItem = options.launchItem;
     this._input.urlChanged.connect(this.updateLinks, this);
   }
 
