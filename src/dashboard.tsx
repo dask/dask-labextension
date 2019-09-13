@@ -110,12 +110,13 @@ export class DaskDashboardLauncher extends Widget {
     super();
     let layout = (this.layout = new PanelLayout());
     this._dashboard = new Widget();
-    this._input = new URLInput(options.linkFinder);
+    this._launchItem = options.launchItem;
+    this._serverSettings = ServerConnection.makeSettings();
+    this._input = new URLInput(this._serverSettings, options.linkFinder);
     layout.addWidget(this._input);
     layout.addWidget(this._dashboard);
     this.addClass('dask-DaskDashboardLauncher');
     this._items = options.items || DaskDashboardLauncher.DEFAULT_ITEMS;
-    this._launchItem = options.launchItem;
     this._input.urlChanged.connect(this.updateLinks, this);
   }
 
@@ -181,6 +182,7 @@ export class DaskDashboardLauncher extends Widget {
   private _input: URLInput;
   private _launchItem: (item: IDashboardItem) => void;
   private _items: IDashboardItem[];
+  private _serverSettings: ServerConnection.ISettings;
 }
 
 /**
@@ -190,7 +192,10 @@ export class URLInput extends Widget {
   /**
    * Construct a new input element.
    */
-  constructor(linkFinder?: () => Promise<string>) {
+  constructor(
+    serverSettings: ServerConnection.ISettings,
+    linkFinder?: () => Promise<string>
+  ) {
     super();
     this.addClass('dask-URLInput');
     const layout = (this.layout = new PanelLayout());
@@ -200,8 +205,6 @@ export class URLInput extends Widget {
     this._input.placeholder = 'DASK DASHBOARD URL';
     wrapper.node.appendChild(this._input);
     layout.addWidget(wrapper);
-
-    this._serverSettings = ServerConnection.makeSettings();
 
     if (linkFinder) {
       const findButton = new ToolbarButton({
@@ -216,6 +219,7 @@ export class URLInput extends Widget {
       });
       layout.addWidget(findButton);
     }
+    this._serverSettings = serverSettings;
 
     this._startUrlCheckTimer();
   }
