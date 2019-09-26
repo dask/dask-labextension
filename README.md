@@ -14,8 +14,18 @@ distributed >= 1.24.1
 
 ## Installation
 
+To install the Dask JupyterLab extension you will need both JupyterLab,
+and [Node.js](https://nodejs.org/).
+These are available through a variety of sources.
+One source common to Python users is the conda package manager.
+
+```bash
+conda install jupyterlab nodejs
+```
+
 This extension includes both a client-side JupyterLab extension and a server-side
-Jupyter notebook extension. Install these using the command line with
+Jupyter notebook extension. Install these using the command line with the
+following commands:
 
 ```bash
 pip install dask_labextension
