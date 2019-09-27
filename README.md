@@ -7,6 +7,16 @@ as well as embed Dask's dashboard plots directly into JupyterLab panes.
 
 ![Dask Extension](./dask.png)
 
+## Explanatory Video (5 minutes)
+
+<iframe width="560"
+        height="315"
+        src="https://www.youtube.com/embed/EX_voquHdk0"
+        style="margin: 0 auto 20px auto; display: block;"
+        frameborder="0"
+        allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen></iframe>
+
 ## Requirements
 
 JupyterLab >= 1.0
