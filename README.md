@@ -9,13 +9,11 @@ as well as embed Dask's dashboard plots directly into JupyterLab panes.
 
 ## Explanatory Video (5 minutes)
 
-<iframe width="560"
-        height="315"
-        src="https://www.youtube.com/embed/EX_voquHdk0"
-        style="margin: 0 auto 20px auto; display: block;"
-        frameborder="0"
-        allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-        allowfullscreen></iframe>
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=EX_voquHdk0 "
+   target="_blank">
+<img src="http://img.youtube.com/vi/EX_voquHdk0/0.jpg"
+       alt="Dask + JupyterLab Screencast" width="560" height="315" border="10" />
+</a>
 
 ## Requirements
 
