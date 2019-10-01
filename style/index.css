@@ -151,6 +151,12 @@
   margin: 0px;
 }
 
+.dask-DaskClusterManager button.jp-Button > span {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
 .dask-ClusterListing ul.dask-ClusterListing-list {
   list-style-type: none;
   padding: 0;
