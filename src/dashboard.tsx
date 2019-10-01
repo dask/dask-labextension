@@ -121,20 +121,15 @@ export class DaskDashboardLauncher extends Widget {
   }
 
   private async updateLinks(): Promise<void> {
+    if (!this._input.isValid) {
+      this.update();
+      return;
+    }
     const result = await Private.getItems(
       this._input.url,
       this._serverSettings
     );
-    if (result) {
-      let newItems: IDashboardItem[] = [];
-      for (let key in result) {
-        let label = key.replace('Individual ', '');
-        let route = String(result[key]);
-        let item = { route: route, label: label, key: label };
-        newItems.push(item);
-      }
-      this._items = newItems;
-    }
+    this._items = result || DaskDashboardLauncher.DEFAULT_ITEMS;
     this.update();
   }
 
@@ -519,7 +514,7 @@ namespace Private {
    * Optionally remove a `status` route from a dashboard url.
    */
   export function normalizeDashboardUrl(url: string, baseUrl = ''): string {
-    if (URLExt.isLocal(url)) {
+    if (isLocal(url)) {
       if (!baseUrl) {
         baseUrl = PageConfig.getBaseUrl();
       }
@@ -544,25 +539,33 @@ namespace Private {
   /**
    * Return the json result of /individual-plots.json
    */
-  export function getItems(
+  export async function getItems(
     url: string,
     settings: ServerConnection.ISettings
-  ): Promise<IDashboardItem[] | void> {
+  ): Promise<IDashboardItem[]> {
+    // We can't fetch items from a non-local URL due to CORS policies.
+    if (!isLocal(url)) {
+      return DaskDashboardLauncher.DEFAULT_ITEMS;
+    }
     url = normalizeDashboardUrl(url, settings.baseUrl);
-
-    return ServerConnection.makeRequest(
+    const response = await ServerConnection.makeRequest(
       URLExt.join(url, 'individual-plots.json'),
       {},
       settings
-    ).then(response => {
-      if (response.status === 200) {
-        return response.json().then(data => {
-          return data;
-        });
-      } else {
-        return undefined;
+    );
+    if (response.status === 200) {
+      let result = await response.json();
+      const newItems: IDashboardItem[] = [];
+      for (let key in result) {
+        let label = key.replace('Individual ', '');
+        let route = String(result[key]);
+        let item = { route: route, label: label, key: label };
+        newItems.push(item);
       }
-    });
+      return newItems;
+    } else {
+      return [];
+    }
   }
 
   /**
@@ -620,5 +623,20 @@ namespace Private {
     const panel = document.createElement('div');
     panel.className = 'dask-DaskDashboard-inactive';
     return panel;
+  }
+
+  /**
+   * Test whether the url is a local url.
+   *
+   * #### Notes
+   * This function returns `false` for any fully qualified url, including
+   * `data:`, `file:`, and `//` protocol URLs.
+   */
+  export function isLocal(url: string): boolean {
+    const { protocol } = URLExt.parse(url);
+
+    return (
+      url.toLowerCase().indexOf(protocol!) !== 0 && url.indexOf('//') !== 0
+    );
   }
 }
