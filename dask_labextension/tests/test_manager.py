@@ -100,7 +100,7 @@ async def test_scale():
             await sleep(0.2)  # let workers settle # TODO: remove need for this
 
             # rescale the cluster
-            model = manager.scale_cluster(model['id'], 6)
+            model = await manager.scale_cluster(model['id'], 6)
             start = time()
             while model['workers'] != 6:
                 await sleep(0.01)

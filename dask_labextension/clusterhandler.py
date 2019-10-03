@@ -68,7 +68,7 @@ class DaskClusterHandler(APIHandler):
             raise web.HTTPError(500, str(e))
 
     @web.authenticated
-    def patch(self, cluster_id):
+    async def patch(self, cluster_id):
         """
         Scale an existing cluster."
         Not yet implemented.
@@ -82,7 +82,7 @@ class DaskClusterHandler(APIHandler):
                     new_model["adapt"]["maximum"],
                 )
             elif new_model.get("adapt") == None:
-                cluster_model = manager.scale_cluster(cluster_id, new_model["workers"])
+                cluster_model = await manager.scale_cluster(cluster_id, new_model["workers"])
             self.set_status(200)
             self.finish(json.dumps(cluster_model))
         except Exception as e:
