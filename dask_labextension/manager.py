@@ -4,6 +4,7 @@
 # Distributed under the terms of the Modified BSD License.
 
 import importlib
+from inspect import isawaitable
 from typing import Any, Dict, List, Union
 from uuid import uuid4
 
@@ -39,7 +40,9 @@ async def make_cluster(configuration: dict) -> Cluster:
     if configuration.get("adapt"):
         adaptive = cluster.adapt(**configuration.get("adapt"))
     elif configuration.get("workers") is not None:
-        cluster.scale(configuration.get("workers"))
+        t = cluster.scale(configuration.get("workers"))
+        if isawaitable(t):
+            await t
 
     return cluster, adaptive
 
@@ -164,7 +167,7 @@ class DaskClusterManager:
             for cluster_id in self._clusters
         ]
 
-    def scale_cluster(self, cluster_id: str, n: int) -> Union[ClusterModel, None]:
+    async def scale_cluster(self, cluster_id: str, n: int) -> Union[ClusterModel, None]:
         cluster = self._clusters.get(cluster_id)
         name = self._cluster_names[cluster_id]
         adaptive = self._adaptives.pop(cluster_id, None)
@@ -179,7 +182,9 @@ class DaskClusterManager:
             return model
 
         # Otherwise, rescale the model.
-        cluster.scale(n)
+        t = cluster.scale(n)
+        if isawaitable(t):
+            await t
         return make_cluster_model(cluster_id, name, cluster, adaptive=None)
 
     def adapt_cluster(
