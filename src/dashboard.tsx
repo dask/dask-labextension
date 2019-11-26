@@ -433,14 +433,18 @@ export namespace DaskDashboardLauncher {
   }
 
   export const DEFAULT_ITEMS = [
+    { route: 'individual-task-stream', label: 'Task Stream' },
+    { route: 'individual-progress', label: 'Progress' },
     { route: 'individual-graph', label: 'Graph' },
-    { route: 'individual-nbytes', label: 'Memory Use' },
+    { route: 'individual-workers', label: 'Workers' },
+    { route: 'individual-nbytes', label: 'Memory (worker)' },
+    { route: 'individual-memory-by-key', label: 'Memory (operation)' },
     { route: 'individual-nprocessing', label: 'Processing Tasks' },
     { route: 'individual-profile', label: 'Profile' },
     { route: 'individual-profile-server', label: 'Profile Server' },
-    { route: 'individual-progress', label: 'Progress' },
-    { route: 'individual-task-stream', label: 'Task Stream' },
-    { route: 'individual-workers', label: 'Workers' }
+    { route: 'individual-cpu', label: 'CPU (workers)' },
+    { route: 'individual-bandwidth-workers', label: 'Bandwidth (workers)' },
+    { route: 'individual-bandwidth-types', label: 'Bandwidth (type)' }
   ];
 }
 
