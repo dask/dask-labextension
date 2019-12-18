@@ -2,7 +2,9 @@
 Setup module for the dask_labextension
 """
 import setuptools
-from setupbase import (create_cmdclass, ensure_python, find_packages, get_version)
+from setupbase import create_cmdclass, ensure_python, find_packages
+
+import versioneer
 
 data_files_spec = [
     (
@@ -15,11 +17,13 @@ data_files_spec = [
 package_data_spec = {"dask_labextension": ["*.yaml"]}
 
 
-cmdclass = create_cmdclass(
-    package_data_spec=package_data_spec, data_files_spec=data_files_spec
+cmdclass = versioneer.get_cmdclass(
+    create_cmdclass(
+        package_data_spec=package_data_spec, data_files_spec=data_files_spec
+    )
 )
 
-VERSION = get_version("dask_labextension/_version.py")
+VERSION = versioneer.get_version()
 
 setup_dict = dict(
     name="dask_labextension",
@@ -45,7 +49,10 @@ setup_dict = dict(
         "Programming Language :: Python :: 3",
     ],
     install_requires=[
-        "bokeh", "distributed>=1.24.1", "notebook>=4.3.1", "jupyter-server-proxy>=1.1.0"
+        "bokeh",
+        "distributed>=1.24.1",
+        "notebook>=4.3.1",
+        "jupyter-server-proxy>=1.1.0",
     ],
 )
 
