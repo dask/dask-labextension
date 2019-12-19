@@ -1,35 +1,34 @@
 language: python
 dist: trusty
 
+before_install:
+  - bash ci/base_install.sh
+
 matrix:
   include:
     - language: python
       python: "3.6"
       env: BUILD_LANG=python36
       install:
-        - bash ci/install.sh
+        - bash ci/python/install.sh
       script:
-        - bash ci/pytest.sh
+        - bash ci/python/test.sh
 
     - language: python
       python: "3.7"
       env: BUILD_LANG=python37
       install:
-        - bash ci/install.sh
+        - bash ci/python/install.sh
       script:
-        - bash ci/pytest.sh
+        - bash ci/python/test.sh
 
     - language: node_js
       node_js: "10"
       env: BUILD_LANG=node_js
       install:
-        - bash ci/install.sh
-        - npm install mocha
-        - conda install jupyterlab
-        - jlpm install
+        - bash ci/javascript/install.sh
       script:
-        - jlpm build
-        - jlpm test
+        - bash ci/javascript/test.sh
 
 deploy:
   - provider: pypi
