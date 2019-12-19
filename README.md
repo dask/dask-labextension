@@ -119,7 +119,7 @@ labextension:
     kwargs: {}
 ```
 
-### Development install
+## Development install
 
 As described in the [JupyterLab documentation](https://jupyterlab.readthedocs.io/en/stable/developer/extension_dev.html#extension-authoring) for a development install of the labextension you can run the following in this directory:
 
@@ -143,4 +143,26 @@ To run an editable install of the server extension, run
 ```bash
 pip install -e .
 jupyter serverextension enable --sys-prefix dask_labextension
+```
+
+## Publishing
+
+This application is distributed as two subpackages.
+
+The JupyterLab frontend part is published to [npm](https://www.npmjs.com/package/dask-labextension),
+and the server-side part to [PyPI](https://pypi.org/project/dask-labextension/).
+
+Releases for both packages are done with the `jlpm` tool, `git` and Travis CI.
+
+_Note: Package versions are not prefixed with the letter `v`. You will need to disable this._
+
+```console
+$ jlpm config set version-tag-prefix ""
+```
+
+Making a release
+
+```console
+$ jlpm version [--major|--minor|--patch]  # updates package.json and creates git commit and tag
+$ git push upstream master && git push upstream master --tags  # pushes tags to GitHub which triggers Travis CI to build and deploy
 ```
