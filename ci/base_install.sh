@@ -5,6 +5,7 @@ bash miniconda.sh -b -p $HOME/miniconda
 export PATH="$HOME/miniconda/bin:$PATH"
 conda config --set always_yes yes --set changeps1 no
 conda update -q conda
+conda init bash && source /home/travis/.bashrc
 
 # Create conda environment
 conda create -q -n test-environment python=$PYTHON
