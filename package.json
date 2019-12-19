@@ -31,7 +31,8 @@
     "clean": "rimraf lib",
     "precommit": "lint-staged",
     "prettier": "prettier --write '**/*{.ts,.tsx,.js,.jsx,.css,.json,.md}'",
-    "watch": "tsc -w"
+    "watch": "tsc -w",
+    "test": "mocha"
   },
   "lint-staged": {
     "**/*{.ts,.tsx,.css,.json,.md}": [
@@ -63,6 +64,7 @@
     "@types/react-dom": "^16.8.4",
     "husky": "^2.4.1",
     "lint-staged": "^8.2.1",
+    "mocha": "^6.2.0",
     "prettier": "^1.18.2",
     "rimraf": "^2.6.3",
     "tslint": "^5.18.0",

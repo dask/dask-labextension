@@ -1,15 +1,51 @@
 language: python
 dist: trusty
 
-env:
-  matrix:
-    - PYTHON=3.6
-    - PYTHON=3.7
+matrix:
+  include:
+    - language: python
+      python: "3.6"
+      env: BUILD_LANG=python36
+      install:
+        - bash ci/install.sh
+      script:
+        - bash ci/pytest.sh
 
-install:
-  - bash ci/install.sh
-script:
-  - bash ci/script.sh
+    - language: python
+      python: "3.7"
+      env: BUILD_LANG=python37
+      install:
+        - bash ci/install.sh
+      script:
+        - bash ci/pytest.sh
+
+    - language: node_js
+      node_js: "10"
+      env: BUILD_LANG=node_js
+      install:
+        - bash ci/install.sh
+        - npm install mocha
+        - conda install jupyterlab
+        - jlpm install
+      script:
+        - jlpm build
+        - jlpm test
+
+deploy:
+  - provider: pypi
+    user: $PYPI_USER
+    password: $PYPI_PASSWORD
+    skip_cleanup: true
+    on:
+      tags: true
+      condition: "$BUILD_LANG = python37"
+  - provider: npm
+    email: $NPM_EMAIL
+    api_key: $NPM_API_KEY
+    skip_cleanup: true
+    on:
+      tags: true
+      condition: "$BUILD_LANG = node_js"
 
 notifications:
   email: false
