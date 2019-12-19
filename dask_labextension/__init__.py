@@ -5,7 +5,12 @@ from notebook.utils import url_path_join
 from . import config
 from .clusterhandler import DaskClusterHandler
 from .dashboardhandler import DaskDashboardHandler
-from ._version import __version__
+
+
+from ._version import get_versions
+
+__version__ = get_versions()["version"]
+del get_versions
 
 
 def _jupyter_server_extension_paths():
