@@ -8,7 +8,9 @@ matrix:
   include:
     - language: python
       python: "3.6"
-      env: BUILD_LANG=python36
+      env:
+        - BUILD_LANG=python36
+        - PYTHON=3.6
       install:
         - bash ci/python/install.sh
       script:
@@ -16,7 +18,9 @@ matrix:
 
     - language: python
       python: "3.7"
-      env: BUILD_LANG=python37
+      env:
+        - BUILD_LANG=python37
+        - PYTHON=3.7
       install:
         - bash ci/python/install.sh
       script:
@@ -24,7 +28,9 @@ matrix:
 
     - language: node_js
       node_js: "10"
-      env: BUILD_LANG=node_js
+      env:
+        - BUILD_LANG=node_js
+        - PYTHON=3.7
       install:
         - bash ci/javascript/install.sh
       script:
