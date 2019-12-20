@@ -4,6 +4,8 @@ Setup module for the dask_labextension
 import setuptools
 from setupbase import create_cmdclass, ensure_python, find_packages
 
+import os.path
+
 import versioneer
 
 data_files_spec = [
@@ -23,13 +25,21 @@ cmdclass = versioneer.get_cmdclass(
     )
 )
 
+
+with open(
+    os.path.join(os.path.abspath(os.path.dirname(__file__)), "README.md"),
+    encoding="utf-8",
+) as f:
+    long_description = f.read()
+
 VERSION = versioneer.get_version()
 
 setup_dict = dict(
     name="dask_labextension",
     version=VERSION,
     description="A Jupyter Notebook server extension manages Dask clusters.",
-    long_description="A Jupyter Notebook server extension manages Dask clusters. Meant to be used in conjunction with the dask-labextension JupyterLab extension.",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     packages=find_packages(),
     cmdclass=cmdclass,
     include_package_data=True,

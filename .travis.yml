@@ -1,15 +1,56 @@
 language: python
-dist: trusty
+dist: xenial
 
-env:
-  matrix:
-    - PYTHON=3.6
-    - PYTHON=3.7
+before_install:
+  - bash ci/base_install.sh
 
-install:
-  - bash ci/install.sh
-script:
-  - bash ci/script.sh
+matrix:
+  include:
+    - language: python
+      python: "3.6"
+      env:
+        - BUILD_LANG=python36
+        - PYTHON=3.6
+      install:
+        - bash ci/python/install.sh
+      script:
+        - bash ci/python/test.sh
+
+    - language: python
+      python: "3.7"
+      env:
+        - BUILD_LANG=python37
+        - PYTHON=3.7
+      install:
+        - bash ci/python/install.sh
+      script:
+        - bash ci/python/test.sh
+
+    - language: node_js
+      node_js: "10"
+      env:
+        - BUILD_LANG=node_js
+        - PYTHON=3.7
+      install:
+        - bash ci/javascript/install.sh
+      script:
+        - bash ci/javascript/test.sh
+
+deploy:
+  - provider: pypi
+    user: $PYPI_USER
+    password: $PYPI_PASSWORD
+    skip_cleanup: true
+    on:
+      tags: true
+      condition: "$BUILD_LANG = python37"
+  - provider: npm
+    email: $NPM_EMAIL
+    api_key: $NPM_API_KEY
+    skip_cleanup: true
+    on:
+      tags: true
+      condition: "$BUILD_LANG = node_js"
 
 notifications:
   email: false
