@@ -45,6 +45,8 @@ export class DaskClusterManager extends Widget {
   /**
    * Create a new Dask cluster manager.
    */
+  status = 'ready';
+
   constructor(options: DaskClusterManager.IOptions) {
     super();
     this.addClass('dask-DaskClusterManager');
@@ -112,17 +114,17 @@ export class DaskClusterManager extends Widget {
     );
 
     // Make a shutdown button for the toolbar.
-    toolbar.addItem(
-      'new',
-      new ToolbarButton({
-        iconClassName: 'jp-AddIcon jp-Icon jp-Icon-16',
-        label: 'NEW',
-        onClick: () => {
-          this._launchCluster();
-        },
-        tooltip: 'Start New Dask Cluster'
-      })
-    );
+    const newButton = new ToolbarButton({
+      iconClassName: 'jp-AddIcon jp-Icon jp-Icon-16',
+      label: 'NEW',
+      onClick: () => {
+        this.status = 'starting';
+        this._launchCluster(newButton);
+      },
+      tooltip: 'Start New Dask Cluster',
+      enabled: this.status == 'ready'
+    });
+    toolbar.addItem('new', newButton);
 
     layout.addWidget(toolbar);
     layout.addWidget(this._clusterListing);
@@ -426,7 +428,12 @@ export class DaskClusterManager extends Widget {
   /**
    * Launch a new cluster on the server.
    */
-  private async _launchCluster(): Promise<IClusterModel> {
+  private async _launchCluster(
+    newButton?: ToolbarButton
+  ): Promise<IClusterModel> {
+    if (newButton) {
+      newButton.update();
+    }
     const response = await ServerConnection.makeRequest(
       `${this._serverSettings.baseUrl}dask/clusters`,
       { method: 'PUT' },
@@ -435,10 +442,18 @@ export class DaskClusterManager extends Widget {
     if (response.status !== 200) {
       const err = await response.json();
       void showErrorMessage('Cluster Start Error', err);
+      this.status = 'failed';
+      if (newButton) {
+        newButton.update();
+      }
       throw err;
     }
     const model = (await response.json()) as IClusterModel;
     await this._updateClusterList();
+    this.status = 'ready';
+    if (newButton) {
+      newButton.update();
+    }
     return model;
   }
 
