@@ -51,9 +51,6 @@ export class DaskClusterManager extends Widget {
   /**
    * Create a new Dask cluster manager.
    */
-  status = 'ready';
-  registry: CommandRegistry;
-  launchClusterId: string;
 
   constructor(options: DaskClusterManager.IOptions) {
     super();
@@ -62,8 +59,8 @@ export class DaskClusterManager extends Widget {
     this._serverSettings = ServerConnection.makeSettings();
     this._injectClientCodeForCluster = options.injectClientCodeForCluster;
     this._getClientCodeForCluster = options.getClientCodeForCluster;
-    this.registry = options.registry;
-    this.launchClusterId = options.launchClusterId;
+    this._registry = options.registry;
+    this._launchClusterId = options.launchClusterId;
 
     // A function to set the active cluster.
     this._setActiveById = (id: string) => {
@@ -169,6 +166,13 @@ export class DaskClusterManager extends Widget {
     IChangedArgs<IClusterModel | undefined>
   > {
     return this._activeClusterChanged;
+  }
+
+  /**
+   * Whether the cluster manager is ready to launch a cluster
+   */
+  get isReady(): boolean {
+    return this._isReady;
   }
 
   /**
@@ -435,8 +439,8 @@ export class DaskClusterManager extends Widget {
    * Launch a new cluster on the server.
    */
   private async _launchCluster(): Promise<IClusterModel> {
-    this.status = 'starting';
-    this.registry.notifyCommandChanged(this.launchClusterId);
+    this._isReady = false;
+    this._registry.notifyCommandChanged(this._launchClusterId);
     const response = await ServerConnection.makeRequest(
       `${this._serverSettings.baseUrl}dask/clusters`,
       { method: 'PUT' },
@@ -445,14 +449,14 @@ export class DaskClusterManager extends Widget {
     if (response.status !== 200) {
       const err = await response.json();
       void showErrorMessage('Cluster Start Error', err);
-      this.status = 'failed';
-      this.registry.notifyCommandChanged(this.launchClusterId);
+      this._isReady = true;
+      this._registry.notifyCommandChanged(this._launchClusterId);
       throw err;
     }
     const model = (await response.json()) as IClusterModel;
     await this._updateClusterList();
-    this.status = 'ready';
-    this.registry.notifyCommandChanged(this.launchClusterId);
+    this._isReady = true;
+    this._registry.notifyCommandChanged(this._launchClusterId);
     return model;
   }
 
@@ -569,6 +573,9 @@ export class DaskClusterManager extends Widget {
   >(this);
   private _isDisposed = false;
   private _serverErrorShown = false;
+  private _isReady = true;
+  private _registry: CommandRegistry;
+  private _launchClusterId: string;
 }
 
 /**

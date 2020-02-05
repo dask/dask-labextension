@@ -376,9 +376,9 @@ function activate(
     label: 'NEW',
     execute: () => sidebar.clusterManager.start(),
     iconClass: 'jp-AddIcon jp-Icon jp-Icon-16',
-    isEnabled: () => sidebar.clusterManager.status != 'starting',
+    isEnabled: () => sidebar.clusterManager.isReady,
     caption: () => {
-      if (sidebar.clusterManager.status == 'starting') {
+      if (sidebar.clusterManager.isReady) {
         return 'Cluster starting...';
       }
       return 'Start New Dask Cluster';
