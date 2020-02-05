@@ -29,6 +29,7 @@
   "scripts": {
     "build": "tsc",
     "clean": "rimraf lib",
+    "lint": "prettier --check '**/*{.ts,.tsx,.js,.jsx,.css,.json,.md}'",
     "precommit": "lint-staged",
     "prettier": "prettier --write '**/*{.ts,.tsx,.js,.jsx,.css,.json,.md}'",
     "watch": "tsc -w",
