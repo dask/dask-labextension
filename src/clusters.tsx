@@ -1,4 +1,4 @@
-import { showErrorMessage, Toolbar, ToolbarButton } from '@jupyterlab/apputils';
+import { showErrorMessage, Toolbar, ToolbarButton, CommandToolbarButton } from '@jupyterlab/apputils';
 
 import { IChangedArgs, nbformat, Poll, URLExt } from '@jupyterlab/coreutils';
 
@@ -22,6 +22,7 @@ import { showScalingDialog } from './scaling';
 
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
+import { CommandRegistry } from '@phosphor/commands';
 
 /**
  * A refresh interval (in ms) for polling the backend cluster manager.
@@ -46,6 +47,7 @@ export class DaskClusterManager extends Widget {
    * Create a new Dask cluster manager.
    */
   status = 'ready';
+  commands = new CommandRegistry()
 
   constructor(options: DaskClusterManager.IOptions) {
     super();
@@ -113,18 +115,27 @@ export class DaskClusterManager extends Widget {
       })
     );
 
-    // Make a shutdown button for the toolbar.
-    const newButton = new ToolbarButton({
-      iconClassName: 'jp-AddIcon jp-Icon jp-Icon-16',
+    // Make a new cluster button for the toolbar.
+    this.commands.addCommand('new', {
       label: 'NEW',
-      onClick: () => {
-        this.status = 'starting';
-        this._launchCluster(newButton);
+      execute: () => this._launchCluster(),
+      iconClass: 'jp-AddIcon jp-Icon jp-Icon-16',
+      isEnabled: () => this.status != 'starting',
+      caption: () => {
+        if (this.status == 'starting') {
+          return 'Cluster starting...'
+        }
+        return 'Start New Dask Cluster'
       },
-      tooltip: 'Start New Dask Cluster',
-      enabled: this.status == 'ready'
     });
-    toolbar.addItem('new', newButton);
+
+    toolbar.addItem(
+      'new',
+      new CommandToolbarButton({
+        commands: this.commands,
+        id: 'new',
+      })
+    );
 
     layout.addWidget(toolbar);
     layout.addWidget(this._clusterListing);
@@ -428,12 +439,9 @@ export class DaskClusterManager extends Widget {
   /**
    * Launch a new cluster on the server.
    */
-  private async _launchCluster(
-    newButton?: ToolbarButton
-  ): Promise<IClusterModel> {
-    if (newButton) {
-      newButton.update();
-    }
+  private async _launchCluster(): Promise<IClusterModel> {
+    this.status = 'starting'
+    this.commands.notifyCommandChanged('new')
     const response = await ServerConnection.makeRequest(
       `${this._serverSettings.baseUrl}dask/clusters`,
       { method: 'PUT' },
@@ -442,18 +450,14 @@ export class DaskClusterManager extends Widget {
     if (response.status !== 200) {
       const err = await response.json();
       void showErrorMessage('Cluster Start Error', err);
-      this.status = 'failed';
-      if (newButton) {
-        newButton.update();
-      }
+      this.status = 'failed'
+      this.commands.notifyCommandChanged('new')
       throw err;
     }
     const model = (await response.json()) as IClusterModel;
     await this._updateClusterList();
-    this.status = 'ready';
-    if (newButton) {
-      newButton.update();
-    }
+    this.status = 'ready'
+    this.commands.notifyCommandChanged('new')
     return model;
   }
 
