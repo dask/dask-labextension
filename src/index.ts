@@ -374,15 +374,15 @@ function activate(
   // Add a command to launch a new cluster.
   app.commands.addCommand(CommandIDs.launchCluster, {
     label: 'NEW',
-    execute:  () => sidebar.clusterManager.start(),
+    execute: () => sidebar.clusterManager.start(),
     iconClass: 'jp-AddIcon jp-Icon jp-Icon-16',
     isEnabled: () => sidebar.clusterManager.status != 'starting',
     caption: () => {
       if (sidebar.clusterManager.status == 'starting') {
-        return 'Cluster starting...'
+        return 'Cluster starting...';
       }
-      return 'Start New Dask Cluster'
-    },
+      return 'Start New Dask Cluster';
+    }
   });
 
   // Add a command to launch a new cluster.

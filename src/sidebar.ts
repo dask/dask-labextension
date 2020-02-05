@@ -5,7 +5,6 @@ import { DaskDashboardLauncher, IDashboardItem } from './dashboard';
 
 import { DaskClusterManager, IClusterModel } from './clusters';
 
-
 /**
  * A widget for hosting Dask dashboard launchers.
  */
@@ -36,7 +35,7 @@ export class DaskSidebar extends Widget {
       launchClusterId: options.launchClusterId,
       setDashboardUrl,
       injectClientCodeForCluster,
-      getClientCodeForCluster,
+      getClientCodeForCluster
     });
     layout.addWidget(this._dashboard);
     layout.addWidget(this._clusters);

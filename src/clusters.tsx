@@ -1,4 +1,9 @@
-import { showErrorMessage, Toolbar, ToolbarButton, CommandToolbarButton } from '@jupyterlab/apputils';
+import {
+  showErrorMessage,
+  Toolbar,
+  ToolbarButton,
+  CommandToolbarButton
+} from '@jupyterlab/apputils';
 
 import { IChangedArgs, nbformat, Poll, URLExt } from '@jupyterlab/coreutils';
 
@@ -57,8 +62,8 @@ export class DaskClusterManager extends Widget {
     this._serverSettings = ServerConnection.makeSettings();
     this._injectClientCodeForCluster = options.injectClientCodeForCluster;
     this._getClientCodeForCluster = options.getClientCodeForCluster;
-    this.registry = options.registry
-    this.launchClusterId = options.launchClusterId
+    this.registry = options.registry;
+    this.launchClusterId = options.launchClusterId;
 
     // A function to set the active cluster.
     this._setActiveById = (id: string) => {
@@ -123,7 +128,7 @@ export class DaskClusterManager extends Widget {
       this.launchClusterId,
       new CommandToolbarButton({
         commands: this.registry,
-        id: this.launchClusterId,
+        id: this.launchClusterId
       })
     );
 
@@ -430,8 +435,8 @@ export class DaskClusterManager extends Widget {
    * Launch a new cluster on the server.
    */
   private async _launchCluster(): Promise<IClusterModel> {
-    this.status = 'starting'
-    this.registry.notifyCommandChanged(this.launchClusterId)
+    this.status = 'starting';
+    this.registry.notifyCommandChanged(this.launchClusterId);
     const response = await ServerConnection.makeRequest(
       `${this._serverSettings.baseUrl}dask/clusters`,
       { method: 'PUT' },
@@ -440,14 +445,14 @@ export class DaskClusterManager extends Widget {
     if (response.status !== 200) {
       const err = await response.json();
       void showErrorMessage('Cluster Start Error', err);
-      this.status = 'failed'
-      this.registry.notifyCommandChanged(this.launchClusterId)
+      this.status = 'failed';
+      this.registry.notifyCommandChanged(this.launchClusterId);
       throw err;
     }
     const model = (await response.json()) as IClusterModel;
     await this._updateClusterList();
-    this.status = 'ready'
-    this.registry.notifyCommandChanged(this.launchClusterId)
+    this.status = 'ready';
+    this.registry.notifyCommandChanged(this.launchClusterId);
     return model;
   }
 
