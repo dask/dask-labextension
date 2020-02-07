@@ -149,7 +149,9 @@ function activate(
     },
     linkFinder,
     clientCodeInjector,
-    clientCodeGetter: Private.getClientCode
+    clientCodeGetter: Private.getClientCode,
+    registry: app.commands,
+    launchClusterId: CommandIDs.launchCluster
   });
   sidebar.id = id;
   sidebar.title.iconClass = 'dask-DaskLogo jp-SideBar-tabIcon';
@@ -371,9 +373,15 @@ function activate(
 
   // Add a command to launch a new cluster.
   app.commands.addCommand(CommandIDs.launchCluster, {
-    label: 'Launch New Cluster',
-    execute: () => {
-      return sidebar.clusterManager.start();
+    label: 'NEW',
+    execute: () => sidebar.clusterManager.start(),
+    iconClass: 'jp-AddIcon jp-Icon jp-Icon-16',
+    isEnabled: () => sidebar.clusterManager.isReady,
+    caption: () => {
+      if (sidebar.clusterManager.isReady) {
+        return 'Start New Dask Cluster';
+      }
+      return 'Cluster starting...';
     }
   });
 

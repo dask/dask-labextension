@@ -1,4 +1,9 @@
-import { showErrorMessage, Toolbar, ToolbarButton } from '@jupyterlab/apputils';
+import {
+  showErrorMessage,
+  Toolbar,
+  ToolbarButton,
+  CommandToolbarButton
+} from '@jupyterlab/apputils';
 
 import { IChangedArgs, nbformat, Poll, URLExt } from '@jupyterlab/coreutils';
 
@@ -22,6 +27,7 @@ import { showScalingDialog } from './scaling';
 
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
+import { CommandRegistry } from '@phosphor/commands';
 
 /**
  * A refresh interval (in ms) for polling the backend cluster manager.
@@ -45,6 +51,7 @@ export class DaskClusterManager extends Widget {
   /**
    * Create a new Dask cluster manager.
    */
+
   constructor(options: DaskClusterManager.IOptions) {
     super();
     this.addClass('dask-DaskClusterManager');
@@ -52,6 +59,8 @@ export class DaskClusterManager extends Widget {
     this._serverSettings = ServerConnection.makeSettings();
     this._injectClientCodeForCluster = options.injectClientCodeForCluster;
     this._getClientCodeForCluster = options.getClientCodeForCluster;
+    this._registry = options.registry;
+    this._launchClusterId = options.launchClusterId;
 
     // A function to set the active cluster.
     this._setActiveById = (id: string) => {
@@ -111,16 +120,12 @@ export class DaskClusterManager extends Widget {
       })
     );
 
-    // Make a shutdown button for the toolbar.
+    // Make a new cluster button for the toolbar.
     toolbar.addItem(
-      'new',
-      new ToolbarButton({
-        iconClassName: 'jp-AddIcon jp-Icon jp-Icon-16',
-        label: 'NEW',
-        onClick: () => {
-          this._launchCluster();
-        },
-        tooltip: 'Start New Dask Cluster'
+      this._launchClusterId,
+      new CommandToolbarButton({
+        commands: this._registry,
+        id: this._launchClusterId
       })
     );
 
@@ -161,6 +166,13 @@ export class DaskClusterManager extends Widget {
     IChangedArgs<IClusterModel | undefined>
   > {
     return this._activeClusterChanged;
+  }
+
+  /**
+   * Whether the cluster manager is ready to launch a cluster
+   */
+  get isReady(): boolean {
+    return this._isReady;
   }
 
   /**
@@ -427,6 +439,8 @@ export class DaskClusterManager extends Widget {
    * Launch a new cluster on the server.
    */
   private async _launchCluster(): Promise<IClusterModel> {
+    this._isReady = false;
+    this._registry.notifyCommandChanged(this._launchClusterId);
     const response = await ServerConnection.makeRequest(
       `${this._serverSettings.baseUrl}dask/clusters`,
       { method: 'PUT' },
@@ -435,10 +449,14 @@ export class DaskClusterManager extends Widget {
     if (response.status !== 200) {
       const err = await response.json();
       void showErrorMessage('Cluster Start Error', err);
+      this._isReady = true;
+      this._registry.notifyCommandChanged(this._launchClusterId);
       throw err;
     }
     const model = (await response.json()) as IClusterModel;
     await this._updateClusterList();
+    this._isReady = true;
+    this._registry.notifyCommandChanged(this._launchClusterId);
     return model;
   }
 
@@ -555,6 +573,9 @@ export class DaskClusterManager extends Widget {
   >(this);
   private _isDisposed = false;
   private _serverErrorShown = false;
+  private _isReady = true;
+  private _registry: CommandRegistry;
+  private _launchClusterId: string;
 }
 
 /**
@@ -565,6 +586,16 @@ export namespace DaskClusterManager {
    * Options for the constructor.
    */
   export interface IOptions {
+    /**
+     * Registry of all commands
+     */
+    registry: CommandRegistry;
+
+    /**
+     * The launchCluster command ID.
+     */
+    launchClusterId: string;
+
     /**
      * A callback to set the dashboard url.
      */

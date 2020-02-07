@@ -1,4 +1,5 @@
 import { Widget, PanelLayout } from '@phosphor/widgets';
+import { CommandRegistry } from '@phosphor/commands';
 
 import { DaskDashboardLauncher, IDashboardItem } from './dashboard';
 
@@ -30,6 +31,8 @@ export class DaskSidebar extends Widget {
     const getClientCodeForCluster = options.clientCodeGetter;
     // Add the cluster manager component.
     this._clusters = new DaskClusterManager({
+      registry: options.registry,
+      launchClusterId: options.launchClusterId,
       setDashboardUrl,
       injectClientCodeForCluster,
       getClientCodeForCluster
@@ -64,6 +67,16 @@ export namespace DaskSidebar {
    * Options for the constructor.
    */
   export interface IOptions {
+    /**
+     * Registry of all commands
+     */
+    registry: CommandRegistry;
+
+    /**
+     * The launchCluster command ID.
+     */
+    launchClusterId: string;
+
     /**
      * A callback to launch a dashboard item.
      */
