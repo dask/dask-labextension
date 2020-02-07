@@ -379,9 +379,9 @@ function activate(
     isEnabled: () => sidebar.clusterManager.isReady,
     caption: () => {
       if (sidebar.clusterManager.isReady) {
-        return 'Cluster starting...';
+        return 'Start New Dask Cluster';
       }
-      return 'Start New Dask Cluster';
+      return 'Cluster starting...';
     }
   });
 

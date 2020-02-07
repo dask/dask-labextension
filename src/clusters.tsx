@@ -122,10 +122,10 @@ export class DaskClusterManager extends Widget {
 
     // Make a new cluster button for the toolbar.
     toolbar.addItem(
-      this.launchClusterId,
+      this._launchClusterId,
       new CommandToolbarButton({
-        commands: this.registry,
-        id: this.launchClusterId
+        commands: this._registry,
+        id: this._launchClusterId
       })
     );
 
