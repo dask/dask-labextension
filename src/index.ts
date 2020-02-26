@@ -373,14 +373,10 @@ function activate(
 
   // Add a command to launch a new cluster.
   app.commands.addCommand(CommandIDs.launchCluster, {
-    label: args => {
-      console.log(args);
-      return args['isPalette'] ? 'Launch New Cluster' : 'NEW';
-    },
+    label: args => (args['isPalette'] ? 'Launch New Cluster' : 'NEW'),
     execute: () => sidebar.clusterManager.start(),
-    iconClass: args => {
-      return args['isPalette'] ? '' : 'jp-AddIcon jp-Icon jp-Icon-16';
-    },
+    iconClass: args =>
+      args['isPalette'] ? '' : 'jp-AddIcon jp-Icon jp-Icon-16',
     isEnabled: () => sidebar.clusterManager.isReady,
     caption: () => {
       if (sidebar.clusterManager.isReady) {
