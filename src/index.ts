@@ -373,9 +373,10 @@ function activate(
 
   // Add a command to launch a new cluster.
   app.commands.addCommand(CommandIDs.launchCluster, {
-    label: 'NEW',
+    label: args => (args['isPalette'] ? 'Launch New Cluster' : 'NEW'),
     execute: () => sidebar.clusterManager.start(),
-    iconClass: 'jp-AddIcon jp-Icon jp-Icon-16',
+    iconClass: args =>
+      args['isPalette'] ? '' : 'jp-AddIcon jp-Icon jp-Icon-16',
     isEnabled: () => sidebar.clusterManager.isReady,
     caption: () => {
       if (sidebar.clusterManager.isReady) {
@@ -432,7 +433,11 @@ function activate(
   ]);
   [CommandIDs.launchCluster, CommandIDs.toggleAutoStartClient].forEach(
     command => {
-      commandPalette.addItem({ category: 'Dask', command });
+      commandPalette.addItem({
+        category: 'Dask',
+        command,
+        args: { isPalette: true }
+      });
     }
   );
 
