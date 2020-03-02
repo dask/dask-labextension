@@ -11,6 +11,8 @@ import * as nbformat from '@jupyterlab/nbformat';
 
 import { ServerConnection } from '@jupyterlab/services';
 
+import { refreshIcon } from '@jupyterlab/ui-components';
+
 import { ArrayExt } from '@lumino/algorithm';
 
 import { JSONObject, JSONExt, MimeData } from '@lumino/coreutils';
@@ -116,7 +118,7 @@ export class DaskClusterManager extends Widget {
     toolbar.addItem(
       'refresh',
       new ToolbarButton({
-        iconClassName: 'jp-RefreshIcon jp-Icon jp-Icon-16',
+        icon: refreshIcon,
         onClick: () => {
           this._updateClusterList();
         },

@@ -4,6 +4,8 @@ import { PageConfig, URLExt } from '@jupyterlab/coreutils';
 
 import { ServerConnection } from '@jupyterlab/services';
 
+import { searchIcon } from '@jupyterlab/ui-components';
+
 import { JSONExt, JSONObject } from '@lumino/coreutils';
 
 import { Message } from '@lumino/messaging';
@@ -207,7 +209,7 @@ export class URLInput extends Widget {
 
     if (linkFinder) {
       const findButton = new ToolbarButton({
-        iconClassName: 'dask-SearchIcon jp-Icon jp-Icon-16',
+        icon: searchIcon,
         onClick: async () => {
           let link = await linkFinder();
           if (link) {
