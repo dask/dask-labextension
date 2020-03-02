@@ -1,12 +1,14 @@
 import { IFrame, MainAreaWidget, ToolbarButton } from '@jupyterlab/apputils';
 
-import { PageConfig, Poll, URLExt } from '@jupyterlab/coreutils';
+import { PageConfig, URLExt } from '@jupyterlab/coreutils';
 
 import { ServerConnection } from '@jupyterlab/services';
 
 import { JSONExt, JSONObject } from '@lumino/coreutils';
 
 import { Message } from '@lumino/messaging';
+
+import { Poll } from '@lumino/polling';
 
 import { ISignal, Signal } from '@lumino/signaling';
 

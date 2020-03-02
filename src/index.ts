@@ -6,7 +6,6 @@ import {
 } from '@jupyterlab/application';
 
 import {
-  IClientSession,
   ICommandPalette,
   IWidgetTracker,
   WidgetTracker
@@ -16,9 +15,11 @@ import { CodeEditor } from '@jupyterlab/codeeditor';
 
 import { ConsolePanel, IConsoleTracker } from '@jupyterlab/console';
 
-import { ISettingRegistry, IStateDB } from '@jupyterlab/coreutils';
-
 import { IMainMenu } from '@jupyterlab/mainmenu';
+
+import { ISettingRegistry } from '@jupyterlab/settingregistry';
+
+import { IStateDB } from '@jupyterlab/statedb';
 
 import {
   INotebookTracker,
@@ -26,7 +27,7 @@ import {
   NotebookPanel
 } from '@jupyterlab/notebook';
 
-import { Kernel, KernelMessage } from '@jupyterlab/services';
+import { Kernel, KernelMessage, Session } from '@jupyterlab/services';
 
 import { Signal } from '@lumino/signaling';
 

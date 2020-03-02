@@ -5,7 +5,9 @@ import {
   CommandToolbarButton
 } from '@jupyterlab/apputils';
 
-import { IChangedArgs, nbformat, Poll, URLExt } from '@jupyterlab/coreutils';
+import { IChangedArgs, URLExt } from '@jupyterlab/coreutils';
+
+import * as nbformat from '@jupyterlab/nbformat';
 
 import { ServerConnection } from '@jupyterlab/services';
 
@@ -18,6 +20,8 @@ import { ElementExt } from '@lumino/domutils';
 import { Drag } from '@lumino/dragdrop';
 
 import { Message } from '@lumino/messaging';
+
+import { Poll } from '@lumino/polling';
 
 import { ISignal, Signal } from '@lumino/signaling';
 
