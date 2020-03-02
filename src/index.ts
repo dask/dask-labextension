@@ -28,7 +28,7 @@ import {
 
 import { Kernel, KernelMessage } from '@jupyterlab/services';
 
-import { Signal } from '@phosphor/signaling';
+import { Signal } from '@lumino/signaling';
 
 import { IClusterModel, DaskClusterManager } from './clusters';
 

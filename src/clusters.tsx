@@ -9,25 +9,25 @@ import { IChangedArgs, nbformat, Poll, URLExt } from '@jupyterlab/coreutils';
 
 import { ServerConnection } from '@jupyterlab/services';
 
-import { ArrayExt } from '@phosphor/algorithm';
+import { ArrayExt } from '@lumino/algorithm';
 
-import { JSONObject, JSONExt, MimeData } from '@phosphor/coreutils';
+import { JSONObject, JSONExt, MimeData } from '@lumino/coreutils';
 
-import { ElementExt } from '@phosphor/domutils';
+import { ElementExt } from '@lumino/domutils';
 
-import { Drag } from '@phosphor/dragdrop';
+import { Drag } from '@lumino/dragdrop';
 
-import { Message } from '@phosphor/messaging';
+import { Message } from '@lumino/messaging';
 
-import { ISignal, Signal } from '@phosphor/signaling';
+import { ISignal, Signal } from '@lumino/signaling';
 
-import { Widget, PanelLayout } from '@phosphor/widgets';
+import { Widget, PanelLayout } from '@lumino/widgets';
 
 import { showScalingDialog } from './scaling';
 
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import { CommandRegistry } from '@phosphor/commands';
+import { CommandRegistry } from '@lumino/commands';
 
 /**
  * A refresh interval (in ms) for polling the backend cluster manager.

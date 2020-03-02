@@ -1,5 +1,5 @@
-import { Widget, PanelLayout } from '@phosphor/widgets';
-import { CommandRegistry } from '@phosphor/commands';
+import { Widget, PanelLayout } from '@lumino/widgets';
+import { CommandRegistry } from '@lumino/commands';
 
 import { DaskDashboardLauncher, IDashboardItem } from './dashboard';
 
