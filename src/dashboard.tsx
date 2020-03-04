@@ -1,16 +1,20 @@
 import { IFrame, MainAreaWidget, ToolbarButton } from '@jupyterlab/apputils';
 
-import { PageConfig, Poll, URLExt } from '@jupyterlab/coreutils';
+import { PageConfig, URLExt } from '@jupyterlab/coreutils';
 
 import { ServerConnection } from '@jupyterlab/services';
 
-import { JSONExt, JSONObject } from '@phosphor/coreutils';
+import { searchIcon } from '@jupyterlab/ui-components';
 
-import { Message } from '@phosphor/messaging';
+import { JSONExt, JSONObject } from '@lumino/coreutils';
 
-import { ISignal, Signal } from '@phosphor/signaling';
+import { Message } from '@lumino/messaging';
 
-import { Widget, PanelLayout } from '@phosphor/widgets';
+import { Poll } from '@lumino/polling';
+
+import { ISignal, Signal } from '@lumino/signaling';
+
+import { Widget, PanelLayout } from '@lumino/widgets';
 
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
@@ -205,7 +209,7 @@ export class URLInput extends Widget {
 
     if (linkFinder) {
       const findButton = new ToolbarButton({
-        iconClassName: 'dask-SearchIcon jp-Icon jp-Icon-16',
+        icon: searchIcon,
         onClick: async () => {
           let link = await linkFinder();
           if (link) {

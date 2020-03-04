@@ -6,8 +6,8 @@ import {
 } from '@jupyterlab/application';
 
 import {
-  IClientSession,
   ICommandPalette,
+  ISessionContext,
   IWidgetTracker,
   WidgetTracker
 } from '@jupyterlab/apputils';
@@ -16,9 +16,11 @@ import { CodeEditor } from '@jupyterlab/codeeditor';
 
 import { ConsolePanel, IConsoleTracker } from '@jupyterlab/console';
 
-import { ISettingRegistry, IStateDB } from '@jupyterlab/coreutils';
-
 import { IMainMenu } from '@jupyterlab/mainmenu';
+
+import { ISettingRegistry } from '@jupyterlab/settingregistry';
+
+import { IStateDB } from '@jupyterlab/statedb';
 
 import {
   INotebookTracker,
@@ -26,9 +28,9 @@ import {
   NotebookPanel
 } from '@jupyterlab/notebook';
 
-import { Kernel, KernelMessage } from '@jupyterlab/services';
+import { Kernel, KernelMessage, Session } from '@jupyterlab/services';
 
-import { Signal } from '@phosphor/signaling';
+import { Signal } from '@lumino/signaling';
 
 import { IClusterModel, DaskClusterManager } from './clusters';
 
@@ -206,7 +208,12 @@ function activate(
   updateDashboards();
 
   // A function to create a new dask client for a session.
-  const createClientForSession = (session: IClientSession) => {
+  const createClientForSession = (
+    session: Session.ISessionConnection | null
+  ) => {
+    if (!session) {
+      return;
+    }
     const cluster = sidebar.clusterManager.activeCluster;
     if (!cluster || !Private.shouldUseKernel(session.kernel)) {
       return;
@@ -222,9 +229,13 @@ function activate(
   ];
 
   // A function to recreate a dask client on reconnect.
-  const injectOnSessionStatusChanged = (session: IClientSession) => {
-    if (session.status === 'connected') {
-      createClientForSession(session);
+  const injectOnSessionStatusChanged = (sessionContext: ISessionContext) => {
+    if (
+      sessionContext.session &&
+      sessionContext.session.kernel &&
+      sessionContext.session.kernel.status === 'restarting'
+    ) {
+      createClientForSession(sessionContext.session);
     }
   };
 
@@ -233,15 +244,15 @@ function activate(
     sender: IWidgetTracker<SessionOwner>,
     widget: SessionOwner
   ) => {
-    widget.session.statusChanged.connect(injectOnSessionStatusChanged);
+    widget.sessionContext.statusChanged.connect(injectOnSessionStatusChanged);
   };
 
   // A function to inject a dask client when the active cluster changes.
   const injectOnClusterChanged = () => {
     trackers.forEach(tracker => {
       tracker.forEach(widget => {
-        const session = widget.session;
-        if (Private.shouldUseKernel(session.kernel)) {
+        const session = widget.sessionContext.session;
+        if (session && Private.shouldUseKernel(session.kernel)) {
           createClientForSession(session);
         }
       });
@@ -271,8 +282,10 @@ function activate(
       // When the status of an existing notebook changes, reinject the client.
       trackers.forEach(tracker => {
         tracker.forEach(widget => {
-          createClientForSession(widget.session);
-          widget.session.statusChanged.connect(injectOnSessionStatusChanged);
+          createClientForSession(widget.sessionContext.session);
+          widget.sessionContext.statusChanged.connect(
+            injectOnSessionStatusChanged
+          );
         });
       });
 
@@ -290,6 +303,10 @@ function activate(
     app.restored
   ]).then(async res => {
     const settings = res[0];
+    if (!settings) {
+      console.warn('Unable to retrieve dask-labextension settings');
+      return;
+    }
     const state = res[1] as { url?: string; cluster?: string } | undefined;
     const url = state ? state.url : '';
     const cluster = state ? state.cluster : '';
@@ -567,15 +584,15 @@ client`;
     let current = shell.currentWidget;
     let kernel: Kernel.IKernelConnection | null | undefined;
     if (current && notebookTracker.has(current)) {
-      kernel = (current as NotebookPanel).session.kernel;
+      kernel = (current as NotebookPanel).sessionContext.session?.kernel;
     } else if (current && consoleTracker.has(current)) {
-      kernel = (current as ConsolePanel).session.kernel;
+      kernel = (current as ConsolePanel).sessionContext.session?.kernel;
     } else if (notebookTracker.currentWidget) {
       const current = notebookTracker.currentWidget;
-      kernel = current.session.kernel;
+      kernel = current.sessionContext.session?.kernel;
     } else if (consoleTracker.currentWidget) {
       const current = consoleTracker.currentWidget;
-      kernel = current.session.kernel;
+      kernel = current.sessionContext.session?.kernel;
     }
     return kernel;
   }

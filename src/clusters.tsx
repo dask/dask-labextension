@@ -5,29 +5,35 @@ import {
   CommandToolbarButton
 } from '@jupyterlab/apputils';
 
-import { IChangedArgs, nbformat, Poll, URLExt } from '@jupyterlab/coreutils';
+import { IChangedArgs, URLExt } from '@jupyterlab/coreutils';
+
+import * as nbformat from '@jupyterlab/nbformat';
 
 import { ServerConnection } from '@jupyterlab/services';
 
-import { ArrayExt } from '@phosphor/algorithm';
+import { refreshIcon } from '@jupyterlab/ui-components';
 
-import { JSONObject, JSONExt, MimeData } from '@phosphor/coreutils';
+import { ArrayExt } from '@lumino/algorithm';
 
-import { ElementExt } from '@phosphor/domutils';
+import { JSONObject, JSONExt, MimeData } from '@lumino/coreutils';
 
-import { Drag } from '@phosphor/dragdrop';
+import { ElementExt } from '@lumino/domutils';
 
-import { Message } from '@phosphor/messaging';
+import { Drag } from '@lumino/dragdrop';
 
-import { ISignal, Signal } from '@phosphor/signaling';
+import { Message } from '@lumino/messaging';
 
-import { Widget, PanelLayout } from '@phosphor/widgets';
+import { Poll } from '@lumino/polling';
+
+import { ISignal, Signal } from '@lumino/signaling';
+
+import { Widget, PanelLayout } from '@lumino/widgets';
 
 import { showScalingDialog } from './scaling';
 
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import { CommandRegistry } from '@phosphor/commands';
+import { CommandRegistry } from '@lumino/commands';
 
 /**
  * A refresh interval (in ms) for polling the backend cluster manager.
@@ -112,7 +118,7 @@ export class DaskClusterManager extends Widget {
     toolbar.addItem(
       'refresh',
       new ToolbarButton({
-        iconClassName: 'jp-RefreshIcon jp-Icon jp-Icon-16',
+        icon: refreshIcon,
         onClick: () => {
           this._updateClusterList();
         },
