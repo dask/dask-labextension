@@ -59,10 +59,10 @@ setup_dict = dict(
         "Programming Language :: Python :: 3",
     ],
     install_requires=[
-        "bokeh <2",
+        "bokeh >=1.0.0,!=2.0.0",
         "distributed>=1.24.1",
         "notebook>=4.3.1",
-        "jupyter-server-proxy>=1.1.0",
+        "jupyter-server-proxy>=1.3.2",
     ],
 )
 
