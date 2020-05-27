@@ -38,6 +38,7 @@ following commands:
 ```bash
 pip install dask_labextension
 jupyter labextension install dask-labextension
+jupyter serverextension enable dask_labextension
 ```
 
 If you are running Notebook 5.2 or earlier, enable the server extension by running
