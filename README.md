@@ -32,11 +32,19 @@ conda install jupyterlab nodejs
 ```
 
 This extension includes both a client-side JupyterLab extension and a server-side
-Jupyter notebook extension. Install these using the command line with the
-following commands:
+Jupyter notebook extension. Install via pip or conda-forge:
 
 ```bash
 pip install dask_labextension
+```
+
+```bash
+conda install -c conda-forge dask-labextension
+```
+
+and build the extension as follows:
+
+```bash
 jupyter labextension install dask-labextension
 jupyter serverextension enable dask_labextension
 ```
