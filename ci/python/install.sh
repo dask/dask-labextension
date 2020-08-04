@@ -5,7 +5,7 @@ conda activate test-environment
 
 conda install -q \
   dask \
-  pytest=3.7 \
+  pytest \
   notebook
 
 pip install -e .
