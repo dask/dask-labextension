@@ -503,7 +503,7 @@ namespace Private {
   export function checkKernel(
     kernel: Kernel.IKernelConnection
   ): Promise<string> {
-    const code = `try:\n  from dask.distributed import default_client as _internal_jlab_default_client\n  display(_internal_jlab_default_client().cluster.dashboard_link)\nexcept:\n  pass`;
+    const code = `try:\n  from dask.distributed import default_client as _internal_jlab_default_client\n  display(_internal_jlab_default_client().dashboard_link)\nexcept:\n  pass`;
     const content: KernelMessage.IExecuteRequestMsg['content'] = {
       store_history: false,
       code
