@@ -249,18 +249,20 @@ export class URLInput extends Widget {
     if (newValue === oldValue) {
       return;
     }
-    Private.testDaskDashboard(newValue, this._serverSettings).then(result => {
-      this._url = newValue;
-      this._isValid = result;
-      this._urlChanged.emit({ isValid: result, oldValue, newValue });
-      this._input.blur();
-      this.update();
-      if (!result) {
-        console.warn(
-          `${newValue} does not appear to host a valid Dask dashboard`
-        );
+    void Private.testDaskDashboard(newValue, this._serverSettings).then(
+      result => {
+        this._url = newValue;
+        this._isValid = result;
+        this._urlChanged.emit({ isValid: result, oldValue, newValue });
+        this._input.blur();
+        this.update();
+        if (!result) {
+          console.warn(
+            `${newValue} does not appear to host a valid Dask dashboard`
+          );
+        }
       }
-    });
+    );
   }
 
   /**

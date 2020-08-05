@@ -101,7 +101,7 @@ export default plugin;
 /**
  * Activate the dashboard launcher plugin.
  */
-function activate(
+async function activate(
   app: JupyterFrontEnd,
   commandPalette: ICommandPalette,
   consoleTracker: IConsoleTracker,
@@ -111,7 +111,7 @@ function activate(
   notebookTracker: INotebookTracker,
   settingRegistry: ISettingRegistry,
   state: IStateDB
-): void {
+): Promise<void> {
   const id = 'dask-dashboard-launcher';
 
   // Attempt to find a link to the dask dashboard
@@ -147,7 +147,7 @@ function activate(
   // Create the Dask sidebar panel.
   const sidebar = new DaskSidebar({
     launchDashboardItem: (item: IDashboardItem) => {
-      app.commands.execute(CommandIDs.launchPanel, item);
+      void app.commands.execute(CommandIDs.launchPanel, item);
     },
     linkFinder,
     clientCodeInjector,
@@ -166,7 +166,7 @@ function activate(
 
   // Add state restoration for the dashboard items.
   restorer.add(sidebar, id);
-  restorer.restore(tracker, {
+  void restorer.restore(tracker, {
     command: CommandIDs.launchPanel,
     args: widget => widget.item || {},
     name: widget => (widget.item && widget.item.route) || ''
@@ -188,19 +188,19 @@ function activate(
     });
   };
 
-  sidebar.dashboardLauncher.input.urlChanged.connect((sender, args) => {
+  sidebar.dashboardLauncher.input.urlChanged.connect(async (sender, args) => {
     updateDashboards();
     // Save the current url to the state DB so it can be
     // reloaded on refresh.
     const active = sidebar.clusterManager.activeCluster;
-    state.save(id, {
+    return state.save(id, {
       url: args.newValue,
       cluster: active ? active.id : ''
     });
   });
-  sidebar.clusterManager.activeClusterChanged.connect(() => {
+  sidebar.clusterManager.activeClusterChanged.connect(async () => {
     const active = sidebar.clusterManager.activeCluster;
-    state.save(id, {
+    return state.save(id, {
       url: sidebar.dashboardLauncher.input.url,
       cluster: active ? active.id : ''
     });
@@ -299,7 +299,7 @@ function activate(
   };
 
   // Fetch the initial state of the settings.
-  Promise.all([
+  await Promise.all([
     settingRegistry.load(PLUGIN_ID),
     state.fetch(id),
     app.restored
@@ -370,7 +370,7 @@ function activate(
       dashboard.title.icon = 'dask-DaskLogo';
 
       labShell.add(dashboard, 'main');
-      tracker.add(dashboard);
+      void tracker.add(dashboard); // no need to wait on this
       return dashboard;
     }
   });
