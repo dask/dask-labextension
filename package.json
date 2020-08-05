@@ -29,7 +29,7 @@
   "scripts": {
     "build": "tsc",
     "clean": "rimraf lib",
-    "lint": "prettier --check '**/*{.ts,.tsx,.js,.jsx,.css,.json,.md}'",
+    "lint": "prettier --check '**/*{.ts,.tsx,.js,.jsx,.css,.json,.md}' && tslint --project .",
     "prettier": "prettier --write '**/*{.ts,.tsx,.js,.jsx,.css,.json,.md}'",
     "watch": "tsc -w",
     "test": "mocha"

@@ -119,8 +119,8 @@ export class DaskClusterManager extends Widget {
       'refresh',
       new ToolbarButton({
         icon: refreshIcon,
-        onClick: () => {
-          this._updateClusterList();
+        onClick: async () => {
+          return this._updateClusterList();
         },
         tooltip: 'Refresh Cluster List'
       })
@@ -139,7 +139,7 @@ export class DaskClusterManager extends Widget {
     layout.addWidget(this._clusterListing);
 
     // Do an initial refresh of the cluster list.
-    this._updateClusterList();
+    void this._updateClusterList();
     // Also refresh periodically.
     this._poll = new Poll({
       factory: async () => {
@@ -389,14 +389,18 @@ export class DaskClusterManager extends Widget {
     if (dx >= DRAG_THRESHOLD || dy >= DRAG_THRESHOLD) {
       event.preventDefault();
       event.stopPropagation();
-      this._startDrag(data.index, event.clientX, event.clientY);
+      void this._startDrag(data.index, event.clientX, event.clientY);
     }
   }
 
   /**
    * Start a drag event.
    */
-  private _startDrag(index: number, clientX: number, clientY: number): void {
+  private async _startDrag(
+    index: number,
+    clientX: number,
+    clientY: number
+  ): Promise<void> {
     // Create the drag image.
     const model = this._clusters[index];
     const listingItem = this._clusterListing.node.querySelector(
@@ -432,7 +436,7 @@ export class DaskClusterManager extends Widget {
     // Remove mousemove and mouseup listeners and start the drag.
     document.removeEventListener('mousemove', this, true);
     document.removeEventListener('mouseup', this, true);
-    this._drag.start(clientX, clientY).then(action => {
+    return this._drag.start(clientX, clientY).then(action => {
       if (this.isDisposed) {
         return;
       }
@@ -480,7 +484,7 @@ export class DaskClusterManager extends Widget {
         'Failed to list clusters: might the server extension not be installed/enabled?';
       const err = new Error(msg);
       if (!this._serverErrorShown) {
-        showErrorMessage('Dask Server Error', err);
+        void showErrorMessage('Dask Server Error', err);
         this._serverErrorShown = true;
       }
       throw err;
@@ -751,9 +755,9 @@ function ClusterListingItem(props: IClusterListingItemProps) {
         />
         <button
           className="dask-ClusterListingItem-button dask-ClusterListingItem-scale jp-mod-styled"
-          onClick={evt => {
-            scale();
+          onClick={async evt => {
             evt.stopPropagation();
+            return scale();
           }}
           title={`Rescale ${cluster.name}`}
         >
@@ -761,9 +765,9 @@ function ClusterListingItem(props: IClusterListingItemProps) {
         </button>
         <button
           className="dask-ClusterListingItem-button dask-ClusterListingItem-stop jp-mod-styled"
-          onClick={evt => {
-            stop();
+          onClick={async evt => {
             evt.stopPropagation();
+            return stop();
           }}
           title={`Shutdown ${cluster.name}`}
         >
