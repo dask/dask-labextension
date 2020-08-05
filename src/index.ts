@@ -299,43 +299,41 @@ async function activate(
   };
 
   // Fetch the initial state of the settings.
-  await Promise.all([
-    settingRegistry.load(PLUGIN_ID),
-    state.fetch(id),
-    app.restored
-  ]).then(async res => {
-    const settings = res[0];
-    if (!settings) {
-      console.warn('Unable to retrieve dask-labextension settings');
-      return;
-    }
-    const state = res[1] as { url?: string; cluster?: string } | undefined;
-    const url = state ? state.url : '';
-    const cluster = state ? state.cluster : '';
-    if (url && !sidebar.dashboardLauncher.input.url) {
-      // If there is a URL in the statedb, let it have priority.
-      sidebar.dashboardLauncher.input.url = url;
-    } else {
-      // Otherwise set the default from the settings.
-      sidebar.dashboardLauncher.input.url = settings.get('defaultURL')
-        .composite as string;
-    }
+  void Promise.all([settingRegistry.load(PLUGIN_ID), state.fetch(id)]).then(
+    async res => {
+      const settings = res[0];
+      if (!settings) {
+        console.warn('Unable to retrieve dask-labextension settings');
+        return;
+      }
+      const state = res[1] as { url?: string; cluster?: string } | undefined;
+      const url = state ? state.url : '';
+      const cluster = state ? state.cluster : '';
+      if (url && !sidebar.dashboardLauncher.input.url) {
+        // If there is a URL in the statedb, let it have priority.
+        sidebar.dashboardLauncher.input.url = url;
+      } else {
+        // Otherwise set the default from the settings.
+        sidebar.dashboardLauncher.input.url = settings.get('defaultURL')
+          .composite as string;
+      }
 
-    const onSettingsChanged = () => {
-      // Determine whether to use the auto-starting client.
-      autoStartClient = settings.get('autoStartClient').composite as boolean;
-      updateTrackers();
-    };
-    onSettingsChanged();
-    // React to a change in the settings.
-    settings.changed.connect(onSettingsChanged);
+      const onSettingsChanged = () => {
+        // Determine whether to use the auto-starting client.
+        autoStartClient = settings.get('autoStartClient').composite as boolean;
+        updateTrackers();
+      };
+      onSettingsChanged();
+      // React to a change in the settings.
+      settings.changed.connect(onSettingsChanged);
 
-    // If an active cluster is in the state, reset it.
-    if (cluster) {
-      await sidebar.clusterManager.refresh();
-      sidebar.clusterManager.setActiveCluster(cluster);
+      // If an active cluster is in the state, reset it.
+      if (cluster) {
+        await sidebar.clusterManager.refresh();
+        sidebar.clusterManager.setActiveCluster(cluster);
+      }
     }
-  });
+  );
 
   // Add the command for launching a new dashboard item.
   app.commands.addCommand(CommandIDs.launchPanel, {
