@@ -124,7 +124,7 @@ function activate(
     );
     // Check to see if we found a kernel, and if its
     // language is python.
-    if (!Private.shouldUseKernel(kernel)) {
+    if (!(await Private.shouldUseKernel(kernel))) {
       return '';
     }
     // If so, find the link if we can.
@@ -208,17 +208,17 @@ function activate(
   updateDashboards();
 
   // A function to create a new dask client for a session.
-  const createClientForSession = (
+  const createClientForSession = async (
     session: Session.ISessionConnection | null
   ) => {
     if (!session) {
       return;
     }
     const cluster = sidebar.clusterManager.activeCluster;
-    if (!cluster || !Private.shouldUseKernel(session.kernel)) {
+    if (!cluster || !(await Private.shouldUseKernel(session.kernel))) {
       return;
     }
-    Private.createClientForKernel(cluster, session.kernel!);
+    return Private.createClientForKernel(cluster, session.kernel!);
   };
 
   type SessionOwner = NotebookPanel | ConsolePanel;
@@ -229,13 +229,15 @@ function activate(
   ];
 
   // A function to recreate a dask client on reconnect.
-  const injectOnSessionStatusChanged = (sessionContext: ISessionContext) => {
+  const injectOnSessionStatusChanged = async (
+    sessionContext: ISessionContext
+  ) => {
     if (
       sessionContext.session &&
       sessionContext.session.kernel &&
       sessionContext.session.kernel.status === 'restarting'
     ) {
-      createClientForSession(sessionContext.session);
+      return createClientForSession(sessionContext.session);
     }
   };
 
@@ -250,10 +252,10 @@ function activate(
   // A function to inject a dask client when the active cluster changes.
   const injectOnClusterChanged = () => {
     trackers.forEach(tracker => {
-      tracker.forEach(widget => {
+      tracker.forEach(async widget => {
         const session = widget.sessionContext.session;
-        if (session && Private.shouldUseKernel(session.kernel)) {
-          createClientForSession(session);
+        if (session && (await Private.shouldUseKernel(session.kernel))) {
+          return createClientForSession(session);
         }
       });
     });
@@ -281,8 +283,8 @@ function activate(
 
       // When the status of an existing notebook changes, reinject the client.
       trackers.forEach(tracker => {
-        tracker.forEach(widget => {
-          createClientForSession(widget.sessionContext.session);
+        tracker.forEach(async widget => {
+          await createClientForSession(widget.sessionContext.session);
           widget.sessionContext.statusChanged.connect(
             injectOnSessionStatusChanged
           );
@@ -491,10 +493,14 @@ namespace Private {
    * Whether a kernel should be used. Only evaluates to true
    * if it is valid and in python.
    */
-  export function shouldUseKernel(
+  export async function shouldUseKernel(
     kernel: Kernel.IKernelConnection | null | undefined
-  ): boolean {
-    return !!kernel && kernel.name.toLowerCase().indexOf('python') !== -1;
+  ): Promise<boolean> {
+    if (!kernel) {
+      return false;
+    }
+    const spec = await kernel.spec;
+    return !!spec && spec.language.toLowerCase().indexOf('python') !== -1;
   }
 
   /**
@@ -525,7 +531,7 @@ namespace Private {
   /**
    * Connect a kernel to a cluster by creating a new Client.
    */
-  export function createClientForKernel(
+  export async function createClientForKernel(
     model: IClusterModel,
     kernel: Kernel.IKernelConnection
   ): Promise<string> {
