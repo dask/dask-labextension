@@ -1,40 +1,39 @@
-"""A Jupyter notebook server extension for managing Dask clusters."""
 
-from notebook.utils import url_path_join
+import json
+import os.path as osp
 
-from . import config
-from .clusterhandler import DaskClusterHandler
-from .dashboardhandler import DaskDashboardHandler
+from ._version import __version__
+
+HERE = osp.abspath(osp.dirname(__file__))
+
+with open(osp.join(HERE, 'static', 'package.json')) as fid:
+    data = json.load(fid)
+
+def _jupyter_labextension_paths():
+    return [{
+        'src': 'static',
+        'dest': data['name']
+    }]
 
 
-from ._version import get_versions
 
-__version__ = get_versions()["version"]
-del get_versions
+from .handlers import setup_handlers
 
 
-def _jupyter_server_extension_paths():
-    return [{"module": "dask_labextension"}]
+def _jupyter_server_extension_points():
+    return [{
+        "module": "dask_labextension"
+    }]
 
 
-def load_jupyter_server_extension(nb_server_app):
+def _load_jupyter_server_extension(server_app):
+    """Registers the API handler to receive HTTP requests from the frontend extension.
+
+    Parameters
+    ----------
+    lab_app: jupyterlab.labapp.LabApp
+        JupyterLab application instance
     """
-    Called when the extension is loaded.
+    setup_handlers(server_app.web_app)
+    server_app.log.info("Registered HelloWorld extension at URL path /dask_labextension")
 
-    Args:
-        nb_server_app (NotebookWebApplication): handle to the Notebook webserver instance.
-    """
-    cluster_id_regex = r"(?P<cluster_id>\w+-\w+-\w+-\w+-\w+)"
-    web_app = nb_server_app.web_app
-    base_url = web_app.settings["base_url"]
-    get_cluster_path = url_path_join(base_url, "dask/clusters/" + cluster_id_regex)
-    list_clusters_path = url_path_join(base_url, "dask/clusters/" + "?")
-    get_dashboard_path = url_path_join(
-        base_url, f"dask/dashboard/{cluster_id_regex}(?P<proxied_path>.+)"
-    )
-    handlers = [
-        (get_cluster_path, DaskClusterHandler),
-        (list_clusters_path, DaskClusterHandler),
-        (get_dashboard_path, DaskDashboardHandler),
-    ]
-    web_app.add_handlers(".*$", handlers)
