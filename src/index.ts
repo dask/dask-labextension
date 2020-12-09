@@ -176,13 +176,30 @@ async function activate(
 
   const updateDashboards = () => {
     const input = sidebar.dashboardLauncher.input;
+    const dashboards = sidebar.dashboardLauncher.items;
     // Update the urls of open dashboards.
     tracker.forEach(widget => {
+      // Identify the dashboard item associated with the widget
+      const dashboard = dashboards.find(d => widget.item?.route === d.route);
+
+      // If the dashboard item doesn't exist in the new listing, close the pane.
+      if (!dashboard) {
+        widget.dispose();
+        return;
+      }
+
+      // Possibly update the name of the existing dashboard pane.
+      if (`Dask ${dashboard.label}` !== widget.title.label) {
+        widget.title.label = `Dask ${dashboard.label}`;
+      }
+
+      // If the dashboard server is inactive, mark it as such.
       if (!input.urlInfo.isActive) {
         widget.dashboardUrl = '';
         widget.active = false;
         return;
       }
+
       widget.dashboardUrl = input.urlInfo.effectiveUrl || input.urlInfo.url;
       widget.active = true;
     });
@@ -436,7 +453,7 @@ async function activate(
   app.commands.addCommand(CommandIDs.toggleAutoStartClient, {
     label: 'Auto-Start Dask',
     isToggled: () => autoStartClient,
-    execute: () => {
+    execute: async () => {
       const value = !autoStartClient;
       const key = 'autoStartClient';
       return settingRegistry
