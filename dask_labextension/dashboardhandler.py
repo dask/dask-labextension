@@ -43,6 +43,7 @@ class DaskDashboardCheckHandler(APIHandler):
             )
             # If we didn't get individual plots, it may not be a dask dashboard
             if individual_plots_response.code != 200:
+                self.log.warn(f"{url} does not seem to host a dask dashboard")
                 raise ValueError("Does not seem to host a dask dashboard")
             individual_plots = json.loads(individual_plots_response.body)
 

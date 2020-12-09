@@ -144,21 +144,15 @@ export class DaskDashboardLauncher extends Widget {
     this.addClass('dask-DaskDashboardLauncher');
     this._items = options.items || DaskDashboardLauncher.DEFAULT_ITEMS;
     this._launchItem = options.launchItem;
-    this._input.urlInfoChanged.connect(this.updateLinks, this);
+    this._input.urlInfoChanged.connect(this._updateLinks, this);
   }
 
-  private async updateLinks(
-    _: URLInput,
-    change: URLInput.IChangedArgs
-  ): Promise<void> {
+  private _updateLinks(_: URLInput, change: URLInput.IChangedArgs): void {
     if (!change.newValue.isActive) {
       this.update();
       return;
     }
-    const result = await Private.getDashboardPlots(
-      this._input.urlInfo.effectiveUrl || this._input.urlInfo.url,
-      this._serverSettings
-    );
+    const result = Private.getDashboardPlots(change.newValue);
     this._items = result;
     this.update();
   }
@@ -581,11 +575,7 @@ namespace Private {
   /**
    * Return the json result of /individual-plots.json
    */
-  export async function getDashboardPlots(
-    url: string,
-    settings: ServerConnection.ISettings
-  ): Promise<IDashboardItem[]> {
-    const info = await testDaskDashboard(url, settings);
+  export function getDashboardPlots(info: DashboardURLInfo): IDashboardItem[] {
     const plots: IDashboardItem[] = [];
     for (let key in info.plots) {
       const label = key.replace('Individual ', '');
