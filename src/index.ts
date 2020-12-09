@@ -178,30 +178,31 @@ async function activate(
     const input = sidebar.dashboardLauncher.input;
     // Update the urls of open dashboards.
     tracker.forEach(widget => {
-      if (!input.isValid) {
+      if (!input.urlInfo.isActive) {
         widget.dashboardUrl = '';
         widget.active = false;
         return;
       }
-      widget.dashboardUrl = input.url;
+      widget.dashboardUrl = input.urlInfo.effectiveUrl || input.urlInfo.url;
       widget.active = true;
     });
   };
 
-  sidebar.dashboardLauncher.input.urlChanged.connect(async (sender, args) => {
+  sidebar.dashboardLauncher.input.urlInfoChanged.connect(async (_, args) => {
     updateDashboards();
     // Save the current url to the state DB so it can be
-    // reloaded on refresh.
+    // reloaded on refresh. Save url instead of effectiveUrl to continue
+    // showing user intent.
     const active = sidebar.clusterManager.activeCluster;
     return state.save(id, {
-      url: args.newValue,
+      url: args.newValue.url,
       cluster: active ? active.id : ''
     });
   });
   sidebar.clusterManager.activeClusterChanged.connect(async () => {
     const active = sidebar.clusterManager.activeCluster;
     return state.save(id, {
-      url: sidebar.dashboardLauncher.input.url,
+      url: sidebar.dashboardLauncher.input.urlInfo.url,
       cluster: active ? active.id : ''
     });
   });
@@ -243,7 +244,7 @@ async function activate(
 
   // A function to inject a dask client when a new session owner is added.
   const injectOnWidgetAdded = (
-    sender: IWidgetTracker<SessionOwner>,
+    _: IWidgetTracker<SessionOwner>,
     widget: SessionOwner
   ) => {
     widget.sessionContext.statusChanged.connect(injectOnSessionStatusChanged);
@@ -309,7 +310,10 @@ async function activate(
       const state = res[1] as { url?: string; cluster?: string } | undefined;
       const url = state ? state.url : '';
       const cluster = state ? state.cluster : '';
-      if (url && !sidebar.dashboardLauncher.input.url) {
+      const dashboardUrl =
+        sidebar.dashboardLauncher.input.urlInfo.effectiveUrl ||
+        sidebar.dashboardLauncher.input.urlInfo.url;
+      if (url && !dashboardUrl) {
         // If there is a URL in the statedb, let it have priority.
         sidebar.dashboardLauncher.input.url = url;
       } else {
@@ -341,8 +345,9 @@ async function activate(
     caption: 'Launch a Dask dashboard',
     execute: args => {
       // Construct the url for the dashboard.
-      const dashboardUrl = sidebar.dashboardLauncher.input.url;
-      const active = sidebar.dashboardLauncher.input.isValid;
+      const urlInfo = sidebar.dashboardLauncher.input.urlInfo;
+      const dashboardUrl = urlInfo.effectiveUrl || urlInfo.url;
+      const active = urlInfo.isActive;
       const dashboardItem = args as IDashboardItem;
 
       // If we already have a dashboard open to this url, activate it
@@ -512,7 +517,7 @@ namespace Private {
       store_history: false,
       code
     };
-    return new Promise<string>((resolve, reject) => {
+    return new Promise<string>((resolve, _) => {
       const future = kernel.requestExecute(content);
       future.onIOPub = msg => {
         if (msg.header.msg_type !== 'display_data') {
@@ -540,7 +545,7 @@ client = Client()`;
       store_history: false,
       code
     };
-    return new Promise<string>((resolve, reject) => {
+    return new Promise<string>((resolve, _) => {
       const future = kernel.requestExecute(content);
       future.onIOPub = msg => {
         if (msg.header.msg_type !== 'display_data') {
