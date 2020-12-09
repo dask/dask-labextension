@@ -37,13 +37,12 @@ class DaskDashboardCheckHandler(APIHandler):
             # Fetch the individual plots
             individual_plots_response = await client.fetch(
                 url_path_join(
-                    _normalize_dashboard_link(effective_url, self.request),
+                    _normalize_dashboard_link(effective_url or url, self.request),
                     "individual-plots.json"
                     )
             )
             # If we didn't get individual plots, it may not be a dask dashboard
             if individual_plots_response.code != 200:
-                self.log.warn(f"{url} does not seem to host a dask dashboard")
                 raise ValueError("Does not seem to host a dask dashboard")
             individual_plots = json.loads(individual_plots_response.body)
 
@@ -55,10 +54,12 @@ class DaskDashboardCheckHandler(APIHandler):
                 "plots": individual_plots,
             }))
         except:
+            self.log.warn(f"{url} does not seem to host a dask dashboard")
             self.set_status(200)
             self.finish(json.dumps({
                 "url": url,
                 "isActive": False,
+                "plots": {},
             }))
 
 
