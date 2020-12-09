@@ -33,7 +33,7 @@ class DaskClusterHandler(APIHandler):
             raise web.HTTPError(500, str(e))
 
     @web.authenticated
-    def get(self, cluster_id: str = "") -> None:
+    async def get(self, cluster_id: str = "") -> None:
         """
         Get a cluster by id. If no id is given, lists known clusters.
         """
