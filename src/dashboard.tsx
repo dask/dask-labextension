@@ -35,6 +35,11 @@ export type DashboardURLInfo = {
    * A new URL to use after redirects or proxies.
    */
   effectiveUrl?: string;
+
+  /**
+   * A mapping from individual dashboard plot names to their sub-path.
+   */
+  plots: { [name: string]: string };
 };
 
 /**
@@ -150,11 +155,11 @@ export class DaskDashboardLauncher extends Widget {
       this.update();
       return;
     }
-    const result = await Private.getItems(
+    const result = await Private.getDashboardPlots(
       this._input.urlInfo.effectiveUrl || this._input.urlInfo.url,
       this._serverSettings
     );
-    this._items = result || DaskDashboardLauncher.DEFAULT_ITEMS;
+    this._items = result;
     this.update();
   }
 
@@ -401,7 +406,7 @@ export class URLInput extends Widget {
   }
 
   private _urlChanged = new Signal<this, URLInput.IChangedArgs>(this);
-  private _urlInfo: DashboardURLInfo = { isActive: false, url: '' };
+  private _urlInfo: DashboardURLInfo = { isActive: false, url: '', plots: {} };
   private _input: HTMLInputElement;
   private _poll: Poll;
   private _isDisposed: boolean;
@@ -576,33 +581,19 @@ namespace Private {
   /**
    * Return the json result of /individual-plots.json
    */
-  export async function getItems(
+  export async function getDashboardPlots(
     url: string,
     settings: ServerConnection.ISettings
   ): Promise<IDashboardItem[]> {
-    // We can't fetch items from a non-local URL due to CORS policies.
-    if (!isLocal(url)) {
-      return DaskDashboardLauncher.DEFAULT_ITEMS;
+    const info = await testDaskDashboard(url, settings);
+    const plots: IDashboardItem[] = [];
+    for (let key in info.plots) {
+      const label = key.replace('Individual ', '');
+      const route = String(info.plots[key]);
+      const plot = { route: route, label: label, key: label };
+      plots.push(plot);
     }
-    url = normalizeDashboardUrl(url, settings.baseUrl);
-    const response = await ServerConnection.makeRequest(
-      URLExt.join(url, 'individual-plots.json'),
-      {},
-      settings
-    );
-    if (response.status === 200) {
-      let result = await response.json();
-      const newItems: IDashboardItem[] = [];
-      for (let key in result) {
-        let label = key.replace('Individual ', '');
-        let route = String(result[key]);
-        let item = { route: route, label: label, key: label };
-        newItems.push(item);
-      }
-      return newItems;
-    } else {
-      return [];
-    }
+    return plots;
   }
 
   /**
@@ -615,22 +606,25 @@ namespace Private {
     url = normalizeDashboardUrl(url, settings.baseUrl);
 
     // If this is a url that we are proxying under the notebook server,
-    // it is easier to check for a valid dashboard.
+    // check for the individual charts directly.
     if (url.indexOf(settings.baseUrl) === 0) {
       return ServerConnection.makeRequest(
         URLExt.join(url, 'individual-plots.json'),
         {},
         settings
-      ).then(response => {
+      ).then(async response => {
         if (response.status === 200) {
+          const plots = (await response.json()) as { [plot: string]: string };
           return {
             url,
-            isActive: true
+            isActive: true,
+            plots
           };
         } else {
           return {
             url,
-            isActive: false
+            isActive: false,
+            plots: {}
           };
         }
       });
@@ -647,7 +641,6 @@ namespace Private {
       settings
     );
     const info = (await response.json()) as DashboardURLInfo;
-    console.log(info);
     return info;
   }
 

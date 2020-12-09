@@ -27,15 +27,31 @@ class DaskDashboardCheckHandler(APIHandler):
         200 code, any errors are presumed to result from an invalid/inactive dashboard.
         """
         try:
-            url = _normalize_dashboard_link(parse.unquote(url), self.request)
             client = httpclient.AsyncHTTPClient()
+
+            # Check the user-provided url, following any redirects.
+            url = _normalize_dashboard_link(parse.unquote(url), self.request)
             response = await client.fetch(url)
             effective_url = response.effective_url if response.effective_url != url else None
+
+            # Fetch the individual plots
+            individual_plots_response = await client.fetch(
+                url_path_join(
+                    _normalize_dashboard_link(effective_url, self.request),
+                    "individual-plots.json"
+                    )
+            )
+            # If we didn't get individual plots, it may not be a dask dashboard
+            if individual_plots_response.code != 200:
+                raise ValueError("Does not seem to host a dask dashboard")
+            individual_plots = json.loads(individual_plots_response.body)
+
             self.set_status(200)
             self.finish(json.dumps({
                 "url": url,
                 "isActive": response.code == 200,
                 "effectiveUrl": effective_url,
+                "plots": individual_plots,
             }))
         except:
             self.set_status(200)
