@@ -8,8 +8,6 @@ import { searchIcon } from '@jupyterlab/ui-components';
 
 import { JSONExt, JSONObject } from '@lumino/coreutils';
 
-import { Message } from '@lumino/messaging';
-
 import { Poll } from '@lumino/polling';
 
 import { ISignal, Signal } from '@lumino/signaling';
@@ -18,6 +16,31 @@ import { Widget, PanelLayout } from '@lumino/widgets';
 
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
+
+/**
+ * Info for a a given dashboard URL.
+ */
+export type DashboardURLInfo = {
+  /**
+   * The user provided url in the search box.
+   */
+  url: string;
+
+  /**
+   * Whether there is a live dashboard at the URL.
+   */
+  isActive: boolean;
+
+  /**
+   * A new URL to use after redirects or proxies.
+   */
+  effectiveUrl?: string;
+
+  /**
+   * A mapping from individual dashboard plot names to their sub-path.
+   */
+  plots: { [name: string]: string };
+};
 
 /**
  * A class for hosting a Dask dashboard in an iframe.
@@ -121,19 +144,16 @@ export class DaskDashboardLauncher extends Widget {
     this.addClass('dask-DaskDashboardLauncher');
     this._items = options.items || DaskDashboardLauncher.DEFAULT_ITEMS;
     this._launchItem = options.launchItem;
-    this._input.urlChanged.connect(this.updateLinks, this);
+    this._input.urlInfoChanged.connect(this._updateLinks, this);
   }
 
-  private async updateLinks(): Promise<void> {
-    if (!this._input.isValid) {
+  private _updateLinks(_: URLInput, change: URLInput.IChangedArgs): void {
+    if (!change.newValue.isActive) {
       this.update();
       return;
     }
-    const result = await Private.getItems(
-      this._input.url,
-      this._serverSettings
-    );
-    this._items = result || DaskDashboardLauncher.DEFAULT_ITEMS;
+    const result = Private.getDashboardPlots(change.newValue);
+    this._items = result;
     this.update();
   }
 
@@ -154,7 +174,7 @@ export class DaskDashboardLauncher extends Widget {
   /**
    * Handle an update request.
    */
-  protected onUpdateRequest(msg: Message): void {
+  protected onUpdateRequest(): void {
     // Don't bother if the sidebar is not visible
     if (!this.isVisible) {
       return;
@@ -163,7 +183,7 @@ export class DaskDashboardLauncher extends Widget {
     ReactDOM.render(
       <DashboardListing
         launchItem={this._launchItem}
-        isEnabled={this.input.isValid}
+        isEnabled={this.input.urlInfo.isActive}
         items={this._items}
       />,
       this._dashboard.node
@@ -173,7 +193,7 @@ export class DaskDashboardLauncher extends Widget {
   /**
    * Rerender after showing.
    */
-  protected onAfterShow(msg: Message): void {
+  protected onAfterShow(): void {
     this.update();
   }
 
@@ -240,20 +260,16 @@ export class URLInput extends Widget {
    * as it first checks to see whether the url is pointing
    * at a valid dask dashboard server.
    */
-  get url(): string {
-    return this._url;
-  }
   set url(newValue: string) {
     this._input.value = newValue;
-    const oldValue = this._url;
-    if (newValue === oldValue) {
+    const oldValue = this._urlInfo;
+    if (newValue === oldValue.url) {
       return;
     }
     void Private.testDaskDashboard(newValue, this._serverSettings).then(
       result => {
-        this._url = newValue;
-        this._isValid = result;
-        this._urlChanged.emit({ isValid: result, oldValue, newValue });
+        this._urlInfo = result;
+        this._urlChanged.emit({ oldValue, newValue: result });
         this._input.blur();
         this.update();
         if (!result) {
@@ -266,16 +282,17 @@ export class URLInput extends Widget {
   }
 
   /**
-   * Whether the current url is pointing to a valid dask dashboard.
+   * The URL information for the dashboard. This should be set via the url setter,
+   * but read through this getter, as it brings in some extra information.
    */
-  get isValid(): boolean {
-    return this._isValid;
+  get urlInfo(): DashboardURLInfo {
+    return this._urlInfo;
   }
 
   /**
    * A signal emitted when the url changes.
    */
-  get urlChanged(): ISignal<this, URLInput.IChangedArgs> {
+  get urlInfoChanged(): ISignal<this, URLInput.IChangedArgs> {
     return this._urlChanged;
   }
 
@@ -329,14 +346,14 @@ export class URLInput extends Widget {
   /**
    * Handle `after-attach` messages for the widget.
    */
-  protected onAfterAttach(msg: Message): void {
+  protected onAfterAttach(): void {
     this._input.addEventListener('keydown', this, true);
   }
 
   /**
    * Handle `before-detach` messages for the widget.
    */
-  protected onBeforeDetach(msg: Message): void {
+  protected onBeforeDetach(): void {
     this._input.removeEventListener('keydown', this, true);
   }
 
@@ -346,39 +363,34 @@ export class URLInput extends Widget {
   private _startUrlCheckTimer(): void {
     this._poll = new Poll({
       factory: async () => {
-        const url = this._url;
+        const urlInfo = this._urlInfo;
         // Don't bother checking if there is no url.
-        if (!url) {
+        if (!urlInfo.url) {
           return;
         }
         const result = await Private.testDaskDashboard(
-          url,
+          urlInfo.url,
           this._serverSettings
         );
         // No change - valid case
-        if (result && this._isValid) {
+        if (result.isActive && urlInfo.isActive) {
           return;
         }
         // Show an error if the connection died.
-        if (!result && this._isValid) {
-          console.warn(`The connection to dask dashboard ${url} has been lost`);
+        if (!result.isActive && urlInfo.isActive) {
+          console.warn(
+            `The connection to dask dashboard ${urlInfo.url} has been lost`
+          );
         }
         // No change - invalid case
-        if (!result && !this._isValid) {
-          // unset url
-          this._urlChanged.emit({
-            oldValue: url,
-            newValue: '',
-            isValid: result
-          });
+        if (!result.isActive && !urlInfo.isActive) {
+          return;
         }
         // Connection died or started
-        if (result !== this._isValid) {
-          this._isValid = result;
+        if (result.isActive !== urlInfo.isActive) {
           this._urlChanged.emit({
-            oldValue: url,
-            newValue: url,
-            isValid: result
+            oldValue: urlInfo,
+            newValue: result
           });
         }
       },
@@ -388,8 +400,7 @@ export class URLInput extends Widget {
   }
 
   private _urlChanged = new Signal<this, URLInput.IChangedArgs>(this);
-  private _url = '';
-  private _isValid = false;
+  private _urlInfo: DashboardURLInfo = { isActive: false, url: '', plots: {} };
   private _input: HTMLInputElement;
   private _poll: Poll;
   private _isDisposed: boolean;
@@ -405,19 +416,14 @@ export namespace URLInput {
    */
   export interface IChangedArgs {
     /**
-     * The old url.
+     * The old url info.
      */
-    oldValue: string;
+    oldValue: DashboardURLInfo;
 
     /**
-     * The new url.
+     * The new url info.
      */
-    newValue: string;
-
-    /**
-     * Whether the URL is pointing at a valid dask webserver.
-     */
-    isValid: boolean;
+    newValue: DashboardURLInfo;
   }
 }
 
@@ -569,84 +575,63 @@ namespace Private {
   /**
    * Return the json result of /individual-plots.json
    */
-  export async function getItems(
-    url: string,
-    settings: ServerConnection.ISettings
-  ): Promise<IDashboardItem[]> {
-    // We can't fetch items from a non-local URL due to CORS policies.
-    if (!isLocal(url)) {
-      return DaskDashboardLauncher.DEFAULT_ITEMS;
+  export function getDashboardPlots(info: DashboardURLInfo): IDashboardItem[] {
+    const plots: IDashboardItem[] = [];
+    for (let key in info.plots) {
+      const label = key.replace('Individual ', '');
+      const route = String(info.plots[key]);
+      const plot = { route: route, label: label, key: label };
+      plots.push(plot);
     }
-    url = normalizeDashboardUrl(url, settings.baseUrl);
-    const response = await ServerConnection.makeRequest(
-      URLExt.join(url, 'individual-plots.json'),
-      {},
-      settings
-    );
-    if (response.status === 200) {
-      let result = await response.json();
-      const newItems: IDashboardItem[] = [];
-      for (let key in result) {
-        let label = key.replace('Individual ', '');
-        let route = String(result[key]);
-        let item = { route: route, label: label, key: label };
-        newItems.push(item);
-      }
-      return newItems;
-    } else {
-      return [];
-    }
+    return plots;
   }
 
   /**
    * Test whether a given URL hosts a dask dashboard.
    */
-  export function testDaskDashboard(
+  export async function testDaskDashboard(
     url: string,
     settings: ServerConnection.ISettings
-  ): Promise<boolean> {
+  ): Promise<DashboardURLInfo> {
     url = normalizeDashboardUrl(url, settings.baseUrl);
 
     // If this is a url that we are proxying under the notebook server,
-    // it is easier to check for a valid dashboard.
+    // check for the individual charts directly.
     if (url.indexOf(settings.baseUrl) === 0) {
       return ServerConnection.makeRequest(
         URLExt.join(url, 'individual-plots.json'),
         {},
         settings
-      ).then(response => {
+      ).then(async response => {
         if (response.status === 200) {
-          return true;
+          const plots = (await response.json()) as { [plot: string]: string };
+          return {
+            url,
+            isActive: true,
+            plots
+          };
         } else {
-          return false;
+          return {
+            url,
+            isActive: false,
+            plots: {}
+          };
         }
       });
     }
 
-    return new Promise<boolean>(resolve => {
-      // Hack Alert! We would like to test whether a given URL is actually
-      // a dask dashboard, since we will be iframe-ing it sight-unseen.
-      // However, CORS policies prevent us from doing a normal fetch
-      // to an arbitrary URL. We *can*, however, request an image from
-      // an arbitrary location. So let's request the dask logo from the
-      // bokeh server statics directory and check whether that was successful.
-      //
-      // If the logo ever moves or changes names, or if there is a different
-      // server with an identical file path, then this will fail.
-      let logoUrl = URLExt.join(url, 'statics/images/dask-logo.svg');
-      // Bust caching for src attr
-      // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Using_XMLHttpRequest#Bypassing_the_cache
-      logoUrl += (/\?/.test(logoUrl) ? '&' : '?') + new Date().getTime();
-
-      let img = document.createElement('img');
-      img.onload = () => {
-        resolve(true);
-      };
-      img.onerror = () => {
-        resolve(false);
-      };
-      img.src = logoUrl;
-    });
+    const response = await ServerConnection.makeRequest(
+      URLExt.join(
+        settings.baseUrl,
+        'dask',
+        'dashboard-check',
+        encodeURIComponent(url)
+      ),
+      {},
+      settings
+    );
+    const info = (await response.json()) as DashboardURLInfo;
+    return info;
   }
 
   export function createInactivePanel(): HTMLElement {

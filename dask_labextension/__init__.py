@@ -4,7 +4,7 @@ from notebook.utils import url_path_join
 
 from . import config
 from .clusterhandler import DaskClusterHandler
-from .dashboardhandler import DaskDashboardHandler
+from .dashboardhandler import DaskDashboardCheckHandler, DaskDashboardHandler
 
 
 from ._version import get_versions
@@ -32,9 +32,13 @@ def load_jupyter_server_extension(nb_server_app):
     get_dashboard_path = url_path_join(
         base_url, f"dask/dashboard/{cluster_id_regex}(?P<proxied_path>.+)"
     )
+    check_dashboard_path = url_path_join(
+        base_url, "dask/dashboard-check/(?P<url>.+)"
+    )
     handlers = [
         (get_cluster_path, DaskClusterHandler),
         (list_clusters_path, DaskClusterHandler),
         (get_dashboard_path, DaskDashboardHandler),
+        (check_dashboard_path, DaskDashboardCheckHandler),
     ]
     web_app.add_handlers(".*$", handlers)

@@ -3,14 +3,64 @@ A Dashboard handler for the Dask labextension.
 This proxies the bokeh server http and ws requests through the notebook
 server, preventing CORS issues.
 """
+import json
 from urllib import parse
 
-from tornado import web
+from tornado import httpclient, web
 
+from notebook.base.handlers import APIHandler
 from notebook.utils import url_path_join
 from jupyter_server_proxy.handlers import ProxyHandler
 
 from .manager import manager
+
+
+class DaskDashboardCheckHandler(APIHandler):
+    """
+    A handler for checking validity of a dask dashboard.
+    """
+
+    @web.authenticated
+    async def get(self, url) -> None:
+        """
+        Test if a given url string hosts a dask dashboard. Should always return a
+        200 code, any errors are presumed to result from an invalid/inactive dashboard.
+        """
+        try:
+            client = httpclient.AsyncHTTPClient()
+
+            # Check the user-provided url, following any redirects.
+            url = _normalize_dashboard_link(parse.unquote(url), self.request)
+            response = await client.fetch(url)
+            effective_url = response.effective_url if response.effective_url != url else None
+
+            # Fetch the individual plots
+            individual_plots_response = await client.fetch(
+                url_path_join(
+                    _normalize_dashboard_link(effective_url or url, self.request),
+                    "individual-plots.json"
+                    )
+            )
+            # If we didn't get individual plots, it may not be a dask dashboard
+            if individual_plots_response.code != 200:
+                raise ValueError("Does not seem to host a dask dashboard")
+            individual_plots = json.loads(individual_plots_response.body)
+
+            self.set_status(200)
+            self.finish(json.dumps({
+                "url": url,
+                "isActive": response.code == 200,
+                "effectiveUrl": effective_url,
+                "plots": individual_plots,
+            }))
+        except:
+            self.log.warn(f"{url} does not seem to host a dask dashboard")
+            self.set_status(200)
+            self.finish(json.dumps({
+                "url": url,
+                "isActive": False,
+                "plots": {},
+            }))
 
 
 class DaskDashboardHandler(ProxyHandler):
@@ -92,6 +142,6 @@ def _normalize_dashboard_link(link, request):
         # as the application, and prepend that.
         link = url_path_join(f"{request.protocol}://{request.host}", link)
     if link.endswith("/status"):
-        # If the default "status" dashboard is give, strip it.
+        # If the default "status" dashboard is given, strip it.
         link = link[:-len("/status")]
     return link
