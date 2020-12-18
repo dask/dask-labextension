@@ -372,22 +372,14 @@ export class URLInput extends Widget {
           urlInfo.url,
           this._serverSettings
         );
-        // No change - valid case
-        if (result.isActive && urlInfo.isActive) {
-          return;
-        }
         // Show an error if the connection died.
         if (!result.isActive && urlInfo.isActive) {
           console.warn(
             `The connection to dask dashboard ${urlInfo.url} has been lost`
           );
         }
-        // No change - invalid case
-        if (!result.isActive && !urlInfo.isActive) {
-          return;
-        }
-        // Connection died or started
-        if (result.isActive !== urlInfo.isActive) {
+        if (!JSONExt.deepEqual(result, urlInfo)) {
+          this._urlInfo = result;
           this._urlChanged.emit({
             oldValue: urlInfo,
             newValue: result
