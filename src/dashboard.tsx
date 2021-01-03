@@ -300,19 +300,11 @@ export class URLInput extends Widget {
    * Dispose of the resources held by the dashboard.
    */
   dispose(): void {
-    if (this._isDisposed) {
+    if (this.isDisposed) {
       return;
     }
-    this._isDisposed = true;
     this._poll.dispose();
     super.dispose();
-  }
-
-  /**
-   * Whether the dashboard has been disposed.
-   */
-  get isDisposed(): boolean {
-    return this._isDisposed;
   }
 
   /**
@@ -403,7 +395,6 @@ export class URLInput extends Widget {
   private _urlInfo: DashboardURLInfo = { isActive: false, url: '', plots: {} };
   private _input: HTMLInputElement;
   private _poll: Poll;
-  private _isDisposed: boolean;
   private _serverSettings: ServerConnection.ISettings;
 }
 
