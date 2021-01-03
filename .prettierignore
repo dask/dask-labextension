@@ -1,4 +1,5 @@
 node_modules
+dask_labextension/labextension
 **/node_modules
 **/lib
 **/package.json

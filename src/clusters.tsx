@@ -718,6 +718,7 @@ function ClusterListingItem(props: IClusterListingItemProps) {
         Dashboard URL:{' '}
         <a
           target="_blank"
+          rel="noreferrer"
           href={cluster.dashboard_link}
           title={cluster.dashboard_link}
         >
