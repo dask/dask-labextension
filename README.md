@@ -23,7 +23,7 @@ distributed >= 1.24.1
 ## Installation
 
 To install the Dask JupyterLab extension you will need both JupyterLab,
-and [Node.js](https://nodejs.org/).
+and [Node.js](https://nodejs.org/), with at least version 12.
 These are available through a variety of sources.
 One source common to Python users is the conda package manager.
 
