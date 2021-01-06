@@ -28,7 +28,8 @@ These are available through a variety of sources.
 One source common to Python users is the conda package manager.
 
 ```bash
-conda install jupyterlab nodejs
+conda install jupyterlab
+conda install -c conda-forge nodejs
 ```
 
 This extension includes both a client-side JupyterLab extension and a server-side
