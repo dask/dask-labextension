@@ -1,4 +1,4 @@
-name: Build
+name: labextension
 
 on:
   push:
@@ -28,6 +28,8 @@ jobs:
         jlpm
         jlpm run eslint:check
         python -m pip install .
+        jupyter serverextension list
+        jupyter labextension list
 
         jupyter serverextension list 2>&1 | grep -ie "dask_labextension.*OK"
 
