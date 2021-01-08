@@ -6,7 +6,7 @@ import os
 
 from jupyter_packaging import (
     create_cmdclass, install_npm, ensure_targets,
-    combine_commands, get_version,
+    combine_commands,
 )
 import setuptools
 
@@ -37,8 +37,17 @@ labext_name = "dask-labextension"
 
 data_files_spec = [
     ("share/jupyter/labextensions/%s" % labext_name, lab_path, "**"),
-    ("share/jupyter/labextensions/%s" % labext_name, HERE, "install.json"),("etc/jupyter/jupyter_server_config.d",
-     "jupyter-config", "dask_labextension.json"),
+    ("share/jupyter/labextensions/%s" % labext_name, HERE, "install.json"),
+    (
+        "etc/jupyter/jupyter_server_config.d",
+        "jupyter-config/jupyter_server_config.d",
+        "dask_labextension.json"
+    ),
+    (
+        "etc/jupyter/jupyter_notebook_config.d",
+        "jupyter-config/jupyter_notebook_config.d",
+        "dask_labextension.json"
+    ),
 ]
 
 cmdclass = create_cmdclass("jsdeps",
@@ -68,7 +77,7 @@ setup_args = dict(
         "bokeh >=1.0.0,!=2.0.0",
         "distributed>=1.24.1",
         "jupyter-server-proxy>=1.3.2",
-        "jupyterlab>=3.0.0rc2,==3.*",
+        "jupyterlab>=3.0.0",
         "notebook>=4.3.1",
     ],
     zip_safe=False,
