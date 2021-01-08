@@ -78,7 +78,6 @@ setup_args = dict(
         "distributed>=1.24.1",
         "jupyter-server-proxy>=1.3.2",
         "jupyterlab>=3.0.0",
-        "notebook>=4.3.1",
     ],
     zip_safe=False,
     include_package_data=True,

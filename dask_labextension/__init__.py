@@ -1,6 +1,6 @@
-"""A Jupyter notebook server extension for managing Dask clusters."""
+"""A Jupyter server extension for managing Dask clusters."""
 
-from notebook.utils import url_path_join
+from jupyter_server.utils import url_path_join
 
 from . import config
 from .clusterhandler import DaskClusterHandler
