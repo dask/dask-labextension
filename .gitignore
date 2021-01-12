@@ -20,6 +20,11 @@ __pycache__
 npm-debug.log
 
 dask_labextension.egg-info
+dask_labextension/labextension
 dask_labextension/static
 lib
 node_modules
+tsconfig.tsbuildinfo
+
+_temp_extension
+dask-worker-space

@@ -6,7 +6,7 @@
 import json
 
 from tornado import web
-from notebook.base.handlers import APIHandler
+from jupyter_server.base.handlers import APIHandler
 
 from .manager import manager
 

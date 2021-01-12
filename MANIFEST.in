@@ -1,10 +1,30 @@
 recursive-include dask_labextension *.py
 recursive-include dask_labextension *.yaml
 
-include setupbase.py
 include setup.py
 include setup.cfg
 include README.md
 include LICENSE
 include MANIFEST.in
 include versioneer.py
+include pyproject.toml
+include jupyter-config/dask_labextension.json
+
+include package.json
+include install.json
+include ts*.json
+
+graft dask_labextension/labextension
+
+# Javascript files
+graft src
+graft style
+prune **/node_modules
+prune lib
+
+# Patterns to exclude from any directory
+global-exclude *~
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude .git
+global-exclude .ipynb_checkpoints

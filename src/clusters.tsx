@@ -230,19 +230,11 @@ export class DaskClusterManager extends Widget {
    * Dispose of the cluster manager.
    */
   dispose(): void {
-    if (this._isDisposed) {
+    if (this.isDisposed) {
       return;
     }
-    this._isDisposed = true;
     this._poll.dispose();
     super.dispose();
-  }
-
-  /**
-   * Whether the dashboard has been disposed.
-   */
-  get isDisposed(): boolean {
-    return this._isDisposed;
   }
 
   /**
@@ -581,7 +573,6 @@ export class DaskClusterManager extends Widget {
     this,
     IChangedArgs<IClusterModel | undefined>
   >(this);
-  private _isDisposed = false;
   private _serverErrorShown = false;
   private _isReady = true;
   private _registry: CommandRegistry;
@@ -727,6 +718,7 @@ function ClusterListingItem(props: IClusterListingItemProps) {
         Dashboard URL:{' '}
         <a
           target="_blank"
+          rel="noreferrer"
           href={cluster.dashboard_link}
           title={cluster.dashboard_link}
         >
