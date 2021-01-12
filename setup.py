@@ -69,7 +69,7 @@ with open("README.md", "r") as fh:
 setup_args = dict(
     name=name,
     version=version,
-    url="y",
+    url="https://github.com/dask/dask-labextension",
     author="Ian Rose, Matt Rocklin, Jacob Tomlinson",
     description="A JupyterLab extension for Dask.",
     long_description= long_description,
