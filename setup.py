@@ -3,12 +3,14 @@ dask_labextension setup
 """
 import json
 import os
+import setuptools
 
 from jupyter_packaging import (
     create_cmdclass, install_npm, ensure_targets,
     combine_commands,
 )
-import setuptools
+
+import versioneer
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 
@@ -16,8 +18,7 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 name="dask_labextension"
 
 # Get our version
-with open(os.path.join(HERE, 'package.json')) as f:
-    version = json.load(f)['version']
+version = versioneer.get_version()
 
 lab_path = os.path.join(HERE, name, "labextension")
 
@@ -50,9 +51,11 @@ data_files_spec = [
     ),
 ]
 
-cmdclass = create_cmdclass("jsdeps",
-    package_data_spec=package_data_spec,
-    data_files_spec=data_files_spec
+cmdclass = versioneer.get_cmdclass(
+    create_cmdclass("jsdeps",
+        package_data_spec=package_data_spec,
+        data_files_spec=data_files_spec
+    )
 )
 
 cmdclass["jsdeps"] = combine_commands(
