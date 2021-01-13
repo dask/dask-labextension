@@ -200,13 +200,11 @@ class DaskClusterManager:
 
         # Check if it is actually different.
         model = make_cluster_model(cluster_id, name, cluster, adaptive)
-        if model.get("adapt") != None and model["adapt"][
-            "minimum"
-        ] == minimum and model[
-            "adapt"
-        ][
-            "maximum"
-        ] == maximum:
+        if (
+            model.get("adapt") != None
+            and model["adapt"]["minimum"] == minimum
+            and model["adapt"]["maximum"] == maximum
+        ):
             return model
 
         # Otherwise, rescale the model.

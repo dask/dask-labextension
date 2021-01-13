@@ -7,7 +7,9 @@ import setuptools
 import sys
 
 from jupyter_packaging import (
-    create_cmdclass, install_npm, ensure_targets,
+    create_cmdclass,
+    install_npm,
+    ensure_targets,
     combine_commands,
 )
 
@@ -22,7 +24,7 @@ import versioneer
 HERE = os.path.abspath(os.path.dirname(__file__))
 
 # The name of the project
-name="dask_labextension"
+name = "dask_labextension"
 
 # Get our version
 version = versioneer.get_version()
@@ -35,11 +37,7 @@ jstargets = [
     os.path.join(lab_path, "package.json"),
 ]
 
-package_data_spec = {
-    name: [
-        "*"
-    ]
-}
+package_data_spec = {name: ["*"]}
 
 labext_name = "dask-labextension"
 
@@ -49,19 +47,18 @@ data_files_spec = [
     (
         "etc/jupyter/jupyter_server_config.d",
         "jupyter-config/jupyter_server_config.d",
-        "dask_labextension.json"
+        "dask_labextension.json",
     ),
     (
         "etc/jupyter/jupyter_notebook_config.d",
         "jupyter-config/jupyter_notebook_config.d",
-        "dask_labextension.json"
+        "dask_labextension.json",
     ),
 ]
 
 cmdclass = versioneer.get_cmdclass(
-    create_cmdclass("jsdeps",
-        package_data_spec=package_data_spec,
-        data_files_spec=data_files_spec
+    create_cmdclass(
+        "jsdeps", package_data_spec=package_data_spec, data_files_spec=data_files_spec
     )
 )
 
@@ -79,9 +76,9 @@ setup_args = dict(
     url="https://github.com/dask/dask-labextension",
     author="Ian Rose, Matt Rocklin, Jacob Tomlinson",
     description="A JupyterLab extension for Dask.",
-    long_description= long_description,
+    long_description=long_description,
     long_description_content_type="text/markdown",
-    cmdclass= cmdclass,
+    cmdclass=cmdclass,
     packages=setuptools.find_packages(),
     install_requires=[
         "bokeh >=1.0.0,!=2.0.0",

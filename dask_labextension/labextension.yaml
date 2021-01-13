@@ -6,10 +6,12 @@ labextension:
     kwargs: {}
   default:
     workers: null
-    adapt: null
+    adapt:
+      null
       # minimum: 0
       # maximum: 10
-  initial: []
+  initial:
+    []
     # - name: "My Big Cluster"
     #   workers: 100
     # - name: "Adaptive Cluster"
