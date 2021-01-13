@@ -22,8 +22,8 @@ distributed >= 1.24.1
 
 ## Installation
 
-To install the Dask JupyterLab extension you will need both JupyterLab,
-and [Node.js](https://nodejs.org/), with at least version 12.
+To install the Dask JupyterLab extension you will need to have JupyterLab installed.
+For JupyterLab < 3.0, you will also need [Node.js](https://nodejs.org/) version >= 12.
 These are available through a variety of sources.
 One source common to Python users is the conda package manager.
 
@@ -32,8 +32,22 @@ conda install jupyterlab
 conda install -c conda-forge nodejs
 ```
 
-This extension includes both a client-side JupyterLab extension and a server-side
-Jupyter notebook extension. Install via pip or conda-forge:
+### JupyterLab 3.0 or greater
+
+You should be able to install this extension with pip or conda,
+and start using it immediately, e.g.
+
+```bash
+pip install dask-labextension
+```
+
+### JupyterLab 2.x
+
+This extension includes both client-side and server-side components.
+Prior to JupyterLab 3.0 these needed to be installed separately,
+with node available on the machine.
+
+The server-side component can be installed via pip or conda-forge:
 
 ```bash
 pip install dask_labextension
@@ -43,11 +57,10 @@ pip install dask_labextension
 conda install -c conda-forge dask-labextension
 ```
 
-and build the extension as follows:
+You then build the client-side extension into JupyterLab with:
 
 ```bash
 jupyter labextension install dask-labextension
-jupyter serverextension enable dask_labextension
 ```
 
 If you are running Notebook 5.2 or earlier, enable the server extension by running
@@ -131,22 +144,23 @@ labextension:
 
 ## Development install
 
-As described in the [JupyterLab documentation](https://jupyterlab.readthedocs.io/en/stable/developer/extension_dev.html#extension-authoring) for a development install of the labextension you can run the following in this directory:
+As described in the [JupyterLab documentation](https://jupyterlab.readthedocs.io/en/stable/extension/extension_dev.html#developing-a-prebuilt-extension)
+for a development install of the labextension you can run the following in this directory:
 
 ```bash
-jlpm install   # Install npm package dependencies
-jlpm run build  # Compile the TypeScript sources to Javascript
-jupyter labextension install  # Install the current directory as an extension
+jlpm  # Install npm package dependencies
+jlpm build  # Compile the TypeScript sources to Javascript
+jupyter labextension develop . --overwrite  # Install the current directory as an extension
 ```
 
 To rebuild the extension:
 
 ```bash
-jlpm run build
+jlpm build
 ```
 
-If you run JupyterLab in watch mode (`jupyter lab --watch`) it will automatically pick
-up changes to the built extension and rebundle itself.
+You should then be able to refresh the JupyterLab page
+and it will pick up the changes to the extension.
 
 To run an editable install of the server extension, run
 

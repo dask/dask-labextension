@@ -3,12 +3,21 @@ dask_labextension setup
 """
 import json
 import os
+import setuptools
+import sys
 
 from jupyter_packaging import (
     create_cmdclass, install_npm, ensure_targets,
     combine_commands,
 )
-import setuptools
+
+# ensure the current directory is on sys.path
+# so versioneer can be imported when pip uses
+# PEP 517/518 build rules.
+# https://github.com/python-versioneer/python-versioneer/issues/193
+sys.path.append(os.path.dirname(__file__))
+
+import versioneer
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 
@@ -16,8 +25,7 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 name="dask_labextension"
 
 # Get our version
-with open(os.path.join(HERE, 'package.json')) as f:
-    version = json.load(f)['version']
+version = versioneer.get_version()
 
 lab_path = os.path.join(HERE, name, "labextension")
 
@@ -50,9 +58,11 @@ data_files_spec = [
     ),
 ]
 
-cmdclass = create_cmdclass("jsdeps",
-    package_data_spec=package_data_spec,
-    data_files_spec=data_files_spec
+cmdclass = versioneer.get_cmdclass(
+    create_cmdclass("jsdeps",
+        package_data_spec=package_data_spec,
+        data_files_spec=data_files_spec
+    )
 )
 
 cmdclass["jsdeps"] = combine_commands(
@@ -66,7 +76,7 @@ with open("README.md", "r") as fh:
 setup_args = dict(
     name=name,
     version=version,
-    url="y",
+    url="https://github.com/dask/dask-labextension",
     author="Ian Rose, Matt Rocklin, Jacob Tomlinson",
     description="A JupyterLab extension for Dask.",
     long_description= long_description,
