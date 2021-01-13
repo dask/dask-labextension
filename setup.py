@@ -1,7 +1,6 @@
 """
 dask_labextension setup
 """
-import json
 import os
 import setuptools
 import sys

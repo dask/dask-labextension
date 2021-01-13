@@ -59,7 +59,7 @@ class DaskDashboardCheckHandler(APIHandler):
                     }
                 )
             )
-        except:
+        except Exception:
             self.log.warn(f"{url} does not seem to host a dask dashboard")
             self.set_status(200)
             self.finish(
