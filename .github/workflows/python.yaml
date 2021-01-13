@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.7", "3.8"]
+        python-version: ['3.7', '3.8']
 
     steps:
       - name: Checkout source
@@ -33,14 +33,6 @@ jobs:
           python -m pip install pytest black flake8
           python -m pip install .
 
-      - name: Lint
-        continue-on-error: true
-        shell: bash -l {0}
-        run: |
-          flake8 dask_labextension 
-          black dask_labextension --check
-
       - name: Run Tests
         shell: bash -l {0}
-        run: python -m pytest dask_labextension  
-
+        run: python -m pytest dask_labextension

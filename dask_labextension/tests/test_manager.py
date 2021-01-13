@@ -9,15 +9,15 @@ from dask_labextension.manager import DaskClusterManager
 
 
 config = {
-    'labextension': {
+    "labextension": {
         "initial": [],
         "default": {},
-        'factory': {
+        "factory": {
             "module": "dask.distributed",
             "class": "LocalCluster",
             "kwargs": {"processes": False},
-            "args": []
-        }
+            "args": [],
+        },
     }
 }
 
@@ -28,19 +28,20 @@ async def test_start():
         async with DaskClusterManager() as manager:
             # add cluster
             model = await manager.start_cluster()
-            assert not model.get('adapt')
+            assert not model.get("adapt")
 
             # close cluster
             assert len(manager.list_clusters()) == 1
-            await manager.close_cluster(model['id'])
+            await manager.close_cluster(model["id"])
 
             # add cluster with adaptive configuration
             model = await manager.start_cluster(
-                configuration={'adapt': {'minimum': 1, 'maximum': 3}}
+                configuration={"adapt": {"minimum": 1, "maximum": 3}}
             )
-            assert model['adapt'] == {'minimum': 1, 'maximum': 3}
+            assert model["adapt"] == {"minimum": 1, "maximum": 3}
 
             await manager.close()
+
 
 @gen_test()
 async def test_close():
@@ -50,11 +51,12 @@ async def test_close():
             model = await manager.start_cluster()
 
             # return None if a nonexistent cluster is closed
-            assert not await manager.close_cluster('fake')
+            assert not await manager.close_cluster("fake")
 
             # close the cluster
-            await manager.close_cluster(model['id'])
+            await manager.close_cluster(model["id"])
             assert not manager.list_clusters()
+
 
 @gen_test()
 async def test_get():
@@ -64,12 +66,13 @@ async def test_get():
             model = await manager.start_cluster()
 
             # return None if a nonexistent cluster is requested
-            assert not manager.get_cluster('fake')
+            assert not manager.get_cluster("fake")
 
             # get the cluster by id
-            assert model == manager.get_cluster(model['id'])
+            assert model == manager.get_cluster(model["id"])
 
-@pytest.mark.filterwarnings('ignore')
+
+@pytest.mark.filterwarnings("ignore")
 @gen_test()
 async def test_list():
     with dask.config.set(config):
@@ -85,27 +88,29 @@ async def test_list():
             assert model1 in models
             assert model2 in models
 
+
 @gen_test()
 async def test_scale():
     with dask.config.set(config):
         async with DaskClusterManager() as manager:
             # add cluster with number of workers configuration
-            model = await manager.start_cluster(configuration={'workers': 3})
+            model = await manager.start_cluster(configuration={"workers": 3})
             start = time()
-            while model['workers'] != 3:
+            while model["workers"] != 3:
                 await sleep(0.01)
-                model = manager.get_cluster(model['id'])
-                assert time() < start + 10, model['workers']
+                model = manager.get_cluster(model["id"])
+                assert time() < start + 10, model["workers"]
 
             await sleep(0.2)  # let workers settle # TODO: remove need for this
 
             # rescale the cluster
-            model = await manager.scale_cluster(model['id'], 6)
+            model = await manager.scale_cluster(model["id"], 6)
             start = time()
-            while model['workers'] != 6:
+            while model["workers"] != 6:
                 await sleep(0.01)
-                model = manager.get_cluster(model['id'])
-                assert time() < start + 10, model['workers']
+                model = manager.get_cluster(model["id"])
+                assert time() < start + 10, model["workers"]
+
 
 @gen_test()
 async def test_adapt():
@@ -113,32 +118,35 @@ async def test_adapt():
         async with DaskClusterManager() as manager:
             # add a new cluster
             model = await manager.start_cluster()
-            assert not model.get('adapt')
-            model = manager.adapt_cluster(model['id'], 0, 4)
-            adapt = model.get('adapt')
+            assert not model.get("adapt")
+            model = manager.adapt_cluster(model["id"], 0, 4)
+            adapt = model.get("adapt")
             assert adapt
-            assert adapt['minimum'] == 0
-            assert adapt['maximum'] == 4
+            assert adapt["minimum"] == 0
+            assert adapt["maximum"] == 4
+
 
 @gen_test()
 async def test_initial():
-    with dask.config.set({
-        'labextension': {
-        "initial": [{"name": "foo"}],
-        "default": {},
-        'factory': {
-            "module": "dask.distributed",
-            "class": "LocalCluster",
-            "kwargs": {"processes": False},
-            "args": []
+    with dask.config.set(
+        {
+            "labextension": {
+                "initial": [{"name": "foo"}],
+                "default": {},
+                "factory": {
+                    "module": "dask.distributed",
+                    "class": "LocalCluster",
+                    "kwargs": {"processes": False},
+                    "args": [],
+                },
+            }
         }
-    }
-        }):
+    ):
         # Test asynchronous starting of clusters via a context
         async with DaskClusterManager() as manager:
             clusters = manager.list_clusters()
             assert len(clusters) == 1
-            assert clusters[0]["name"] == 'foo'
+            assert clusters[0]["name"] == "foo"
 
         # Test asynchronous starting of clusters outside of a context
         manager = DaskClusterManager()
@@ -146,11 +154,11 @@ async def test_initial():
         await manager
         clusters = manager.list_clusters()
         assert len(clusters) == 1
-        assert clusters[0]["name"] == 'foo'
+        assert clusters[0]["name"] == "foo"
         await manager.close()
 
         manager = await DaskClusterManager()
         clusters = manager.list_clusters()
         assert len(clusters) == 1
-        assert clusters[0]["name"] == 'foo'
+        assert clusters[0]["name"] == "foo"
         await manager.close()

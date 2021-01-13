@@ -1,0 +1,31 @@
+repos:
+  - repo: https://github.com/psf/black
+    rev: stable
+    hooks:
+      - id: black
+        language_version: python3
+        exclude: versioneer.py
+  - repo: https://gitlab.com/pycqa/flake8
+    rev: 3.8.3
+    hooks:
+      - id: flake8
+        language_version: python3
+        exclude: versioneer.py
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v2.1.1
+    hooks:
+      - id: prettier
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v7.14.0
+    hooks:
+      - id: eslint
+        files: \.[jt]sx?$ # *.js, *.jsx, *.ts and *.tsx
+        types: [file]
+        additional_dependencies:
+          - '@typescript-eslint/eslint-plugin@2.27.0'
+          - '@typescript-eslint/parser@2.27.0'
+          - eslint@^6.0.0
+          - eslint-config-prettier@6.10.1
+          - eslint-plugin-prettier@3.1.4
+          - eslint-plugin-react@7.21.5
+          - typescript@4.1.3

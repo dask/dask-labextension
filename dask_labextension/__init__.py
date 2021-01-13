@@ -32,9 +32,7 @@ def load_jupyter_server_extension(nb_server_app):
     get_dashboard_path = url_path_join(
         base_url, f"dask/dashboard/{cluster_id_regex}(?P<proxied_path>.+)"
     )
-    check_dashboard_path = url_path_join(
-        base_url, "dask/dashboard-check/(?P<url>.+)"
-    )
+    check_dashboard_path = url_path_join(base_url, "dask/dashboard-check/(?P<url>.+)")
     handlers = [
         (get_cluster_path, DaskClusterHandler),
         (list_clusters_path, DaskClusterHandler),

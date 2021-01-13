@@ -32,14 +32,16 @@ class DaskDashboardCheckHandler(APIHandler):
             # Check the user-provided url, following any redirects.
             url = _normalize_dashboard_link(parse.unquote(url), self.request)
             response = await client.fetch(url)
-            effective_url = response.effective_url if response.effective_url != url else None
+            effective_url = (
+                response.effective_url if response.effective_url != url else None
+            )
 
             # Fetch the individual plots
             individual_plots_response = await client.fetch(
                 url_path_join(
                     _normalize_dashboard_link(effective_url or url, self.request),
-                    "individual-plots.json"
-                    )
+                    "individual-plots.json",
+                )
             )
             # If we didn't get individual plots, it may not be a dask dashboard
             if individual_plots_response.code != 200:
@@ -47,20 +49,28 @@ class DaskDashboardCheckHandler(APIHandler):
             individual_plots = json.loads(individual_plots_response.body)
 
             self.set_status(200)
-            self.finish(json.dumps({
-                "url": url,
-                "isActive": response.code == 200,
-                "effectiveUrl": effective_url,
-                "plots": individual_plots,
-            }))
-        except:
+            self.finish(
+                json.dumps(
+                    {
+                        "url": url,
+                        "isActive": response.code == 200,
+                        "effectiveUrl": effective_url,
+                        "plots": individual_plots,
+                    }
+                )
+            )
+        except Exception:
             self.log.warn(f"{url} does not seem to host a dask dashboard")
             self.set_status(200)
-            self.finish(json.dumps({
-                "url": url,
-                "isActive": False,
-                "plots": {},
-            }))
+            self.finish(
+                json.dumps(
+                    {
+                        "url": url,
+                        "isActive": False,
+                        "plots": {},
+                    }
+                )
+            )
 
 
 class DaskDashboardHandler(ProxyHandler):
@@ -127,7 +137,7 @@ class DaskDashboardHandler(ProxyHandler):
         parsed = parse.urlparse(dashboard_link)
         port = parsed.port
         if not port:
-            port = 443 if parsed.scheme == 'https' else 80
+            port = 443 if parsed.scheme == "https" else 80
         if not parsed.hostname:
             raise web.HTTPError(500, "Dask dashboard URI malformed")
         return parsed.hostname, port
@@ -143,5 +153,5 @@ def _normalize_dashboard_link(link, request):
         link = url_path_join(f"{request.protocol}://{request.host}", link)
     if link.endswith("/status"):
         # If the default "status" dashboard is given, strip it.
-        link = link[:-len("/status")]
+        link = link[: -len("/status")]
     return link
