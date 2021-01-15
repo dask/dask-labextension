@@ -35,13 +35,19 @@ class DaskDashboardCheckHandler(APIHandler):
             # Check the user-provided url, following any redirects.
             url = _normalize_dashboard_link(parse.unquote(url), self.request)
             logger.info("Checking for dashboard at %s", url)
-            response = await client.fetch(url, raise_error=False)
-            effective_url = (
-                response.effective_url if response.effective_url != url else None
-            )
+            try:
+                response = await client.fetch(url)
+                effective_url = (
+                    response.effective_url if response.effective_url != url else None
+                )
+            except httpclient.HTTPError:
+                logger.info("Failed to connect to %s", url)
+                effective_url = None
+            # otherwise fall through
 
             # Fetch the individual plots
-            logger.info("Checking for dashboard at %s", url or effective_url)
+            # We'll want to verify this.
+            logger.info("Checking for individual plots at %s", url or effective_url)
             individual_plots_response = await client.fetch(
                 url_path_join(
                     _normalize_dashboard_link(effective_url or url, self.request),
