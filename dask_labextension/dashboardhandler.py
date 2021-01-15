@@ -4,6 +4,7 @@ This proxies the bokeh server http and ws requests through the notebook
 server, preventing CORS issues.
 """
 import json
+import logging
 from urllib import parse
 
 from tornado import httpclient, web
@@ -13,6 +14,8 @@ from jupyter_server.utils import url_path_join
 from jupyter_server_proxy.handlers import ProxyHandler
 
 from .manager import manager
+
+logger = logging.getLogger(__name__)
 
 
 class DaskDashboardCheckHandler(APIHandler):
@@ -31,12 +34,14 @@ class DaskDashboardCheckHandler(APIHandler):
 
             # Check the user-provided url, following any redirects.
             url = _normalize_dashboard_link(parse.unquote(url), self.request)
-            response = await client.fetch(url)
+            logger.info("Checking for dashboard at %s", url)
+            response = await client.fetch(url, raise_error=False)
             effective_url = (
                 response.effective_url if response.effective_url != url else None
             )
 
             # Fetch the individual plots
+            logger.info("Checking for dashboard at %s", url or effective_url)
             individual_plots_response = await client.fetch(
                 url_path_join(
                     _normalize_dashboard_link(effective_url or url, self.request),
