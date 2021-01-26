@@ -66,7 +66,7 @@ class DaskDashboardCheckHandler(APIHandler):
                 json.dumps(
                     {
                         "url": url,
-                        "isActive": response.code == 200,
+                        "isActive": individual_plots_response.code == 200,
                         "effectiveUrl": effective_url,
                         "plots": individual_plots,
                     }
