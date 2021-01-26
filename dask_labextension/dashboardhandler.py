@@ -57,6 +57,7 @@ class DaskDashboardCheckHandler(APIHandler):
             # If we didn't get individual plots, it may not be a dask dashboard
             if individual_plots_response.code != 200:
                 raise ValueError("Does not seem to host a dask dashboard")
+            effective_url = effective_url or url
             individual_plots = json.loads(individual_plots_response.body)
 
             self.set_status(200)
