@@ -61,6 +61,7 @@ class DaskDashboardCheckHandler(APIHandler):
             individual_plots = json.loads(individual_plots_response.body)
 
             self.set_status(200)
+            self.log.info("finalize with %s -- %s", url, effective_url)
             self.finish(
                 json.dumps(
                     {
@@ -72,7 +73,7 @@ class DaskDashboardCheckHandler(APIHandler):
                 )
             )
         except Exception:
-            self.log.warn(f"{url} does not seem to host a dask dashboard")
+            self.log.exception(f"{url} does not seem to host a dask dashboard")
             self.set_status(200)
             self.finish(
                 json.dumps(
