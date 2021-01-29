@@ -40,11 +40,10 @@ class DaskDashboardCheckHandler(APIHandler):
                     response.effective_url if response.effective_url != url else None
                 )
             except httpclient.HTTPError:
+                # The page at /individual-plots.html might be available, even if `/` isn't.
                 effective_url = None
-            # otherwise fall through
 
             # Fetch the individual plots
-            # We'll want to verify this.
             effective_url = effective_url or url
             logger.info("Checking for individual plots at %s", effective_url)
             individual_plots_response = await client.fetch(
