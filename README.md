@@ -1,6 +1,6 @@
 # Dask JupyterLab Extension
 
-[![Build Status](https://travis-ci.org/dask/dask-labextension.svg?branch=master)](https://travis-ci.org/dask/dask-labextension) [![Version](https://img.shields.io/npm/v/dask-labextension.svg)](https://www.npmjs.com/package/dask-labextension) [![Downloads](https://img.shields.io/npm/dm/dask-labextension.svg)](https://www.npmjs.com/package/dask-labextension) [![Dependencies](https://img.shields.io/librariesio/release/npm/dask-labextension.svg)](https://libraries.io/npm/dask-labextension)
+[![Build Status](https://travis-ci.org/dask/dask-labextension.svg?branch=main)](https://travis-ci.org/dask/dask-labextension) [![Version](https://img.shields.io/npm/v/dask-labextension.svg)](https://www.npmjs.com/package/dask-labextension) [![Downloads](https://img.shields.io/npm/dm/dask-labextension.svg)](https://www.npmjs.com/package/dask-labextension) [![Dependencies](https://img.shields.io/librariesio/release/npm/dask-labextension.svg)](https://libraries.io/npm/dask-labextension)
 
 This package provides a JupyterLab extension to manage Dask clusters,
 as well as embed Dask's dashboard plots directly into JupyterLab panes.
@@ -188,5 +188,5 @@ Making a release
 
 ```console
 $ jlpm version [--major|--minor|--patch]  # updates package.json and creates git commit and tag
-$ git push upstream master && git push upstream master --tags  # pushes tags to GitHub which triggers Travis CI to build and deploy
+$ git push upstream main && git push upstream main --tags  # pushes tags to GitHub which triggers Travis CI to build and deploy
 ```
