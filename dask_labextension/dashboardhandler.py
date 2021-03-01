@@ -4,7 +4,6 @@ This proxies the bokeh server http and ws requests through the notebook
 server, preventing CORS issues.
 """
 import json
-import logging
 from urllib import parse
 
 from tornado import httpclient, web
@@ -14,8 +13,6 @@ from jupyter_server.utils import url_path_join
 from jupyter_server_proxy.handlers import ProxyHandler
 
 from .manager import manager
-
-logger = logging.getLogger(__name__)
 
 
 class DaskDashboardCheckHandler(APIHandler):
@@ -44,14 +41,12 @@ class DaskDashboardCheckHandler(APIHandler):
                 effective_url = None
 
             # Fetch the individual plots
-            effective_url = effective_url or url
-            logger.info("Checking for individual plots at %s", effective_url)
-            individual_plots_response = await client.fetch(
-                url_path_join(
-                    _normalize_dashboard_link(effective_url, self.request),
-                    "individual-plots.json",
-                )
+            individual_plots_url = url_path_join(
+                _normalize_dashboard_link(effective_url or url, self.request),
+                "individual-plots.json",
             )
+            self.log.info("Checking for individual plots at %s", individual_plots_url)
+            individual_plots_response = await client.fetch(individual_plots_url)
             # If we didn't get individual plots, it may not be a dask dashboard
             if individual_plots_response.code != 200:
                 raise ValueError("Does not seem to host a dask dashboard")
