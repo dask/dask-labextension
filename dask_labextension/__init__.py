@@ -13,6 +13,15 @@ __version__ = get_versions()["version"]
 del get_versions
 
 
+def _jupyter_labextension_paths():
+    return [
+        {
+            "src": "labextension",
+            "dest": "dask-labextension",
+        }
+    ]
+
+
 def _jupyter_server_extension_paths():
     return [{"module": "dask_labextension"}]
 
