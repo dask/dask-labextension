@@ -29,27 +29,48 @@ class DaskDashboardCheckHandler(APIHandler):
         try:
             client = httpclient.AsyncHTTPClient()
 
-            # Check the user-provided url, following any redirects.
+            # First check for the individual-plots endpoint at user-provided url.
+            # We don't check for the root URL because that can trigger a lot of
+            # object creation in the bokeh document.
             url = _normalize_dashboard_link(parse.unquote(url), self.request)
-            try:
-                response = await client.fetch(url)
-                effective_url = (
-                    response.effective_url if response.effective_url != url else None
-                )
-            except httpclient.HTTPError:
-                # The page at /individual-plots.html might be available, even if `/` isn't.
-                effective_url = None
-
-            # Fetch the individual plots
+            effective_url = None
             individual_plots_url = url_path_join(
-                _normalize_dashboard_link(effective_url or url, self.request),
+                url,
                 "individual-plots.json",
             )
-            self.log.info("Checking for individual plots at %s", individual_plots_url)
-            individual_plots_response = await client.fetch(individual_plots_url)
+            try:
+                self.log.debug(
+                    f"Checking for individual plots at {individual_plots_url}"
+                )
+                individual_plots_response = await client.fetch(individual_plots_url)
+                self.log.debug(f"{individual_plots_response.code}")
+            except httpclient.HTTPError as err:
+                # If we didn't get individual plots, we may have to follow a redirect first.
+                self.log.debug(f"Checking for redirect at {url}")
+                response = await client.fetch(url)
+                effective_url = (
+                    _normalize_dashboard_link(response.effective_url, self.request)
+                    if response.effective_url != url
+                    else None
+                )
+                # If there was no redirect, raise.
+                if not effective_url:
+                    raise err
+
+                individual_plots_url = url_path_join(
+                    effective_url,
+                    "individual-plots.json",
+                )
+                self.log.debug(f"Found redirect at {effective_url}")
+                self.log.debug(
+                    f"Checking for individual plots at {individual_plots_url}"
+                )
+                individual_plots_response = await client.fetch(individual_plots_url)
+
             # If we didn't get individual plots, it may not be a dask dashboard
             if individual_plots_response.code != 200:
                 raise ValueError("Does not seem to host a dask dashboard")
+
             individual_plots = json.loads(individual_plots_response.body)
 
             self.set_status(200)
@@ -57,14 +78,14 @@ class DaskDashboardCheckHandler(APIHandler):
                 json.dumps(
                     {
                         "url": url,
-                        "isActive": individual_plots_response.code == 200,
+                        "isActive": True,
                         "effectiveUrl": effective_url,
                         "plots": individual_plots,
                     }
                 )
             )
         except Exception:
-            self.log.exception(f"{url} does not seem to host a dask dashboard")
+            self.log.debug(f"{url} does not seem to host a dask dashboard")
             self.set_status(200)
             self.finish(
                 json.dumps(

@@ -54,7 +54,7 @@ class DaskClusterManager:
     """
 
     def __init__(self) -> None:
-        """ Initialize the cluster manager """
+        """Initialize the cluster manager"""
         self._clusters: Dict[str, Cluster] = dict()
         self._adaptives: Dict[str, Adaptive] = dict()
         self._cluster_names: Dict[str, str] = dict()
@@ -213,7 +213,7 @@ class DaskClusterManager:
         return make_cluster_model(cluster_id, name, cluster, adaptive)
 
     async def close(self):
-        """ Close all clusters and cleanup """
+        """Close all clusters and cleanup"""
         for cluster_id in list(self._clusters):
             await self.close_cluster(cluster_id)
 
