@@ -467,6 +467,13 @@ export namespace DaskDashboardLauncher {
  * A React component for a launcher button listing.
  */
 function DashboardListing(props: IDashboardListingProps) {
+  if (!props.isEnabled) {
+    return (
+      <div className="dask-DashboardListing-inactive">
+        Dashboard not connected
+      </div>
+    );
+  }
   const items = [...props.items].sort((e1, e2) =>
     e1.label <= e2.label ? -1 : 1
   );
