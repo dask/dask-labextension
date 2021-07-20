@@ -444,7 +444,14 @@ function DashboardListing(props: IDashboardListingProps) {
   if (!props.isEnabled) {
     return (
       <div className="dask-DashboardListing-inactive">
-        Dashboard not connected
+        <span className="dask-DashboardListing-inactive-title">
+          Dashboard not connected
+        </span>
+        <span className="dask-DashboardListing-inactive-detail">
+          To connect, paste a dashboard URL in the box above, or create a new
+          Dask cluster with the cluster manager below. If you are still unable
+          to connect, check your network setup.
+        </span>
       </div>
     );
   }

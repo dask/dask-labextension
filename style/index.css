@@ -19,6 +19,7 @@
 
 .dask-DashboardListing-inactive {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   margin: 0;
@@ -26,7 +27,17 @@
   width: 100%;
   height: 600px;
   color: var(--jp-ui-font-color3);
+}
+
+.dask-DashboardListing-inactive-title {
   font-size: var(--jp-ui-font-size3);
+  padding: 24px;
+  text-align: center;
+}
+
+.dask-DashboardListing-inactive-detail {
+  font-size: var(--jp-ui-font-size4);
+  padding: 24px;
 }
 
 .dask-DashboardListing-inactive:before {
@@ -34,8 +45,8 @@
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 80%;
+  height: 80%;
   background-image: url(dask.svg);
   background-repeat: no-repeat;
   background-position: center;
