@@ -142,7 +142,7 @@ export class DaskDashboardLauncher extends Widget {
     layout.addWidget(this._input);
     layout.addWidget(this._dashboard);
     this.addClass('dask-DaskDashboardLauncher');
-    this._items = options.items || DaskDashboardLauncher.DEFAULT_ITEMS;
+    this._items = options.items || [];
     this._launchItem = options.launchItem;
     this._input.urlInfoChanged.connect(this._updateLinks, this);
   }
@@ -435,39 +435,31 @@ export namespace DaskDashboardLauncher {
      */
     items?: IDashboardItem[];
   }
-
-  export const DEFAULT_ITEMS = [
-    { route: 'individual-task-stream', label: 'Task Stream' },
-    { route: 'individual-progress', label: 'Progress' },
-    { route: 'individual-workers', label: 'Workers' },
-    { route: 'individual-nbytes', label: 'Memory (worker)' },
-    { route: 'individual-cpu', label: 'CPU (workers)' },
-    { route: 'statics/individual-cluster-map.html', label: 'Cluster Map' },
-    { route: 'individual-graph', label: 'Graph' },
-    { route: 'individual-nprocessing', label: 'Processing Tasks' },
-    {
-      route: 'individual-compute-time-per-key',
-      label: 'Compute Time (operation)'
-    },
-    { route: 'individual-memory-by-key', label: 'Memory (operation)' },
-    { route: 'individual-profile', label: 'Profile' },
-    { route: 'individual-profile-server', label: 'Profile Server' },
-    { route: 'individual-bandwidth-workers', label: 'Bandwidth (workers)' },
-    { route: 'individual-bandwidth-types', label: 'Bandwidth (type)' },
-    {
-      route: 'individual-aggregate-time-per-action',
-      label: 'Compute/Transfer'
-    },
-    { route: 'individual-gpu-memory', label: 'GPU Memory' },
-    { route: 'individual-gpu-utilization', label: 'GPU Utilization' }
-  ];
 }
 
 /**
  * A React component for a launcher button listing.
  */
 function DashboardListing(props: IDashboardListingProps) {
-  let listing = props.items.map(item => {
+  if (!props.isEnabled) {
+    return (
+      <div className="dask-DashboardListing-inactive">
+        <span className="dask-DashboardListing-inactive-title">
+          Dashboard not connected
+        </span>
+        <span className="dask-DashboardListing-inactive-detail">
+          To connect, paste a dashboard URL in the box above, or create a new
+          Dask cluster with the cluster manager below. If you are still unable
+          to connect, check your network setup.
+        </span>
+      </div>
+    );
+  }
+  const items = [...props.items].sort((e1, e2) =>
+    e1.label <= e2.label ? -1 : 1
+  );
+
+  const listing = items.map(item => {
     return (
       <li className="dask-DashboardListing-item" key={item.route}>
         <button
