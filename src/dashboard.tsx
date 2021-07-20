@@ -467,7 +467,11 @@ export namespace DaskDashboardLauncher {
  * A React component for a launcher button listing.
  */
 function DashboardListing(props: IDashboardListingProps) {
-  let listing = props.items.map(item => {
+  const items = [...props.items].sort((e1, e2) =>
+    e1.label <= e2.label ? -1 : 1
+  );
+
+  const listing = items.map(item => {
     return (
       <li className="dask-DashboardListing-item" key={item.route}>
         <button
