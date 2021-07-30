@@ -189,8 +189,8 @@ async function activate(
       }
 
       // Possibly update the name of the existing dashboard pane.
-      if (`Dask ${dashboard.label}` !== widget.title.label) {
-        widget.title.label = `Dask ${dashboard.label}`;
+      if (`${dashboard.label}` !== widget.title.label) {
+        widget.title.label = `${dashboard.label}`;
       }
 
       // If the dashboard server is inactive, mark it as such.
@@ -386,7 +386,7 @@ async function activate(
       dashboard.item = dashboardItem;
       dashboard.active = active;
       dashboard.id = `dask-dashboard-${Private.id++}`;
-      dashboard.title.label = `Dask ${dashboardItem.label}`;
+      dashboard.title.label = `${dashboardItem.label}`;
       dashboard.title.icon = 'dask-DaskLogo';
 
       labShell.add(dashboard, 'main');
