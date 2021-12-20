@@ -283,6 +283,10 @@ async function activate(
   // into the current session.
   let autoStartClient: boolean = false;
 
+  // Whether to hide the cluster manager for deployments that don't want to
+  // or are unable to use it.
+  let hideClusterManager: boolean = false;
+
   // Update the existing trackers and signals in light of a change to the
   // settings system. In particular, this reacts to a change in the setting
   // for auto-starting cluster client.
@@ -343,6 +347,11 @@ async function activate(
         // Determine whether to use the auto-starting client.
         autoStartClient = settings.get('autoStartClient').composite as boolean;
         updateTrackers();
+
+        //Determine whether to hide the cluster manager
+        hideClusterManager = settings.get('hideClusterManager')
+          .composite as boolean;
+        sidebar.clusterManager.setHidden(hideClusterManager);
       };
       onSettingsChanged();
       // React to a change in the settings.
