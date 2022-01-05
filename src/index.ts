@@ -182,22 +182,17 @@ async function activate(
       // Identify the dashboard item associated with the widget
       const dashboard = dashboards.find(d => widget.item?.route === d.route);
 
-      // If the dashboard item doesn't exist in the new listing, close the pane.
-      if (!dashboard) {
-        widget.dispose();
+      // If the dashboard item doesn't exist in the new listing, or if the new
+      // url is inactive, mark the existing pane as such.
+      if (!dashboard || !input.urlInfo.isActive) {
+        widget.active = false;
+        widget.dashboardUrl = '';
         return;
       }
 
       // Possibly update the name of the existing dashboard pane.
       if (`${dashboard.label}` !== widget.title.label) {
         widget.title.label = `${dashboard.label}`;
-      }
-
-      // If the dashboard server is inactive, mark it as such.
-      if (!input.urlInfo.isActive) {
-        widget.dashboardUrl = '';
-        widget.active = false;
-        return;
       }
 
       widget.dashboardUrl = input.urlInfo.effectiveUrl || input.urlInfo.url;
