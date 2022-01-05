@@ -1,8 +1,8 @@
 {
   "jupyter.lab.setting-icon-class": "dask-DaskLogo",
-  "jupyter.lab.setting-icon-label": "Dask Dashboard",
-  "title": "Dask Dashboard",
-  "description": "Settings for the Dask Dashboard plugin.",
+  "jupyter.lab.setting-icon-label": "Dask",
+  "title": "Dask",
+  "description": "Settings for the Dask plugin.",
   "properties": {
     "defaultURL": {
       "type": "string",
@@ -13,6 +13,12 @@
       "type": "boolean",
       "title": "Auto-Start Client",
       "description": "If set to true, every notebook and console will automatically have a dask client for the active cluster injected into the kernel under the name 'client'",
+      "default": false
+    },
+    "hideClusterManager": {
+      "type": "boolean",
+      "title": "Hide Cluster Manager",
+      "description": "Some deployments don't want to or are unable to use the cluster manager feature. Toggle to hide it from the user interface (note: this does not disable the underlying functionality).",
       "default": false
     }
   },
