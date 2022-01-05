@@ -364,7 +364,6 @@ export class URLInput extends Widget {
           urlInfo.url,
           this._serverSettings
         );
-        // Show an error if the connection died.
         if (!result.isActive && urlInfo.isActive) {
           console.warn(
             `The connection to dask dashboard ${urlInfo.url} has been lost`
@@ -377,10 +376,17 @@ export class URLInput extends Widget {
             newValue: result
           });
         }
+        // Throw an error if the connection died. If we don't raise/reject here,
+        // then the poll won't back off.
+        if (!result.isActive) {
+          throw Error(`No connection to ${urlInfo.url}`);
+        }
       },
-      frequency: { interval: 4 * 1000, backoff: true, max: 60 * 1000 },
+      frequency: { interval: 4 * 1000, backoff: true, max: 120 * 1000 },
       standby: 'when-hidden'
     });
+    // When the URL changes, refresh the poll and backoff.
+    this._urlChanged.connect(() => this._poll.refresh(), this);
   }
 
   private _urlChanged = new Signal<this, URLInput.IChangedArgs>(this);
@@ -577,22 +583,30 @@ namespace Private {
         URLExt.join(url, 'individual-plots.json'),
         {},
         settings
-      ).then(async response => {
-        if (response.status === 200) {
-          const plots = (await response.json()) as { [plot: string]: string };
-          return {
-            url,
-            isActive: true,
-            plots
-          };
-        } else {
+      )
+        .then(async response => {
+          if (response.status === 200) {
+            const plots = (await response.json()) as { [plot: string]: string };
+            return {
+              url,
+              isActive: true,
+              plots
+            };
+          } else {
+            return {
+              url,
+              isActive: false,
+              plots: {}
+            };
+          }
+        })
+        .catch(() => {
           return {
             url,
             isActive: false,
             plots: {}
           };
-        }
-      });
+        });
     }
 
     const response = await ServerConnection.makeRequest(
