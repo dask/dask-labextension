@@ -576,13 +576,26 @@ namespace Private {
   ): Promise<DashboardURLInfo> {
     url = normalizeDashboardUrl(url, settings.baseUrl);
 
+    function isOauthProxy(url: string, settings: ServerConnection.ISettings) {
+      let proxyUrl = new URL(url);
+      if (proxyUrl.host === settings.baseUrl) {
+        return fetch(
+          URLExt.join(url, 'individual-plots.json'))
+      }
+      else {
+        return ServerConnection.makeRequest(
+          URLExt.join(url, 'individual-plots.json'),
+          {},
+          settings
+        )
+      }
+    }
+
     // If this is a url that we are proxying under the notebook server,
     // check for the individual charts directly.
     if (url.indexOf(settings.baseUrl) === 0) {
-      return ServerConnection.makeRequest(
-        URLExt.join(url, 'individual-plots.json'),
-        {},
-        settings
+      return isOauthProxy(
+        url, settings
       )
         .then(async response => {
           if (response.status === 200) {
