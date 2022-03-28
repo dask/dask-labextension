@@ -576,26 +576,44 @@ namespace Private {
   ): Promise<DashboardURLInfo> {
     url = normalizeDashboardUrl(url, settings.baseUrl);
 
-    function isOauthProxy(url: string, settings: ServerConnection.ISettings) {
-      let proxyUrl = new URL(url);
-      if (proxyUrl.host === settings.baseUrl) {
-        return fetch(
-          URLExt.join(url, 'individual-plots.json'))
-      }
-      else {
-        return ServerConnection.makeRequest(
-          URLExt.join(url, 'individual-plots.json'),
-          {},
-          settings
+    console.log(settings.baseUrl)
+    // If Hostname matches the baseUrl, then we can fetch directly.
+    if (new URL(url).host === settings.baseUrl) {
+      return fetch(
+        URLExt.join(url, 'individual-plots.json')
         )
-      }
+        .then(async response => {
+          if (response.status === 200) {
+            const plots = (await response.json()) as { [plot: string]: string };
+            return {
+              url,
+              isActive: true,
+              plots
+            };
+          } else {
+            return {
+              url,
+              isActive: false,
+              plots: {}
+            };
+          }
+        })
+        .catch(() => {
+          return {
+            url,
+            isActive: false,
+            plots: {}
+          };
+        });
     }
 
     // If this is a url that we are proxying under the notebook server,
     // check for the individual charts directly.
     if (url.indexOf(settings.baseUrl) === 0) {
-      return isOauthProxy(
-        url, settings
+      return ServerConnection.makeRequest(
+        URLExt.join(url, 'individual-plots.json'),
+        {},
+        settings
       )
         .then(async response => {
           if (response.status === 200) {
