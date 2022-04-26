@@ -576,7 +576,9 @@ namespace Private {
   ): Promise<DashboardURLInfo> {
     url = normalizeDashboardUrl(url, settings.baseUrl);
 
+    console.log(url)
     console.log(settings.baseUrl)
+    console.log(settings)
     // If Hostname matches the baseUrl, then we can fetch directly.
     // if (new URL(url).host === settings.baseUrl) {
     //   return fetch(
@@ -607,16 +609,16 @@ namespace Private {
     //     });
     // }
 
+    const test = await fetch(URLExt.join(url, 'individual-plots.json'))
+    console.log(await test.json())
+
     // If this is a url that we are proxying under the notebook server,
     // check for the individual charts directly.
     if (url.indexOf(settings.baseUrl) === 0) {
-      // return ServerConnection.makeRequest(
-      //   URLExt.join(url, 'individual-plots.json'),
-      //   {},
-      //   settings
-      // )
-      return fetch(
-        URLExt.join(url, 'individual-plots.json')
+      return ServerConnection.makeRequest(
+        URLExt.join(url, 'individual-plots.json'),
+        {},
+        settings
         )
         .then(async response => {
           if (response.status === 200) {
@@ -654,6 +656,7 @@ namespace Private {
       settings
     );
     const info = (await response.json()) as DashboardURLInfo;
+    console.log(info)
     return info;
   }
 
