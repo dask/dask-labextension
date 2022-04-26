@@ -645,7 +645,6 @@ namespace Private {
     else if (url.includes("gateway")) {
       try {
         const response = await fetch(URLExt.join(url, 'individual-plots.json'))
-        console.log(await response.json())
         if (response.status === 200) {
           const plots = (await response.json()) as { [plot: string]: string };
           return {
