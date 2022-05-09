@@ -20,7 +20,12 @@
       "title": "Hide Cluster Manager",
       "description": "Some deployments don't want to or are unable to use the cluster manager feature. Toggle to hide it from the user interface (note: this does not disable the underlying functionality).",
       "default": false
-    }
+    },
+    "enableTestDashboardFetch": {
+      "type": "boolean",
+      "title": "Enable Test Dashboard with Fetch",
+      "description": "If set to true, the test dashboard will be validated with the a simple fetch request. This is useful for testing the dashboard when behind authentication.",
+      "default": false
   },
   "type": "object"
 }
