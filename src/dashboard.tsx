@@ -130,6 +130,7 @@ export class DaskDashboard extends MainAreaWidget<IFrame> {
  * A widget for hosting Dask dashboard launchers.
  */
 export class DaskDashboardLauncher extends Widget {
+  enableDashboardFetch: boolean;
   /**
    * Create a new Dask sidebar.
    */
@@ -138,6 +139,7 @@ export class DaskDashboardLauncher extends Widget {
     let layout = (this.layout = new PanelLayout());
     this._dashboard = new Widget();
     this._serverSettings = ServerConnection.makeSettings();
+    this.enableDashboardFetch = options.enableDashboardFetch;
     this._input = new URLInput(this._serverSettings, options.linkFinder);
     layout.addWidget(this._input);
     layout.addWidget(this._dashboard);
@@ -424,6 +426,10 @@ export namespace DaskDashboardLauncher {
    * Options for the constructor.
    */
   export interface IOptions {
+
+    /** Enable Test Dashboard with Fetch */
+    enableDashboardFetch: boolean;
+
     /**
      * A function that attempts to find a link to
      * a dask bokeh server in the current application
@@ -572,7 +578,8 @@ namespace Private {
    */
   export async function testDaskDashboard(
     url: string,
-    settings: ServerConnection.ISettings
+    settings: ServerConnection.ISettings,
+    enableDashboardFetch: boolean
   ): Promise<DashboardURLInfo> {
     url = normalizeDashboardUrl(url, settings.baseUrl);
 
@@ -609,7 +616,7 @@ namespace Private {
         });
     }
 
-    else if (url.includes("gateway")) {
+    else if (enableDashboardFetch) {
       return fetch(
         URLExt.join(url, 'individual-plots.json')
         )
