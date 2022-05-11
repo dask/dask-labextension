@@ -284,7 +284,7 @@ async function activate(
 
   // Whether to test the Dask dashboard using a fetch request or to proceed
   // with default behavior.
-  let enableTestDashboardFetch: boolean = false;
+  let browserDashboardCheck: boolean = false;
 
   // Update the existing trackers and signals in light of a change to the
   // settings system. In particular, this reacts to a change in the setting
@@ -346,6 +346,11 @@ async function activate(
         // Determine whether to use the auto-starting client.
         autoStartClient = settings.get('autoStartClient').composite as boolean;
         updateTrackers();
+
+        // Determine whether to validate dashboards via browser check.
+        browserDashboardCheck = settings.get('browserDashboardCheck')
+          .composite as boolean;
+        sidebar.dashboardLauncher.input.browserDashboardCheck = browserDashboardCheck;
 
         //Determine whether to hide the cluster manager
         hideClusterManager = settings.get('hideClusterManager')
