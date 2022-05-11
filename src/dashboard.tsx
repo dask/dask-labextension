@@ -266,19 +266,21 @@ export class URLInput extends Widget {
     if (newValue === oldValue.url) {
       return;
     }
-    void Private.testDaskDashboard(newValue, this._serverSettings, this.browserDashboardCheck).then(
-      result => {
-        this._urlInfo = result;
-        this._urlChanged.emit({ oldValue, newValue: result });
-        this._input.blur();
-        this.update();
-        if (!result) {
-          console.warn(
-            `${newValue} does not appear to host a valid Dask dashboard`
-          );
-        }
+    void Private.testDaskDashboard(
+      newValue,
+      this._serverSettings,
+      this.browserDashboardCheck
+    ).then(result => {
+      this._urlInfo = result;
+      this._urlChanged.emit({ oldValue, newValue: result });
+      this._input.blur();
+      this.update();
+      if (!result) {
+        console.warn(
+          `${newValue} does not appear to host a valid Dask dashboard`
+        );
       }
-    );
+    });
   }
 
   /**
@@ -296,6 +298,9 @@ export class URLInput extends Widget {
     return this._urlChanged;
   }
 
+  /**
+   * The in browser dashboard check for authenticated dashboards.
+   */
   set browserDashboardCheck(value: boolean) {
     this.browserDashboardCheck = value;
     this.update();
@@ -429,7 +434,6 @@ export namespace DaskDashboardLauncher {
    * Options for the constructor.
    */
   export interface IOptions {
-
     /**
      * A function that attempts to find a link to
      * a dask bokeh server in the current application
@@ -590,7 +594,7 @@ namespace Private {
         URLExt.join(url, 'individual-plots.json'),
         {},
         settings
-        )
+      )
         .then(async response => {
           if (response.status === 200) {
             const plots = (await response.json()) as { [plot: string]: string };
@@ -614,37 +618,32 @@ namespace Private {
             plots: {}
           };
         });
-    }
-
-    else if (browserDashboardCheck) {
-      return fetch(
-        URLExt.join(url, 'individual-plots.json')
-        )
-        .then (async response => {
+    } else if (browserDashboardCheck) {
+      return fetch(URLExt.join(url, 'individual-plots.json'))
+        .then(async response => {
           if (response.status === 200) {
             const plots = (await response.json()) as { [plot: string]: string };
-              return {
-                url,
-                isActive: true,
-                plots
-              };
-            } else {
-              return {
-                url,
-                isActive: false,
-                plots: {}
-              };
-            }
+            return {
+              url,
+              isActive: true,
+              plots
+            };
+          } else {
+            return {
+              url,
+              isActive: false,
+              plots: {}
+            };
           }
-        )
-        .catch((error) => {
+        })
+        .catch(error => {
           console.log('Fetch error: ', error);
           return {
             url,
             isActive: false,
             plots: {}
-        };
-      });
+          };
+        });
     }
 
     const response = await ServerConnection.makeRequest(

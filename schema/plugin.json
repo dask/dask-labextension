@@ -23,9 +23,10 @@
     },
     "browserDashboardCheck": {
       "type": "boolean",
-      "title": "Enable Test Dashboard with Fetch",
-      "description": "If set to true, the test dashboard will be validated with the a simple fetch request. This is useful for testing the dashboard when behind authentication.",
+      "title": "Determine whether to validate dashboards via browser check.",
+      "description": "If set to true, the test dashboard will be validated within the browser environment. This is useful for testing the dashboard when behind authentication.",
       "default": false
+    }
   },
   "type": "object"
 }
