@@ -24,7 +24,7 @@
     "browserDashboardCheck": {
       "type": "boolean",
       "title": "Determine whether to validate dashboards via browser check.",
-      "description": "If set to true, the test dashboard will be validated within the browser environment. This is useful for testing the dashboard when behind authentication.",
+      "description": "If set to true, the test dashboard will be validated within the browser environment. This is useful for testing the dashboard when behind a browser-cookie based authentication.",
       "default": false
     }
   },
