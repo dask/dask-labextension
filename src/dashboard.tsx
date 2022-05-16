@@ -301,9 +301,11 @@ export class URLInput extends Widget {
   /**
    * The in browser dashboard check for authenticated dashboards.
    */
+  get browserDashboardCheck(): boolean {
+    return this.browserDashboardCheck;
+  }
   set browserDashboardCheck(value: boolean) {
     this.browserDashboardCheck = value;
-    this.update();
   }
 
   /**
