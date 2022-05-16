@@ -639,8 +639,7 @@ namespace Private {
             };
           }
         })
-        .catch(error => {
-          console.log('Fetch error: ', error);
+        .catch(() => {
           return {
             url,
             isActive: false,
