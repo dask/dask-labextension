@@ -374,7 +374,8 @@ export class URLInput extends Widget {
         }
         const result = await Private.testDaskDashboard(
           urlInfo.url,
-          this._serverSettings
+          this._serverSettings,
+          this._browserDashboardCheck
         );
         if (!result.isActive && urlInfo.isActive) {
           console.warn(
