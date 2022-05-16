@@ -269,7 +269,7 @@ export class URLInput extends Widget {
     void Private.testDaskDashboard(
       newValue,
       this._serverSettings,
-      this.browserDashboardCheck
+      this._browserDashboardCheck
     ).then(result => {
       this._urlInfo = result;
       this._urlChanged.emit({ oldValue, newValue: result });
@@ -302,10 +302,10 @@ export class URLInput extends Widget {
    * The in browser dashboard check for authenticated dashboards.
    */
   get browserDashboardCheck(): boolean {
-    return this.browserDashboardCheck;
+    return this._browserDashboardCheck;
   }
   set browserDashboardCheck(value: boolean) {
-    this.browserDashboardCheck = value;
+    this._browserDashboardCheck = value;
   }
 
   /**
@@ -405,6 +405,7 @@ export class URLInput extends Widget {
   private _urlInfo: DashboardURLInfo = { isActive: false, url: '', plots: {} };
   private _input: HTMLInputElement;
   private _poll: Poll;
+  private _browserDashboardCheck: boolean = false;
   private _serverSettings: ServerConnection.ISettings;
 }
 
