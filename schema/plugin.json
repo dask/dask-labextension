@@ -20,6 +20,12 @@
       "title": "Hide Cluster Manager",
       "description": "Some deployments don't want to or are unable to use the cluster manager feature. Toggle to hide it from the user interface (note: this does not disable the underlying functionality).",
       "default": false
+    },
+    "browserDashboardCheck": {
+      "type": "boolean",
+      "title": "Determine whether to validate dashboards via browser check.",
+      "description": "If set to true, the test dashboard will be validated within the browser environment. This is useful for testing the dashboard when behind a browser-cookie based authentication.",
+      "default": false
     }
   },
   "type": "object"
