@@ -472,15 +472,17 @@ export class DaskClusterManager extends Widget {
       this._serverSettings
     );
     if (response.status !== 200) {
+      this._failedServerChecks++;
       const msg =
-        'Failed to list clusters: might the server extension not be installed/enabled?';
+        'Failed to list Dask clusters: might the server extension not be installed/enabled?';
       const err = new Error(msg);
-      if (!this._serverErrorShown) {
+      if (!this._hasServer && this._failedServerChecks == 5) {
         void showErrorMessage('Dask Server Error', err);
-        this._serverErrorShown = true;
       }
       throw err;
     }
+    this._hasServer = true;
+
     const data = (await response.json()) as IClusterModel[];
     this._clusters = data;
 
@@ -573,7 +575,8 @@ export class DaskClusterManager extends Widget {
     this,
     IChangedArgs<IClusterModel | undefined>
   >(this);
-  private _serverErrorShown = false;
+  private _failedServerChecks = 0;
+  private _hasServer = false;
   private _isReady = true;
   private _registry: CommandRegistry;
   private _launchClusterId: string;
