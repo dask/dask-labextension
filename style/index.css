@@ -77,9 +77,9 @@
 
 .dask-DashboardListing-item button.jp-mod-styled.jp-mod-accept {
   height: var(--dask-launch-button-height);
-  color: #000000;
-  background-color: #ecb172;
-  border: 1px solid #ecb172;
+  color: #262326;
+  background-color: #ffc11e;
+  border: 1px solid #ffc11e;
   text-transform: uppercase;
 }
 
