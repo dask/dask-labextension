@@ -58,6 +58,7 @@ export class DaskDashboard extends MainAreaWidget<IFrame> {
     });
     this._inactivePanel = Private.createInactivePanel();
     this.content.node.appendChild(this._inactivePanel);
+    this.addClass('dask-DaskDashboard-widget');
     this.update();
   }
 
