@@ -133,6 +133,10 @@
 /**
  * Rules for the dashboard panels.
  */
+.dask-DaskDashboard-widget {
+  background-color: white;
+}
+
 .dask-DaskDashboard-inactive {
   position: absolute;
   top: 0;
