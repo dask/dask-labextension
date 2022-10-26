@@ -474,11 +474,16 @@ async function activate(
               _normalize_ref(w.item.route) === _normalize_ref(opts.ref)
             );
           });
-          options.ref = ref.id || null;
+          if (!ref) {
+            console.warn(
+              `Non-existent dashboard found in Dask layout spec ${opts.ref}`
+            );
+            options.ref = null;
+          }
+          {
+            options.ref = ref.id;
+          }
         } else {
-          console.warn(
-            `Non-existent dashboard found in Dask layout spec ${opts.ref}`
-          );
           options.ref = null;
         }
         await app.commands.execute(CommandIDs.launchPanel, {
