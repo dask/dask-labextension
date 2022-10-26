@@ -16,6 +16,8 @@ import { CodeEditor } from '@jupyterlab/codeeditor';
 
 import { ConsolePanel, IConsoleTracker } from '@jupyterlab/console';
 
+import { DocumentRegistry } from '@jupyterlab/docregistry';
+
 import { IMainMenu } from '@jupyterlab/mainmenu';
 
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
@@ -46,6 +48,12 @@ namespace CommandIDs {
    */
   export const launchPanel = 'dask:launch-dashboard';
 
+  /**
+   * Launch a dask custom layout.
+   */
+  export const launchLayout = 'dask:launch-layout';
+
+  /**
   /**
    * Inject client code into the active editor.
    */
@@ -147,7 +155,7 @@ async function activate(
   // Create the Dask sidebar panel.
   const sidebar = new DaskSidebar({
     launchDashboardItem: (item: IDashboardItem) => {
-      void app.commands.execute(CommandIDs.launchPanel, item);
+      void app.commands.execute(CommandIDs.launchPanel, { item });
     },
     linkFinder,
     clientCodeInjector,
@@ -168,7 +176,7 @@ async function activate(
   restorer.add(sidebar, id);
   void restorer.restore(tracker, {
     command: CommandIDs.launchPanel,
-    args: widget => widget.item || {},
+    args: widget => ({ item: widget.item } || {}),
     name: widget => (widget.item && widget.item.route) || ''
   });
 
@@ -371,14 +379,18 @@ async function activate(
 
   // Add the command for launching a new dashboard item.
   app.commands.addCommand(CommandIDs.launchPanel, {
-    label: args => `Launch Dask ${(args['label'] as string) || ''} Dashboard`,
+    label: args =>
+      `Launch Dask ${
+        ((args.item as IDashboardItem)['label'] as string) || ''
+      } Dashboard`,
     caption: 'Launch a Dask dashboard',
     execute: args => {
       // Construct the url for the dashboard.
       const urlInfo = sidebar.dashboardLauncher.input.urlInfo;
       const dashboardUrl = urlInfo.effectiveUrl || urlInfo.url;
       const active = urlInfo.isActive;
-      const dashboardItem = args as IDashboardItem;
+      const dashboardItem = args.item as IDashboardItem;
+      const addOptions = args?.options as DocumentRegistry.IOpenOptions;
 
       // If we already have a dashboard open to this url, activate it
       // but don't create a duplicate.
@@ -387,7 +399,7 @@ async function activate(
       });
       if (w) {
         if (!w.isAttached) {
-          labShell.add(w, 'main');
+          labShell.add(w, 'main', addOptions);
         }
         labShell.activateById(w.id);
         return;
@@ -402,9 +414,62 @@ async function activate(
       dashboard.title.label = `${dashboardItem.label}`;
       dashboard.title.icon = 'dask-DaskLogo';
 
-      labShell.add(dashboard, 'main');
+      labShell.add(dashboard, 'main', addOptions);
       void tracker.add(dashboard); // no need to wait on this
       return dashboard;
+    }
+  });
+
+  const layout: { [x: string]: DocumentRegistry.IOpenOptions } = {
+    'individual-task-stream': {
+      mode: 'split-right',
+      ref: null
+    },
+    'individual-workers-memory': {
+      mode: 'split-bottom',
+      ref: 'individual-task-stream'
+    },
+    'individual-progress': {
+      mode: 'split-right',
+      ref: 'individual-workers-memory'
+    }
+  };
+
+  const _normalize_ref = (r: string) => (r.startsWith('/') ? r.slice(1) : r);
+
+  app.commands.addCommand(CommandIDs.launchLayout, {
+    label: () => `Launch Dask Dashboard Layout`,
+    caption: 'Launch a pre-configured Dask Dashboard Layout',
+    execute: async () => {
+      const dashboards = sidebar.dashboardLauncher.items;
+      for (let k of Object.keys(layout)) {
+        const opts = layout[k];
+
+        const dashboard = dashboards.find(
+          d => _normalize_ref(d.route) === _normalize_ref(k)
+        );
+        if (!dashboard) {
+          continue;
+        }
+
+        const options: { mode: string; ref?: string } = { mode: opts.mode };
+        if (opts.ref) {
+          const ref = tracker.find(w => {
+            return !!(
+              w &&
+              w.item &&
+              _normalize_ref(w.item.route) === _normalize_ref(opts.ref)
+            );
+          });
+          options.ref = ref.id || null;
+        } else {
+          options.ref = null;
+        }
+        await app.commands.execute(CommandIDs.launchPanel, {
+          item: dashboard,
+          options: options
+        });
+      }
     }
   });
 
@@ -480,18 +545,21 @@ async function activate(
   });
 
   // Add some commands to the menu and command palette.
+  mainMenu.fileMenu.addGroup([{ command: CommandIDs.launchLayout }]);
   mainMenu.settingsMenu.addGroup([
     { command: CommandIDs.toggleAutoStartClient }
   ]);
-  [CommandIDs.launchCluster, CommandIDs.toggleAutoStartClient].forEach(
-    command => {
-      commandPalette.addItem({
-        category: 'Dask',
-        command,
-        args: { isPalette: true }
-      });
-    }
-  );
+  [
+    CommandIDs.launchCluster,
+    CommandIDs.launchLayout,
+    CommandIDs.toggleAutoStartClient
+  ].forEach(command => {
+    commandPalette.addItem({
+      category: 'Dask',
+      command,
+      args: { isPalette: true }
+    });
+  });
 
   // Add a context menu items.
   app.contextMenu.addItem({
