@@ -32,6 +32,8 @@ import {
 
 import { Kernel, KernelMessage, Session } from '@jupyterlab/services';
 
+import { topologicSort } from '@lumino/algorithm';
+
 import { Signal } from '@lumino/signaling';
 
 import { IClusterModel, DaskClusterManager } from './clusters';
@@ -421,34 +423,52 @@ async function activate(
   });
 
   const layout: { [x: string]: DocumentRegistry.IOpenOptions } = {
-    'individual-task-stream': {
+    'individual-progress': {
       mode: 'split-right',
-      ref: null
+      ref: 'individual-workers-memory'
     },
     'individual-workers-memory': {
       mode: 'split-bottom',
       ref: 'individual-task-stream'
     },
-    'individual-progress': {
+    'individual-task-stream': {
       mode: 'split-right',
-      ref: 'individual-workers-memory'
+      ref: null
     }
   };
 
-  const _normalize_ref = (r: string) => (r.startsWith('/') ? r.slice(1) : r);
+  const _normalize_ref = (r: string) => {
+    if (r.startsWith('/')) {
+      r = r.slice(1);
+    }
+    if (!r.startsWith('individual-')) {
+      r = 'individual-' + r;
+    }
+    return r;
+  };
 
   app.commands.addCommand(CommandIDs.launchLayout, {
     label: () => `Launch Dask Dashboard Layout`,
     caption: 'Launch a pre-configured Dask Dashboard Layout',
     execute: async () => {
       const dashboards = sidebar.dashboardLauncher.items;
+
+      // Compute the order that we have to add the panes so that the refs
+      // exist when we need them.
+      const dependencies: Array<[string, string]> = [];
       for (let k of Object.keys(layout)) {
+        dependencies.push([layout[k].ref || null, k]);
+      }
+      const order = topologicSort(dependencies).filter(d => d); // sort and remove nulls
+
+      for (let k of order) {
         const opts = layout[k];
 
         const dashboard = dashboards.find(
           d => _normalize_ref(d.route) === _normalize_ref(k)
         );
         if (!dashboard) {
+          console.warn(`Non-existent dashboard found in Dask layout spec ${k}`);
           continue;
         }
 
@@ -463,6 +483,9 @@ async function activate(
           });
           options.ref = ref.id || null;
         } else {
+          console.warn(
+            `Non-existent dashboard found in Dask layout spec ${opts.ref}`
+          );
           options.ref = null;
         }
         await app.commands.execute(CommandIDs.launchPanel, {
