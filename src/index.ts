@@ -296,6 +296,9 @@ async function activate(
   // with default behavior.
   let browserDashboardCheck: boolean = false;
 
+  // The default layout for dashboards.
+  let defaultLayout: { [x: string]: { mode: string; ref: string } };
+
   // Update the existing trackers and signals in light of a change to the
   // settings system. In particular, this reacts to a change in the setting
   // for auto-starting cluster client.
@@ -366,6 +369,11 @@ async function activate(
         hideClusterManager = settings.get('hideClusterManager')
           .composite as boolean;
         sidebar.clusterManager.setHidden(hideClusterManager);
+
+        // Get the default layout
+        defaultLayout = settings.get('defaultLayout').composite as {
+          [x: string]: { mode: string; ref: string };
+        };
       };
       onSettingsChanged();
       // React to a change in the settings.
@@ -422,21 +430,6 @@ async function activate(
     }
   });
 
-  const layout: { [x: string]: DocumentRegistry.IOpenOptions } = {
-    'individual-progress': {
-      mode: 'split-right',
-      ref: 'individual-workers-memory'
-    },
-    'individual-workers-memory': {
-      mode: 'split-bottom',
-      ref: 'individual-task-stream'
-    },
-    'individual-task-stream': {
-      mode: 'split-right',
-      ref: null
-    }
-  };
-
   const _normalize_ref = (r: string) => {
     if (r.startsWith('/')) {
       r = r.slice(1);
@@ -456,13 +449,13 @@ async function activate(
       // Compute the order that we have to add the panes so that the refs
       // exist when we need them.
       const dependencies: Array<[string, string]> = [];
-      for (let k of Object.keys(layout)) {
-        dependencies.push([layout[k].ref || null, k]);
+      for (let k of Object.keys(defaultLayout)) {
+        dependencies.push([defaultLayout[k].ref || null, k]);
       }
       const order = topologicSort(dependencies).filter(d => d); // sort and remove nulls
 
       for (let k of order) {
-        const opts = layout[k];
+        const opts = defaultLayout[k];
 
         const dashboard = dashboards.find(
           d => _normalize_ref(d.route) === _normalize_ref(k)
@@ -568,7 +561,7 @@ async function activate(
   });
 
   // Add some commands to the menu and command palette.
-  mainMenu.fileMenu.addGroup([{ command: CommandIDs.launchLayout }]);
+  mainMenu.fileMenu.addGroup([{ command: CommandIDs.launchLayout }], 50);
   mainMenu.settingsMenu.addGroup([
     { command: CommandIDs.toggleAutoStartClient }
   ]);
