@@ -29,13 +29,23 @@
     },
     "defaultLayout": {
       "type": "object",
-      "title": "",
-      "description": "",
+      "title": "Default layout for Dask Dashboard panels",
+      "description": "This allows you to store a default layout for your Dask dashboard panels. It is stored as an object keyed by the individual chart names. Each value in the object is an object storing `mode`, which specifies how the chart is to be added to the main area, and `ref`, which is an (optional) reference to another chart. If `ref` is supplied, then `mode` will be with respect to that chart, if it is not supplied, then `mode` will be with respect to the main area. The default value for this option provides a relatively simple example specification.",
       "properties": {},
       "additionalProperties": {
         "type": "object",
         "properties": {
-          "mode": { "type": "string" },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "split-top",
+              "split-left",
+              "split-right",
+              "split-bottom",
+              "tab-before",
+              "tab-after"
+            ]
+          },
           "ref": { "type": ["string", "null"], "default": null }
         }
       },
