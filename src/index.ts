@@ -443,6 +443,7 @@ async function activate(
   app.commands.addCommand(CommandIDs.launchLayout, {
     label: () => `Launch Dask Dashboard Layout`,
     caption: 'Launch a pre-configured Dask Dashboard Layout',
+    isEnabled: () => sidebar.dashboardLauncher.input.urlInfo.isActive,
     execute: async () => {
       const dashboards = sidebar.dashboardLauncher.items;
 
