@@ -480,8 +480,7 @@ async function activate(
               `Non-existent dashboard found in Dask layout spec ${opts.ref}`
             );
             options.ref = null;
-          }
-          {
+          } else {
             options.ref = ref.id;
           }
         } else {
