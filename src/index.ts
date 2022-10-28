@@ -463,6 +463,7 @@ async function activate(
         dependencies.push([defaultLayout[k].ref || null, k]);
       }
       const order = topologicSort(dependencies).filter(d => d); // sort and remove nulls
+      const initial = app.shell.currentWidget;
 
       for (let k of order) {
         const opts = defaultLayout[k];
@@ -500,6 +501,7 @@ async function activate(
           options: options
         });
       }
+      app.shell.activateById(initial.id);
     }
   });
 
