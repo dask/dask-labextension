@@ -56,6 +56,15 @@ namespace CommandIDs {
   export const launchLayout = 'dask:launch-layout';
 
   /**
+   * Attempt to find an active dask cluster.
+   */
+  export const populateDashboardUrl = 'dask:populate-dashboard-url';
+
+  /**
+   * Attempt to find an active dask cluster.
+   */
+  export const populateAndLaunchLayout = 'dask:populate-and-launch-layout';
+
   /**
    * Inject client code into the active editor.
    */
@@ -490,6 +499,33 @@ async function activate(
           item: dashboard,
           options: options
         });
+      }
+    }
+  });
+
+  app.commands.addCommand(CommandIDs.populateDashboardUrl, {
+    label: 'Populate Dask Dashboard URL',
+    caption: 'Attempt to populate the URL for an active Dask cluster',
+    execute: async args => {
+      let url = (args.url as string) || (await linkFinder());
+      if (url) {
+        sidebar.dashboardLauncher.input.url = url;
+      }
+      return url;
+    }
+  });
+
+  app.commands.addCommand(CommandIDs.populateAndLaunchLayout, {
+    label: 'Populate Dask Dashboard URL and launch the default layout',
+    caption:
+      'Attempt to populate the URL for an active Dask cluster and then launch the default layout',
+    execute: async args => {
+      const url = await app.commands.execute(
+        CommandIDs.populateDashboardUrl,
+        args
+      );
+      if (url) {
+        await app.commands.execute(CommandIDs.launchLayout);
       }
     }
   });
