@@ -16,6 +16,8 @@ import { CodeEditor } from '@jupyterlab/codeeditor';
 
 import { ConsolePanel, IConsoleTracker } from '@jupyterlab/console';
 
+import { DocumentRegistry } from '@jupyterlab/docregistry';
+
 import { IMainMenu } from '@jupyterlab/mainmenu';
 
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
@@ -29,6 +31,8 @@ import {
 } from '@jupyterlab/notebook';
 
 import { Kernel, KernelMessage, Session } from '@jupyterlab/services';
+
+import { topologicSort } from '@lumino/algorithm';
 
 import { Signal } from '@lumino/signaling';
 
@@ -45,6 +49,21 @@ namespace CommandIDs {
    * Launch a dask dashboard panel in an iframe.
    */
   export const launchPanel = 'dask:launch-dashboard';
+
+  /**
+   * Launch a dask custom layout.
+   */
+  export const launchLayout = 'dask:launch-layout';
+
+  /**
+   * Attempt to find an active dask cluster.
+   */
+  export const populateDashboardUrl = 'dask:populate-dashboard-url';
+
+  /**
+   * Attempt to find an active dask cluster.
+   */
+  export const populateAndLaunchLayout = 'dask:populate-and-launch-layout';
 
   /**
    * Inject client code into the active editor.
@@ -147,7 +166,7 @@ async function activate(
   // Create the Dask sidebar panel.
   const sidebar = new DaskSidebar({
     launchDashboardItem: (item: IDashboardItem) => {
-      void app.commands.execute(CommandIDs.launchPanel, item);
+      void app.commands.execute(CommandIDs.launchPanel, { item });
     },
     linkFinder,
     clientCodeInjector,
@@ -168,7 +187,7 @@ async function activate(
   restorer.add(sidebar, id);
   void restorer.restore(tracker, {
     command: CommandIDs.launchPanel,
-    args: widget => widget.item || {},
+    args: widget => ({ item: widget.item } || {}),
     name: widget => (widget.item && widget.item.route) || ''
   });
 
@@ -286,6 +305,9 @@ async function activate(
   // with default behavior.
   let browserDashboardCheck: boolean = false;
 
+  // The default layout for dashboards.
+  let defaultLayout: { [x: string]: { mode: string; ref: string } };
+
   // Update the existing trackers and signals in light of a change to the
   // settings system. In particular, this reacts to a change in the setting
   // for auto-starting cluster client.
@@ -356,6 +378,11 @@ async function activate(
         hideClusterManager = settings.get('hideClusterManager')
           .composite as boolean;
         sidebar.clusterManager.setHidden(hideClusterManager);
+
+        // Get the default layout
+        defaultLayout = settings.get('defaultLayout').composite as {
+          [x: string]: { mode: string; ref: string };
+        };
       };
       onSettingsChanged();
       // React to a change in the settings.
@@ -371,14 +398,18 @@ async function activate(
 
   // Add the command for launching a new dashboard item.
   app.commands.addCommand(CommandIDs.launchPanel, {
-    label: args => `Launch Dask ${(args['label'] as string) || ''} Dashboard`,
+    label: args =>
+      `Launch Dask ${
+        ((args.item as IDashboardItem)['label'] as string) || ''
+      } Dashboard`,
     caption: 'Launch a Dask dashboard',
     execute: args => {
       // Construct the url for the dashboard.
       const urlInfo = sidebar.dashboardLauncher.input.urlInfo;
       const dashboardUrl = urlInfo.effectiveUrl || urlInfo.url;
       const active = urlInfo.isActive;
-      const dashboardItem = args as IDashboardItem;
+      const dashboardItem = args.item as IDashboardItem;
+      const addOptions = args?.options as DocumentRegistry.IOpenOptions;
 
       // If we already have a dashboard open to this url, activate it
       // but don't create a duplicate.
@@ -387,7 +418,7 @@ async function activate(
       });
       if (w) {
         if (!w.isAttached) {
-          labShell.add(w, 'main');
+          labShell.add(w, 'main', addOptions);
         }
         labShell.activateById(w.id);
         return;
@@ -402,9 +433,102 @@ async function activate(
       dashboard.title.label = `${dashboardItem.label}`;
       dashboard.title.icon = 'dask-DaskLogo';
 
-      labShell.add(dashboard, 'main');
+      labShell.add(dashboard, 'main', addOptions);
       void tracker.add(dashboard); // no need to wait on this
       return dashboard;
+    }
+  });
+
+  const _normalize_ref = (r: string) => {
+    if (r.startsWith('/')) {
+      r = r.slice(1);
+    }
+    if (!r.startsWith('individual-')) {
+      r = 'individual-' + r;
+    }
+    return r;
+  };
+
+  app.commands.addCommand(CommandIDs.launchLayout, {
+    label: 'Launch Dask Dashboard Layout',
+    caption: 'Launch a pre-configured Dask Dashboard Layout',
+    isEnabled: () => sidebar.dashboardLauncher.input.urlInfo.isActive,
+    execute: async () => {
+      const dashboards = sidebar.dashboardLauncher.items;
+
+      // Compute the order that we have to add the panes so that the refs
+      // exist when we need them.
+      const dependencies: Array<[string, string]> = [];
+      for (let k of Object.keys(defaultLayout)) {
+        dependencies.push([defaultLayout[k].ref || null, k]);
+      }
+      const order = topologicSort(dependencies).filter(d => d); // sort and remove nulls
+      const initial = app.shell.currentWidget;
+
+      for (let k of order) {
+        const opts = defaultLayout[k];
+
+        const dashboard = dashboards.find(
+          d => _normalize_ref(d.route) === _normalize_ref(k)
+        );
+        if (!dashboard) {
+          console.warn(`Non-existent dashboard found in Dask layout spec ${k}`);
+          continue;
+        }
+
+        const options: { mode: string; ref?: string } = { mode: opts.mode };
+        if (opts.ref) {
+          const ref = tracker.find(w => {
+            return !!(
+              w &&
+              w.item &&
+              _normalize_ref(w.item.route) === _normalize_ref(opts.ref)
+            );
+          });
+          if (!ref) {
+            console.warn(
+              `Non-existent dashboard found in Dask layout spec ${opts.ref}`
+            );
+            options.ref = null;
+          } else {
+            options.ref = ref.id;
+          }
+        } else {
+          options.ref = null;
+        }
+        await app.commands.execute(CommandIDs.launchPanel, {
+          item: dashboard,
+          options: options
+        });
+      }
+      app.shell.activateById(initial.id);
+    }
+  });
+
+  app.commands.addCommand(CommandIDs.populateDashboardUrl, {
+    label: 'Populate Dask Dashboard URL',
+    caption: 'Attempt to populate the URL for an active Dask cluster',
+    execute: async args => {
+      let url = (args.url as string) || (await linkFinder());
+      if (url) {
+        sidebar.dashboardLauncher.input.url = url;
+      }
+      return url;
+    }
+  });
+
+  app.commands.addCommand(CommandIDs.populateAndLaunchLayout, {
+    label: 'Populate Dask Dashboard URL and launch the default layout',
+    caption:
+      'Attempt to populate the URL for an active Dask cluster and then launch the default layout',
+    execute: async args => {
+      const url = await app.commands.execute(
+        CommandIDs.populateDashboardUrl,
+        args
+      );
+      if (url) {
+        await app.commands.execute(CommandIDs.launchLayout);
+      }
     }
   });
 
@@ -480,18 +604,21 @@ async function activate(
   });
 
   // Add some commands to the menu and command palette.
+  mainMenu.fileMenu.addGroup([{ command: CommandIDs.launchLayout }], 50);
   mainMenu.settingsMenu.addGroup([
     { command: CommandIDs.toggleAutoStartClient }
   ]);
-  [CommandIDs.launchCluster, CommandIDs.toggleAutoStartClient].forEach(
-    command => {
-      commandPalette.addItem({
-        category: 'Dask',
-        command,
-        args: { isPalette: true }
-      });
-    }
-  );
+  [
+    CommandIDs.launchCluster,
+    CommandIDs.launchLayout,
+    CommandIDs.toggleAutoStartClient
+  ].forEach(command => {
+    commandPalette.addItem({
+      category: 'Dask',
+      command,
+      args: { isPalette: true }
+    });
+  });
 
   // Add a context menu items.
   app.contextMenu.addItem({

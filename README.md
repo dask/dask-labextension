@@ -41,7 +41,7 @@ and start using it immediately, e.g.
 pip install dask-labextension
 ```
 
-### JupyterLab 2.x
+### JupyterLab 3.x
 
 This extension includes both client-side and server-side components.
 Prior to JupyterLab 3.0 these needed to be installed separately,
@@ -141,6 +141,48 @@ labextension:
     args: []
     kwargs: {}
 ```
+
+## Configuring a default layout
+
+This extension can store a default layout for the Dask dashboard panes,
+which is useful if you find yourself reaching for the same dashboard charts over and over.
+You can launch the default layout via the command palette,
+or by going to the File menu and choosing "Launch Dask Dashboard Layout".
+
+Default layouts can be configured via the JupyterLab config system
+(either using the JSON editor or the user interface).
+Specify a layout by writing a JSON object keyed by the
+[individual charts](https://github.com/dask/distributed/blob/f31fbde748294065ed70dd5c4399821fa664a9f1/distributed/dashboard/scheduler.py#L72-L117)
+you would like to open.
+Each chart is opened with a `mode`, and a `ref`.
+`mode` refers to how the chart is to be added to the workspace.
+For example, if you want to split a panel and add the new one to the right, choose `split-right`.
+Other options are `split-top`, `split-bottom`, `split-left`, `tab-after`, and `tab-before`.
+`ref` refers to the panel to which `mode` is applied, and might be the names of other dashboard panels.
+If `ref` is `null`, the panel in question is added at the top of the layout hierarchy.
+
+A concrete example of a default layout is
+
+```json
+{
+  "individual-task-stream": {
+    "mode": "split-right",
+    "ref": null
+  },
+  "individual-workers-memory": {
+    "mode": "split-bottom",
+    "ref": "individual-task-stream"
+  },
+  "individual-progress": {
+    "mode": "split-right",
+    "ref": "individual-workers-memory"
+  }
+}
+```
+
+which adds the task stream to the right of the workspace,
+then adds the worker memory chart below the task stream,
+then adds the progress chart to the right of the worker memory chart.
 
 ## Development install
 

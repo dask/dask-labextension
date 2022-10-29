@@ -23,9 +23,46 @@
     },
     "browserDashboardCheck": {
       "type": "boolean",
-      "title": "Determine whether to validate dashboards via browser check.",
-      "description": "If set to true, the test dashboard will be validated within the browser environment. This is useful for testing the dashboard when behind a browser-cookie based authentication.",
+      "title": "Check dashboards via browser.",
+      "description": "If set to true, the extension will check for the Dask dashboard from the user's browser. This is useful for testing the dashboard when behind a browser-cookie based authentication.",
       "default": false
+    },
+    "defaultLayout": {
+      "type": "object",
+      "title": "Default layout for Dask Dashboard panels",
+      "description": "This allows you to store a default layout for your Dask dashboard panels. It is stored as an object keyed by the individual chart names. Each value in the object is an object storing `mode`, which specifies how the chart is to be added to the main area, and `ref`, which is an (optional) reference to another chart. If `ref` is supplied, then `mode` will be with respect to that chart, if it is not supplied, then `mode` will be with respect to the main area. The default value for this option provides a relatively simple example specification.",
+      "properties": {},
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "split-top",
+              "split-left",
+              "split-right",
+              "split-bottom",
+              "tab-before",
+              "tab-after"
+            ]
+          },
+          "ref": { "type": ["string", "null"], "default": null }
+        }
+      },
+      "default": {
+        "individual-task-stream": {
+          "mode": "split-right",
+          "ref": null
+        },
+        "individual-workers-memory": {
+          "mode": "split-bottom",
+          "ref": "individual-task-stream"
+        },
+        "individual-progress": {
+          "mode": "split-right",
+          "ref": "individual-workers-memory"
+        }
+      }
     }
   },
   "type": "object"
