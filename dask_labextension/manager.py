@@ -9,7 +9,8 @@ from typing import Any, Dict, List, Union
 from uuid import uuid4
 
 import dask
-from dask.distributed import Adaptive, utils
+from dask.utils import format_bytes
+from dask.distributed import Adaptive
 from tornado.ioloop import IOLoop
 from tornado.concurrent import Future
 
@@ -282,9 +283,7 @@ def make_cluster_model(
         scheduler_address=cluster.scheduler_address,
         dashboard_link=cluster.dashboard_link or "",
         workers=len(info["workers"]),
-        memory=utils.format_bytes(
-            sum(d["memory_limit"] for d in info["workers"].values())
-        ),
+        memory=format_bytes(sum(d["memory_limit"] for d in info["workers"].values())),
         cores=cores,
     )
     if adaptive:
