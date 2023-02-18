@@ -86,7 +86,8 @@ class DaskDashboardCheckHandler(APIHandler):
                 for name, plot_url in individual_plots.items():
                     individual_plots[name] = f"{plot_url}{query}"
                 url = f"{url}{query}"
-                effective_url = f"{url}{query}"
+                if effective_url:
+                    effective_url = f"{effective_url}{query}"
 
             self.set_status(200)
             self.finish(
