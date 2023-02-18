@@ -29,6 +29,14 @@ class DaskDashboardCheckHandler(APIHandler):
         try:
             client = httpclient.AsyncHTTPClient()
 
+            # Extract query (if any) from URL, this will then be appended after path.
+            # This allows using (eg) "?token=[...]" in URL for authentication.
+            if "?" in url:
+                pos = url.find("?")
+                url, query = url[:pos], url[pos:]
+            else:
+                query = ""
+
             # First check for the individual-plots endpoint at user-provided url.
             # We don't check for the root URL because that can trigger a lot of
             # object creation in the bokeh document.
@@ -36,7 +44,7 @@ class DaskDashboardCheckHandler(APIHandler):
             effective_url = None
             individual_plots_url = url_path_join(
                 url,
-                "individual-plots.json",
+                f"individual-plots.json{query}",
             )
             try:
                 self.log.debug(
@@ -72,6 +80,13 @@ class DaskDashboardCheckHandler(APIHandler):
                 raise ValueError("Does not seem to host a dask dashboard")
 
             individual_plots = json.loads(individual_plots_response.body)
+
+            # If there was query in original URL, append to URLs returned
+            if query:
+                for name, plot_url in individual_plots.items():
+                    individual_plots[name] = f"{plot_url}{query}"
+                url = f"{url}{query}"
+                effective_url = f"{url}{query}"
 
             self.set_status(200)
             self.finish(
@@ -180,3 +195,4 @@ def _normalize_dashboard_link(link, request):
         # If the default "status" dashboard is given, strip it.
         link = link[: -len("/status")]
     return link
+
