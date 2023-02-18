@@ -195,4 +195,3 @@ def _normalize_dashboard_link(link, request):
         # If the default "status" dashboard is given, strip it.
         link = link[: -len("/status")]
     return link
-
