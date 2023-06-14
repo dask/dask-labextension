@@ -14,6 +14,8 @@ import {
 
 import { CodeEditor } from '@jupyterlab/codeeditor';
 
+import { LabIcon } from '@jupyterlab/ui-components';
+
 import { ConsolePanel, IConsoleTracker } from '@jupyterlab/console';
 
 import { DocumentRegistry } from '@jupyterlab/docregistry';
@@ -43,6 +45,13 @@ import { DaskDashboard, IDashboardItem } from './dashboard';
 import { DaskSidebar } from './sidebar';
 
 import '../style/index.css';
+
+import DaskSvgStr from '../style/dask.svg';
+
+export const DaskIcon = new LabIcon({
+  name: 'dask:icon',
+  svgstr: DaskSvgStr
+});
 
 namespace CommandIDs {
   /**
@@ -175,7 +184,8 @@ async function activate(
     launchClusterId: CommandIDs.launchCluster
   });
   sidebar.id = id;
-  sidebar.title.iconClass = 'dask-DaskLogo jp-SideBar-tabIcon';
+  sidebar.title.icon = DaskIcon;
+  sidebar.title.iconClass = 'jp-SideBar-tabIcon';
   sidebar.title.caption = 'Dask';
 
   // An instance tracker which is used for state restoration.
@@ -431,7 +441,7 @@ async function activate(
       dashboard.active = active;
       dashboard.id = `dask-dashboard-${Private.id++}`;
       dashboard.title.label = `${dashboardItem.label}`;
-      dashboard.title.icon = 'dask-DaskLogo';
+      dashboard.title.icon = DaskIcon;
 
       labShell.add(dashboard, 'main', addOptions);
       void tracker.add(dashboard); // no need to wait on this
