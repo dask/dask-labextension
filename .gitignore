@@ -25,6 +25,7 @@ dask_labextension/static
 lib
 node_modules
 tsconfig.tsbuildinfo
+.yarn
 
 _temp_extension
 dask-worker-space

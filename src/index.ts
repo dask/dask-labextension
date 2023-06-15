@@ -730,10 +730,8 @@ client = Client()`;
     cluster: IClusterModel,
     editor: CodeEditor.IEditor
   ): void {
-    const cursor = editor.getCursorPosition();
-    const offset = editor.getOffsetAt(cursor);
     const code = getClientCode(cluster);
-    editor.model.value.insert(offset, code);
+    editor.model.sharedModel.setSource(code);
   }
 
   /**
