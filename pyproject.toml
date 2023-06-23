@@ -115,3 +115,18 @@ concurrency = [
 
 [tool.coverage.html]
 show_contexts = true
+
+[tool.coverage.report]
+# Regexes for lines to exclude from consideration
+exclude_lines = [
+    "if self.debug:",
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+]
+ignore_errors = true
+omit = [
+    "dask_labextension/_version.py",
+    "tests/*",
+    "*/site-packages/*"
+]
