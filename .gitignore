@@ -22,6 +22,8 @@ npm-debug.log
 dask_labextension.egg-info
 dask_labextension/labextension
 dask_labextension/static
+# Version file is handled by hatchling
+dask_labextension/_version.py
 lib
 node_modules
 tsconfig.tsbuildinfo
