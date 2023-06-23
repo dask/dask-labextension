@@ -197,7 +197,7 @@ async function activate(
   restorer.add(sidebar, id);
   void restorer.restore(tracker, {
     command: CommandIDs.launchPanel,
-    args: widget => ({ item: widget.item } || {}),
+    args: widget => ({ item: widget.item }) || {},
     name: widget => (widget.item && widget.item.route) || ''
   });
 
@@ -382,7 +382,8 @@ async function activate(
         // Determine whether to validate dashboards via browser check.
         browserDashboardCheck = settings.get('browserDashboardCheck')
           .composite as boolean;
-        sidebar.dashboardLauncher.input.browserDashboardCheck = browserDashboardCheck;
+        sidebar.dashboardLauncher.input.browserDashboardCheck =
+          browserDashboardCheck;
 
         //Determine whether to hide the cluster manager
         hideClusterManager = settings.get('hideClusterManager')
