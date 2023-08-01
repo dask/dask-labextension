@@ -226,7 +226,7 @@ $ jlpm config set version-tag-prefix ""
 
 ### Release process
 
-This requires `twine` to be installed.
+This requires `node`, `build`, and `twine` to be installed.
 
 ```bash
 jlpm version [--major|--minor|--patch]  # updates package.json and creates git commit and tag
