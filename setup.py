@@ -83,7 +83,7 @@ setup_args = dict(
         "bokeh >=1.0.0,!=2.0.0",
         "distributed>=1.24.1",
         "jupyter-server-proxy>=1.3.2",
-        "jupyterlab>=3.0.0",
+        "jupyterlab>=3.0.0,<4",
     ],
     zip_safe=False,
     include_package_data=True,
