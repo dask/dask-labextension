@@ -213,12 +213,10 @@ jupyter serverextension enable --sys-prefix dask_labextension
 
 ## Publishing
 
-This application is distributed as two subpackages.
-
-The JupyterLab frontend part is published to [npm](https://www.npmjs.com/package/dask-labextension),
-and the server-side part to [PyPI](https://pypi.org/project/dask-labextension/).
-
-Releases for both packages are done with the `jlpm` tool, `git` and Travis CI.
+This extension contains a front-end component written in TypeScript
+and a back-end component written in Python.
+The front-end is compiled to Javascript during the build process
+and is distributed as static assets along with the Python package.
 
 _Note: Package versions are not prefixed with the letter `v`. You will need to disable this._
 
@@ -226,9 +224,24 @@ _Note: Package versions are not prefixed with the letter `v`. You will need to d
 $ jlpm config set version-tag-prefix ""
 ```
 
-Making a release
+### Release process
 
-```console
-$ jlpm version [--major|--minor|--patch]  # updates package.json and creates git commit and tag
-$ git push upstream main && git push upstream main --tags  # pushes tags to GitHub which triggers Travis CI to build and deploy
+This requires `twine` to be installed.
+
+```bash
+jlpm version [--major|--minor|--patch]  # updates package.json and creates git commit and tag
+git push upstream main && git push upstream main --tags  # pushes to GitHub
+python -m build .  # Build the package
+twine upload dist/*  # Upload the package to PyPI
+```
+
+### Handling Javascript package version conflicts
+
+Unlike Python, Javascript packages can include more than one version of the same dependency.
+Usually the `yarn` package manager handles this okay, but occasionally you might end up with conflicting versions,
+or with unexpected package bloat.
+You can try to fix this by deduplicating dependencies:
+
+```bash
+jlpm yarn-deduplicate -s fewer
 ```
