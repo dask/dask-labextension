@@ -12,6 +12,8 @@ import {
   WidgetTracker
 } from '@jupyterlab/apputils';
 
+import { Cell } from '@jupyterlab/cells';
+
 import { CodeEditor } from '@jupyterlab/codeeditor';
 
 import { LabIcon } from '@jupyterlab/ui-components';
@@ -160,8 +162,8 @@ async function activate(
     return link;
   };
 
-  const clientCodeInjector = (model: IClusterModel) => {
-    const editor = Private.getCurrentEditor(
+  const clientCodeInjector = async (model: IClusterModel) => {
+    const editor = await Private.getCurrentEditor(
       app,
       notebookTracker,
       consoleTracker
@@ -197,7 +199,7 @@ async function activate(
   restorer.add(sidebar, id);
   void restorer.restore(tracker, {
     command: CommandIDs.launchPanel,
-    args: widget => ({ item: widget.item } || {}),
+    args: widget => ({ item: widget.item }) || {},
     name: widget => (widget.item && widget.item.route) || ''
   });
 
@@ -382,7 +384,8 @@ async function activate(
         // Determine whether to validate dashboards via browser check.
         browserDashboardCheck = settings.get('browserDashboardCheck')
           .composite as boolean;
-        sidebar.dashboardLauncher.input.browserDashboardCheck = browserDashboardCheck;
+        sidebar.dashboardLauncher.input.browserDashboardCheck =
+          browserDashboardCheck;
 
         //Determine whether to hide the cluster manager
         hideClusterManager = settings.get('hideClusterManager')
@@ -548,12 +551,12 @@ async function activate(
   // If either is not found, it bails.
   app.commands.addCommand(CommandIDs.injectClientCode, {
     label: 'Inject Dask Client Connection Code',
-    execute: () => {
+    execute: async () => {
       const cluster = Private.clusterFromClick(app, sidebar.clusterManager);
       if (!cluster) {
         return;
       }
-      clientCodeInjector(cluster);
+      await clientCodeInjector(cluster);
     }
   });
 
@@ -730,10 +733,8 @@ client = Client()`;
     cluster: IClusterModel,
     editor: CodeEditor.IEditor
   ): void {
-    const cursor = editor.getCursorPosition();
-    const offset = editor.getOffsetAt(cursor);
     const code = getClientCode(cluster);
-    editor.model.value.insert(offset, code);
+    editor.model.sharedModel.setSource(code);
   }
 
   /**
@@ -774,36 +775,43 @@ client`;
   }
 
   /**
+   * Wait until the cell is ready and return a promise
+   * that fullfils to editor
+   */
+  export async function getEditor(
+    cell: Cell
+  ): Promise<CodeEditor.IEditor | null | undefined> {
+    await cell.ready;
+    return cell && cell.editor;
+  }
+
+  /**
    * Get the currently focused editor in the application,
    * checking both notebooks and consoles.
    * In the case of a notebook, it creates a new cell above the currently
    * active cell and then returns that.
    */
-  export function getCurrentEditor(
+  export async function getCurrentEditor(
     app: JupyterFrontEnd,
     notebookTracker: INotebookTracker,
     consoleTracker: IConsoleTracker
-  ): CodeEditor.IEditor | null | undefined {
+  ): Promise<CodeEditor.IEditor | null | undefined> {
     // Get a handle on the most relevant kernel,
     // whether it is attached to a notebook or a console.
     let current = app.shell.currentWidget;
     let editor: CodeEditor.IEditor | null | undefined;
     if (current && notebookTracker.has(current)) {
       NotebookActions.insertAbove((current as NotebookPanel).content);
-      const cell = (current as NotebookPanel).content.activeCell;
-      editor = cell && cell.editor;
+      return getEditor((current as NotebookPanel).content.activeCell);
     } else if (current && consoleTracker.has(current)) {
-      const cell = (current as ConsolePanel).console.promptCell;
-      editor = cell && cell.editor;
+      return getEditor((current as ConsolePanel).console.promptCell);
     } else if (notebookTracker.currentWidget) {
       const current = notebookTracker.currentWidget;
       NotebookActions.insertAbove(current.content);
-      const cell = current.content.activeCell;
-      editor = cell && cell.editor;
+      return getEditor(current.content.activeCell);
     } else if (consoleTracker.currentWidget) {
       const current = consoleTracker.currentWidget;
-      const cell = current.console.promptCell;
-      editor = cell && cell.editor;
+      return getEditor(current.console.promptCell);
     }
     return editor;
   }

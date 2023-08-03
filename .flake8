@@ -1,0 +1,32 @@
+[flake8]
+# References:
+# https://flake8.readthedocs.io/en/latest/user/configuration.html
+# https://flake8.readthedocs.io/en/latest/user/error-codes.html
+
+# Note: there cannot be spaces after comma's here
+exclude = __init__.py
+ignore =
+    # Extra space in brackets
+    E20,
+    # Multiple spaces around ","
+    E231,E241,
+    # Comments
+    E26,
+    # Import formatting
+    E4,
+    # Comparing types instead of isinstance
+    E721,
+    # Assigning lambda expression
+    E731,
+    # Ambiguous variable names
+    E741,
+    # line break before binary operator
+    W503,
+    # line break after binary operator
+    W504,
+    # redefinition of unused 'loop' from line 10
+    F811,
+max-line-length = 120
+
+[aliases]
+test = pytest

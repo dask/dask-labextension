@@ -7,10 +7,7 @@ from .clusterhandler import DaskClusterHandler
 from .dashboardhandler import DaskDashboardCheckHandler, DaskDashboardHandler
 
 
-from ._version import get_versions
-
-__version__ = get_versions()["version"]
-del get_versions
+from ._version import __version__
 
 
 def _jupyter_labextension_paths():

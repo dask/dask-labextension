@@ -1,3 +1,122 @@
 [build-system]
-requires = ["jupyter_packaging~=0.12.0", "jupyterlab>=3.0.0rc2,==3.*", "setuptools>=40.8.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.5.0", "jupyterlab>=4.0.0,<5", "hatch-nodejs-version"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dask_labextension"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.8"
+classifiers = [
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Framework :: Jupyter",
+]
+dependencies = [
+    "bokeh >=1.0.0,!=2.0.0",
+    "distributed>=1.24.1",
+    "jupyter-server-proxy>=1.3.2",
+    "jupyterlab>=4.0.0,<5",
+]
+dynamic = ["version", "description", "authors", "urls", "keywords"]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-cov",
+    "pytest-html",
+    "black",
+    "flake8",
+]
+
+[tool.hatch.version]
+source = "nodejs"
+
+[tool.hatch.metadata.hooks.nodejs]
+fields = ["description", "authors", "urls"]
+
+[tool.hatch.build.targets.sdist]
+artifacts = ["dask_labextension/labextension"]
+exclude = [".github"]
+
+[tool.hatch.build.targets.wheel.shared-data]
+"jupyter-config" = "etc/jupyter"
+"dask_labextension/labextension" = "share/jupyter/labextensions/dask-labextension"
+"install.json" = "share/jupyter/labextensions/dask-labextension/install.json"
+
+[tool.hatch.build.hooks.version]
+path = "dask_labextension/_version.py"
+
+[tool.hatch.build.hooks.jupyter-builder]
+dependencies = ["hatch-jupyter-builder>=0.5"]
+build-function = "hatch_jupyter_builder.npm_builder"
+ensured-targets = [
+    "dask_labextension/labextension/static/style.js",
+    "dask_labextension/labextension/package.json",
+]
+skip-if-exists = ["dask_labextension/labextension/static/style.js"]
+
+[tool.hatch.build.hooks.jupyter-builder.build-kwargs]
+build_cmd = "build:prod"
+npm = ["jlpm"]
+
+[tool.hatch.build.hooks.jupyter-builder.editable-build-kwargs]
+build_cmd = "build"
+npm = ["jlpm"]
+source_dir = "src"
+build_dir = "dask_labextension/labextension"
+
+[tool.check-wheel-contents]
+ignore = ["W002"]
+
+[tool.black]
+# target-version should be all supported versions
+target_version = [
+    "py38",
+    "py39",
+    "py310",
+    "py311",
+]
+
+[tool.pytest.ini_options]
+cache_dir = "build/.cache/pytest"
+addopts = [
+    "-vv",
+    "--cov=dask_labextension",
+    "--cov-branch",
+    "--cov-context=test",
+    "--cov-report=term-missing:skip-covered",
+    "--cov-report=html:build/coverage",
+    "--html=build/pytest/index.html",
+    "--color=yes",
+]
+
+[tool.coverage.run]
+data_file = "build/.coverage"
+concurrency = [
+    "multiprocessing",
+    "thread"
+]
+
+[tool.coverage.html]
+show_contexts = true
+
+[tool.coverage.report]
+# Regexes for lines to exclude from consideration
+exclude_lines = [
+    "if self.debug:",
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+]
+ignore_errors = true
+omit = [
+    "dask_labextension/_version.py",
+    "tests/*",
+    "*/site-packages/*"
+]
