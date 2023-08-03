@@ -199,7 +199,7 @@ async function activate(
   restorer.add(sidebar, id);
   void restorer.restore(tracker, {
     command: CommandIDs.launchPanel,
-    args: widget => ({ item: widget.item } || {}),
+    args: widget => ({ item: widget.item }) || {},
     name: widget => (widget.item && widget.item.route) || ''
   });
 
