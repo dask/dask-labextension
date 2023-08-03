@@ -686,8 +686,8 @@ function ClusterListingItem(props: IClusterListingItemProps) {
   let itemClass = 'dask-ClusterListingItem';
   itemClass = isActive ? `${itemClass} jp-mod-active` : itemClass;
 
-  let minimum: JSX.Element | null = null;
-  let maximum: JSX.Element | null = null;
+  let minimum: React.JSX.Element | null = null;
+  let maximum: React.JSX.Element | null = null;
   if (cluster.adapt) {
     minimum = (
       <div className="dask-ClusterListingItem-stats">

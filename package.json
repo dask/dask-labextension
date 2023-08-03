@@ -1,7 +1,6 @@
 {
   "name": "dask-labextension",
   "version": "6.2.0",
-  "private": false,
   "description": "A JupyterLab extension for Dask.",
   "keywords": [
     "dask",

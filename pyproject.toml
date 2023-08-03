@@ -45,6 +45,7 @@ artifacts = ["dask_labextension/labextension"]
 exclude = [".github"]
 
 [tool.hatch.build.targets.wheel.shared-data]
+"jupyter-config" = "etc/jupyter"
 "dask_labextension/labextension" = "share/jupyter/labextensions/dask-labextension"
 "install.json" = "share/jupyter/labextensions/dask-labextension/install.json"
 

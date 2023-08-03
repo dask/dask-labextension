@@ -52,8 +52,8 @@ pip install dask-labextension==6.2.0
 
 ### JupyterLab 2.x
 
-Prior to JupyterLab 3.0 client-side and server-side components needed 
-to be installed separately,nwith node available on the machine.
+Prior to JupyterLab 3.0 client-side and server-side components needed
+to be installed separately, with node available on the machine.
 
 The server-side component can be installed via pip or conda-forge:
 
@@ -231,7 +231,7 @@ and is distributed as static assets along with the Python package.
 This requires `node`, `build`, `hatch` and `twine` to be installed.
 
 ```bash
-# To set version (e.g. 7.0.0). hatch will update version string in package.json 
+# To set version (e.g. 7.0.0). hatch will update version string in package.json
 hatch version "7.0.0"
 
 # Examples of bumping version
