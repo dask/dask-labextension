@@ -30,7 +30,7 @@ def load_jupyter_server_extension(nb_server_app):
     Args:
         nb_server_app (NotebookWebApplication): handle to the Notebook webserver instance.
     """
-    cluster_id_regex = r"(?P<cluster_id>\w+-\w+-\w+-\w+-\w+)"
+    cluster_id_regex = r"(?P<cluster_id>[^/]+)"
     web_app = nb_server_app.web_app
     base_url = web_app.settings["base_url"]
     get_cluster_path = url_path_join(base_url, "dask/clusters/" + cluster_id_regex)
