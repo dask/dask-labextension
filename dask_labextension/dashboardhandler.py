@@ -4,21 +4,31 @@ This proxies the bokeh server http and ws requests through the notebook
 server, preventing CORS issues.
 """
 import json
+from inspect import isawaitable
 from urllib import parse
 
 from tornado import httpclient, web
+
 
 from jupyter_server.base.handlers import APIHandler
 from jupyter_server.utils import url_path_join
 from jupyter_server_proxy.handlers import ProxyHandler
 
-from .manager import manager
+from .manager import DaskClusterManager
 
 
 class DaskDashboardCheckHandler(APIHandler):
     """
     A handler for checking validity of a dask dashboard.
     """
+
+    manager: DaskClusterManager
+
+    async def prepare(self):
+        r = super().prepare()
+        if isawaitable(r):
+            await r
+        self.manager = await self.settings["dask_cluster_manager"]
 
     @web.authenticated
     async def get(self, url) -> None:
@@ -133,7 +143,7 @@ class DaskDashboardHandler(ProxyHandler):
         return await self.proxy(cluster_id, proxied_path)
 
     async def open(self, cluster_id, proxied_path):
-        host, port = self._get_parsed(cluster_id)
+        host, port = await self._get_parsed(cluster_id)
         return await super().proxy_open(host, port, proxied_path)
 
     # We have to duplicate all these for now, I've no idea why!
@@ -157,17 +167,17 @@ class DaskDashboardHandler(ProxyHandler):
     def options(self, cluster_id, proxied_path):
         return self.proxy(cluster_id, proxied_path)
 
-    def proxy(self, cluster_id, proxied_path):
-        host, port = self._get_parsed(cluster_id)
+    async def proxy(self, cluster_id, proxied_path):
+        host, port = await self._get_parsed(cluster_id)
         return super().proxy(host, port, proxied_path)
 
-    def _get_parsed(self, cluster_id):
+    async def _get_parsed(self, cluster_id):
         """
         Given a cluster ID, get the hostname and port of its bokeh server.
         """
         # Get the cluster by ID. If it is not found,
         # raise an error.
-        cluster_model = manager.get_cluster(cluster_id)
+        cluster_model = await self.manager.get_cluster(cluster_id)
         if not cluster_model:
             raise web.HTTPError(404, f"Dask cluster {cluster_id} not found")
 
