@@ -23,7 +23,7 @@ class DaskClusterHandler(APIHandler):
         r = super().prepare()
         if isawaitable(r):
             await r
-        self.manager = await self.settings["dask_labextension_manager"]
+        self.manager = await self.settings["dask_cluster_manager"]
 
     @web.authenticated
     async def delete(self, cluster_id: str) -> None:

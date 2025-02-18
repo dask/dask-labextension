@@ -28,7 +28,7 @@ class DaskDashboardCheckHandler(APIHandler):
         r = super().prepare()
         if isawaitable(r):
             await r
-        self.manager = await self.settings["dask_labextension_manager"]
+        self.manager = await self.settings["dask_cluster_manager"]
 
     @web.authenticated
     async def get(self, url) -> None:
