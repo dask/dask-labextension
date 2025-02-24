@@ -2,12 +2,13 @@
 
 from jupyter_server.utils import url_path_join
 
-from . import config
+from . import config  # noqa
 from .clusterhandler import DaskClusterHandler
 from .dashboardhandler import DaskDashboardCheckHandler, DaskDashboardHandler
+from .manager import DaskClusterManager
 
 
-from ._version import __version__
+from ._version import __version__  # noqa
 
 
 def _jupyter_labextension_paths():
@@ -33,6 +34,7 @@ def load_jupyter_server_extension(nb_server_app):
     cluster_id_regex = r"(?P<cluster_id>[^/]+)"
     web_app = nb_server_app.web_app
     base_url = web_app.settings["base_url"]
+    web_app.settings["dask_cluster_manager"] = DaskClusterManager()
     get_cluster_path = url_path_join(base_url, "dask/clusters/" + cluster_id_regex)
     list_clusters_path = url_path_join(base_url, "dask/clusters/" + "?")
     get_dashboard_path = url_path_join(
